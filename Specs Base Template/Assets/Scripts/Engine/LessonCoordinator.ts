@@ -37,6 +37,7 @@ import { LessonEngine } from "./LessonEngine";
 import { LessonRequestOutcome, requestLesson } from "./LessonPlanner";
 import { LessonAnchorPayload, LessonRequestFailure, RequestStatePayload } from "./RequestTypes";
 import { describeDegradations } from "./LessonValidator";
+import { gatewayDropPending, gatewayStatus, GW_BACKGROUND } from "./GatewayQueue";
 import { XYZ } from "./SurveyTypes";
 
 @component
@@ -71,6 +72,11 @@ export class LessonCoordinator extends BaseScriptComponent {
   @widget(new SliderWidget(0, 5, 0.1))
   @hint("Pause before the single automatic retry.")
   private retryDelaySec: number = 0.6;
+
+  @input
+  @widget(new SliderWidget(0, 60, 1))
+  @hint("Extra grace while a request waits for the gateway slot. Requests are strictly one at a time, so a lesson asked for mid-synthesis waits for that call to finish. The real timeout re-arms at dispatch; this only stops a request stuck BEHIND something from hanging forever.")
+  private slotWaitAllowanceSec: number = 45;
 
   @input
   @widget(new SliderWidget(1, 15, 0.5))
@@ -186,6 +192,13 @@ export class LessonCoordinator extends BaseScriptComponent {
     // An error on screen is stale the moment the user asks for something new.
     this.errorTimer.enabled = false;
 
+    // Clear queued background synthesis out of the way. Requests are strictly
+    // one at a time now, so a pile of prefetches ahead of this one is a pile of
+    // seconds the user spends staring at COMPILING. The in-flight call cannot
+    // be cancelled; everything merely waiting can.
+    const dropped = gatewayDropPending(GW_BACKGROUND, "user asked for a lesson");
+    if (dropped > 0) this.log("cleared " + dropped + " queued background call(s) — " + gatewayStatus());
+
     this.requestId++;
     this.activeText = clean;
     this.activeSource = source;
@@ -205,10 +218,16 @@ export class LessonCoordinator extends BaseScriptComponent {
     const id = this.requestId;
     const attempt = this.attempt;
 
+    // Armed generously until dispatch, then re-armed tight. See slotWaitAllowanceSec.
     this.watchdog.enabled = true;
-    this.watchdog.reset(this.requestTimeoutSec);
+    this.watchdog.reset(this.requestTimeoutSec + this.slotWaitAllowanceSec);
 
-    requestLesson(this.activeText, this.systemPrompt).then((outcome) => {
+    requestLesson(this.activeText, this.systemPrompt, (queuedMs) => {
+      if (id !== this.requestId) return;
+      this.watchdog.enabled = true;
+      this.watchdog.reset(this.requestTimeoutSec);
+      if (queuedMs > 50) this.log("request #" + id + " waited " + queuedMs + "ms for the gateway slot");
+    }).then((outcome) => {
       this.handleOutcome(outcome, id, attempt);
     });
   }
@@ -270,7 +289,8 @@ export class LessonCoordinator extends BaseScriptComponent {
       );
     }
     this.log(
-      'lesson ready in ' + elapsed + 'ms: "' + v.plan.title + '" ' + v.plan.steps.length +
+      'lesson ready in ' + elapsed + 'ms (gateway ' + outcome.latencyMs + 'ms, queued ' +
+        outcome.queuedMs + 'ms): "' + v.plan.title + '" ' + v.plan.steps.length +
         " steps, " + v.degradations.length + " degraded"
     );
 

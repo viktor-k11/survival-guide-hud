@@ -99,7 +99,14 @@ export const Events = {
    * about it, so the answer queues and follows.
    */
   speakRequested: "speakRequested",
-  /** Narration playback started or stopped. Payload: { speaking, text, source }. */
+  /**
+   * Narration playback started or stopped, OR became pending.
+   * Payload: { speaking, pending, pendingText, text, source }.
+   *
+   * `pending` is the 6.5-18.6 s window between a step appearing and its voice
+   * arriving. The step text is never gated on it — the HUD shows the
+   * instruction immediately and this only says that audio is still coming.
+   */
   narrationStateChanged: "narrationStateChanged",
   /** A Q&A answer came back. Payload: { question, answer, latencyMs }. */
   qaAnswered: "qaAnswered",

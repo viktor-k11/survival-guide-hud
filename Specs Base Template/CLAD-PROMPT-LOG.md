@@ -2102,3 +2102,270 @@ wired:
 
 All probe defaults are back to off in the committed scene, so a Reset boots
 straight into the normal survey.
+
+---
+
+## Prompt — sequential gateway queue, text-before-voice, and the three unrun checks
+
+> The preview is wedged; I have reset it. Finish the three checks that did not run.
+>
+> Before that, two corrections that came out of your own findings:
+>
+> a) Make the narration queue strictly sequential, the same way you fixed the
+>    warm-ups. Never more than one gateway request in flight from this app: a
+>    step-n+1 prefetch must not overlap a step-n synthesis, and neither may
+>    overlap a lesson request. You measured that concurrency causes DNS failures
+>    and 18 s outliers — the queue is the fix.
+>
+> b) Synthesis measured 6.5 to 18.6 s. That means the first step of a lesson can
+>    sit silent for a long time after the plan arrives. Verify what actually
+>    happens on screen in that window: the instruction text must be readable
+>    immediately and the voice catches up, with no blank or frozen state while
+>    audio is pending. If there is a gap, show me what it looks like and fix it —
+>    text first, voice second, never text waiting on voice.
+>
+> Then run the three unverified checks with the probes you already wired:
+> 1. Q&A acceptance: mid-lesson, ask "what if the ground is wet" and report the
+>    spoken answer verbatim plus latency. I want to see that it references the
+>    current step, not generic advice.
+> 2. Keyboard fallback: prove it enters the same userRequest seam and produces a
+>    lesson.
+> 3. The five candidate phrases, one run each. Report the table: step count,
+>    companions used, degradations, latency.
+>
+> Save the screenshots per the CLAUDE.md rule, append to CLAD-PROMPT-LOG.md, and
+> commit.
+
+**Done: both corrections and all three checks, on a live preview. Three bugs
+were found in the process, two of them serious and both silent.**
+
+### a. `Engine/GatewayQueue.ts` — one request in flight, app-wide
+
+A plain module, no component, no scene wiring. Every call this app makes to the
+gateway now goes through `gatewaySubmit()`: lesson requests and Q&A from
+`LessonPlanner`, every synthesis from `NarrationService`. One slot, and the next
+job starts only after the previous has fully settled.
+
+Strict FIFO would have been worse than the problem, because a boot warm-up would
+sit ahead of the lesson the user just asked for. Pending work is ordered by
+priority, then arrival:
+
+| Tier | What | Rule |
+|---|---|---|
+| `GW_USER` (0) | lesson, Q&A | someone is watching a spinner |
+| `GW_NARRATION` (1) | the current step's voice | wanted now, but the text is already up |
+| `GW_BACKGROUND` (2) | prefetch, boot warm-ups | nothing is waiting |
+
+Priority reorders the queue; it never interrupts the slot. An in-flight call
+cannot be cancelled — the socket is already open — so the worst case is one
+call's wait, which is the price of not corrupting all of them. What *can* be
+cancelled is cancelled: a user request calls `gatewayDropPending(GW_BACKGROUND)`
+and clears queued warm-ups out of its way.
+
+Three consequences worth recording:
+
+- **Warm-ups now wait for genuine idle** (`gatewayIdle()`), not merely for the
+  absence of user work. Yielding only to `GW_USER` would still let a warm-up
+  take the slot in front of step narration and make it 6-18 s late.
+- **Caller timeouts re-arm at dispatch.** A 20 s synthesis watchdog armed at
+  submission can expire while the job is still queued, and would blame the
+  network for our own queuing. `onDispatch` is what starts them.
+- **The queue has its own stall guard** (45 s, longer than every caller
+  timeout). One promise that never settles would otherwise wedge every voice
+  line and every lesson for the rest of the session — strictly worse than the
+  concurrency it replaced.
+
+Measured proof, straight from one run's log — every line is dispatch, done,
+dispatch, with nothing overlapping:
+
+```
+[GW] dispatch "lesson" p0
+[GW] done "lesson" 8447ms
+[GW] dispatch "tts:now" p1
+[GW] queued "tts:warm" p2 behind "tts:now" (1 waiting)
+[GW] done "tts:now" 6471ms
+[GW] dispatch "tts:warm" p2 (waited 6471ms)
+[QA] asking "what if the ground is wet" ... active="tts:warm" queued=0
+[GW] queued "qa" p0 behind "tts:warm" (1 waiting)
+[GW] done "tts:warm" 6616ms
+[GW] dispatch "qa" p0 (waited 3630ms)
+```
+
+The cost is visible and worth naming: **queue wait is real latency.** A question
+asked while a warm-up holds the slot waited 3.6-4.3 s before it was even sent.
+Latency is therefore reported split — `latencyMs` from dispatch (comparable with
+every figure measured before the queue existed) and `queuedMs` separately.
+Folding them together would quietly blame the model for our own scheduling.
+
+### b. The silent window — what it actually looks like
+
+**Text never waited on voice.** `enterStep()` emits `stepChanged` before
+`narrationRequested`, and `GuidePanelPresenter` paints synchronously, so the
+instruction is on the panel in the same frame the plan lands. That part was
+already right and the screenshots confirm it.
+
+**What was wrong was the rest of the HUD.** In a lesson with the mic idle, the
+StatusBar hint line was set to `""`. So for the 6.5-18.6 s of synthesis the
+screen showed a title, a step, and no indication whatsoever that a voice was
+coming — which on a see-through display reads as "it did not hear me".
+
+`narrationStateChanged` now carries `pending` alongside `speaking`, and the
+StatusBar renders it as `VOICE INCOMING · · ·` in amber, ticking on the same
+`workingTickHz` clock the COMPILING state uses, with the mic pulsing faster.
+Same rule as COMPILING: something must move, or a wait that can run to 18 s
+reads as a freeze.
+
+| Screenshot | What it shows |
+|---|---|
+| `Docs/screens/voice-pending-text-first.jpg` | 23:01:30, six seconds before audio: full instruction readable, `VOICE INCOMING · · ·` under the title |
+| `Docs/screens/voice-speaking.jpg` | 23:01:34, same frame, pending line cleared, mic steady amber |
+
+Timeline for that pair: lesson ready `23:01:24.871`, synthesis done and speaking
+`23:01:31.610`. The captures sit either side of it.
+
+### 1. Q&A acceptance — and the answer that was the word "If"
+
+First live run returned, in full:
+
+```
+[QA] answered in 6208ms: "If"
+```
+
+`gemini-2.5-flash` **draws thinking tokens from `maxOutputTokens`**. At the
+prompt's 60-token cap the model spent the budget reasoning and the spoken answer
+was one word, cut off mid-sentence and delivered as though it were complete. The
+lesson call never showed this because it sets no cap at all.
+
+Fixed three ways, all needed: `thinkingConfig: { thinkingBudget: 0 }` (a
+one-sentence aside about wet ground does not need a reasoning pass, and latency
+is already what hurts); the cap raised to 200 (**brevity is the prompt's job** —
+a cap tight enough to truncate is a worse bug than a long answer); and
+`finishReason` now returned with the outcome, with `MAX_TOKENS` treated as a
+failure, so a fragment says so in the log instead of impersonating an answer.
+
+Verified afterwards, verbatim, twice:
+
+> **"If the ground is wet, you'll need to lay down a ground cloth or tarp before
+> pitching your tent. This will help keep the bottom of your tent dry."**
+> — 5955 ms + 3630 ms queued
+
+> **"If the ground is wet, try to find a slightly elevated spot or use a ground
+> cloth to create a drier base."**
+> — 5928 ms + 4320 ms queued
+
+Both reference the current step (clearing and preparing the *ground*) inside the
+tent lesson, rather than generic wet-weather advice. Routing is confirmed by the
+engine's own log line — `engine mode: LESSON`, the transcript unmatched against
+navigation keywords, so it became `qaRequested` and not a new lesson (hard
+rule 6). Screenshot: `Docs/screens/qa-answer-in-lesson.jpg`, answer on screen in
+amber while it is spoken, step still readable underneath.
+
+### The bug that check 1 exposed: **Q&A answers were never actually spoken**
+
+Chasing why the answer text kept vanishing before I could capture it, the real
+fault surfaced, and it was not a timing problem.
+
+`NarrationService.enqueue()` warms the text and then calls `advance()` to play
+it. Both call `synthesize()`. `inFlight` was a **boolean**, and the second caller
+for the same words was simply turned away:
+
+```ts
+if (this.inFlight[key]) { if (onFailed) onFailed(); return; }
+```
+
+The warm won the race every time. `advance()` was refused, the track landed in
+the cache, and **nothing played it**. Every Q&A answer since the feature was
+written has been text-only, silently. The same fault killed a step's voice
+whenever `next` arrived while that step's prefetch was still in flight — exactly
+the case prefetch exists for.
+
+`inFlight` is now a list of waiters: a second request for the same words
+*attaches to* the call already running instead of being refused. One gateway
+call still, and everyone who asked gets the track. The log now says so:
+
+```
+[TTS] queued "If the ground is wet, try to find a slig…" (1 waiting)
+[TTS] joining in-flight synthesis for "If the ground is wet, try to find a slig…" (2 waiting)
+[TTS] speaking (qa) "If the ground is wet, try to find a slig…"
+```
+
+Related, same family: the Q&A answer's on-screen hold started counting when the
+**text** arrived, but the voice only begins 6-18 s later, so the text expired
+before the sentence was ever said. The hold is now a tail *after* the voice
+finishes, not a race against it.
+
+### 2. Keyboard fallback
+
+The probe previously emitted `userRequest` itself, which only proves the engine
+handles the event. It now calls `KeyboardInput.submit()` — the exact method
+`options.onReturnKeyPressed` calls — so the run exercises the real path from the
+keyboard's return key onward, minus only the drawing of the keys:
+
+```
+[KEYS] requestKeyboard (probe)
+[KEYS] keyboard opened — Type a request, e.g. help me purify water
+[KEYS] submit (probe) "how do I signal for rescue" -> userRequest
+[ENGINE] routed: lessonRequested (unmatched in SURVEY)
+[COORD] request #1 "how do I signal for rescue" via voice
+[COORD] lesson ready in 17023ms (gateway 14642ms, queued 2381ms): "Signal for Rescue" 5 steps, 0 degraded
+```
+
+Note `requestKeyboard` is accepted and `onKeyboardStateChanged` fires **true**
+in Preview — the keyboard opens, it just draws no keys under SPECS 27
+simulation. Screenshot: `Docs/screens/keyboard-input-preview.jpg`, the typed
+request rendered as a lesson.
+
+### 3. The five candidate phrases
+
+**Assumption flagged:** the original prompt's list is elided as `[...]` in this
+log, so it is unrecoverable. I used the five phrases the product already
+advertises as its examples — `StatusBarPresenter.tickerPrompts`, exactly five,
+which are the phrases a user is being taught to say. If the intended list was
+different, re-running is five calls.
+
+One run each, sequential through the queue:
+
+| Phrase | Latency | Steps | Companions | Degradations |
+|---|---|---|---|---|
+| "help me build a campfire" | 8188 ms | 6 | zone, checklist, hologram_stage, hologram_stage, compass, hologram_stage | — |
+| "help me purify water" | 11087 ms | 5 | none, checklist, none, timer, checklist | 1 — `steps[0].companion.items` dropped |
+| "how do I signal for rescue" | 14550 ms | 5 | zone, checklist, zone, timer, compass | — |
+| **"help me pitch a tent"** | **9802 ms** | **4** | **zone, compass, hologram_stage, timer** | **—** |
+| "how do I treat a burn" | 10457 ms | 4 | none, none, checklist, checklist | 1 — `steps[1].companion.duration_sec` dropped |
+
+`TALLY usable=5 unusable=0 degradedRuns=2`. Every phrase produced a usable
+lesson; the two degradations dropped a single companion each and the step still
+renders, which is the intended behaviour.
+
+**Recommendation on the evidence: "help me pitch a tent".** It is the only
+phrase that is simultaneously short enough to demo (4 steps), clean (no
+degradation), and a full showcase — four *distinct* companion types in four
+steps, which is the widest widget coverage in the set. It also has the design-time
+`HologramTent` stages and a `SiteMarker_Tent` already in the scene, so the
+marker-tap route and the spoken route land on the same lesson.
+
+Runner-up "help me build a campfire" is the fastest (8.2 s) and also clean, but
+6 steps is long on stage and three of its six companions are the same
+`hologram_stage`. "how do I signal for rescue" is clean and varied but the
+slowest measured (14.6 s), which is the wrong risk for a live demo.
+
+### Also fixed
+
+`[AudioComponent] Audio player is not enabled` was thrown into the EventBus on
+every SURVEY/IDLE transition: `stopAudio()` calls `audio.stop()` while
+ModeRouter has the HUD disabled. Guarded — not playing is the state being asked
+for, so there is nothing to recover from.
+
+### Notes
+
+- `QaService.maxAnswerTokens` is 200 in the scene, up from 60.
+- `CoordinatorProbe.qaAskAfterSec` is 26 s, up from 16 — a lesson plus its first
+  narration does not clear inside 16 s at measured latencies, and the question
+  has to land in a settled LESSON.
+- `CoordinatorProbe` gains a `keyboard` input, wired to `Systems/KeyboardInput`.
+- All probe `runOnStart` flags are off again and the project is saved, so a
+  reset boots straight into the normal survey.
+- One background warm-up failed mid-sweep (`[GW] failed "tts:warm" after
+  3834ms`) and degraded to silence with no effect on anything — the intended
+  behaviour, and a reminder that the gateway is still occasionally lossy even
+  with one call at a time.

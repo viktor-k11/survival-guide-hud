@@ -24,6 +24,7 @@
  */
 import { eventBus, Events } from "./EventBus";
 import { requestQaAnswer } from "./LessonPlanner";
+import { gatewayDropPending, gatewayStatus, GW_BACKGROUND } from "./GatewayQueue";
 
 @component
 export class QaService extends BaseScriptComponent {
@@ -32,9 +33,9 @@ export class QaService extends BaseScriptComponent {
   private promptsAsset: JsonAsset;
 
   @input
-  @widget(new SliderWidget(20, 200, 5))
-  @hint("Hard cap on answer length. This is spoken aloud while the user is holding a tent pole; two sentences is the product.")
-  private maxAnswerTokens: number = 60;
+  @widget(new SliderWidget(20, 400, 5))
+  @hint("Hard cap on answer length. Brevity is the PROMPT's job, not this number's — set too low, the model is cut off mid-sentence and a fragment gets spoken as if it were the answer. 60 produced the literal answer \"If\".")
+  private maxAnswerTokens: number = 200;
 
   @input
   @hint("Shown (and spoken) when the guide cannot answer. Kept short on purpose.")
@@ -90,7 +91,14 @@ export class QaService extends BaseScriptComponent {
     }
     this.busy = true;
 
-    this.log('asking "' + p.question + '" (step: "' + shorten(p.stepInstruction) + '")');
+    // A question is a user request: queued prefetches get out of its way, same
+    // as for a lesson. Only queued ones — the in-flight call keeps the slot.
+    const dropped = gatewayDropPending(GW_BACKGROUND, "user asked a question");
+    this.log(
+      'asking "' + p.question + '" (step: "' + shorten(p.stepInstruction) + '")' +
+        (dropped > 0 ? " [cleared " + dropped + " queued background call(s)]" : "") +
+        " " + gatewayStatus()
+    );
 
     requestQaAnswer(
       p.question,
@@ -102,7 +110,11 @@ export class QaService extends BaseScriptComponent {
       this.busy = false;
 
       if (!outcome.ok) {
-        this.log("FAILED after " + outcome.latencyMs + "ms: " + outcome.error);
+        this.log(
+          "FAILED after " + outcome.latencyMs + "ms: " + outcome.error +
+            (outcome.finishReason ? " (finishReason=" + outcome.finishReason + ")" : "") +
+            (outcome.answer ? ' — fragment was "' + outcome.answer + '"' : "")
+        );
         eventBus.emit(Events.qaAnswered, {
           question: p.question,
           answer: this.failureMessage,
@@ -115,7 +127,11 @@ export class QaService extends BaseScriptComponent {
         return;
       }
 
-      this.log('answered in ' + outcome.latencyMs + 'ms: "' + outcome.answer + '"');
+      this.log(
+        'answered in ' + outcome.latencyMs + 'ms' +
+          (outcome.queuedMs > 50 ? " (+" + outcome.queuedMs + "ms queued)" : "") +
+          ': "' + outcome.answer + '"'
+      );
       eventBus.emit(Events.qaAnswered, {
         question: p.question,
         answer: outcome.answer,

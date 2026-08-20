@@ -36,6 +36,7 @@
     promptsAsset: false
     requestTimeoutSec: false
     retryDelaySec: false
+    slotWaitAllowanceSec: false
     tentPhrase: false
   ScriptTypesHidden:
     {}
@@ -52,6 +53,7 @@
       firePhrase: help me build a campfire
       requestTimeoutSec: !<float> 25.000000
       retryDelaySec: 0.600000
+      slotWaitAllowanceSec: !<float> 45.000000
       errorHoldSec: !<float> 5.000000
       dumpFailedResponses: true
       enableLogging: true
@@ -72,6 +74,7 @@
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Failure handling</span>"}'
     - '// @input float requestTimeoutSec = 25 {"hint":"Give up on a response after this long and treat it as a network failure. A request that never resolves would otherwise leave the HUD compiling forever.", "widget":"slider", "min":5, "max":60, "step":1}'
     - '// @input float retryDelaySec = 0.6 {"hint":"Pause before the single automatic retry.", "widget":"slider", "min":0, "max":5, "step":0.1}'
+    - '// @input float slotWaitAllowanceSec = 45 {"hint":"Extra grace while a request waits for the gateway slot. Requests are strictly one at a time, so a lesson asked for mid-synthesis waits for that call to finish. The real timeout re-arms at dispatch; this only stops a request stuck BEHIND something from hanging forever.", "widget":"slider", "min":0, "max":60, "step":1}'
     - '// @input float errorHoldSec = 5 {"hint":"How long the error state stays on screen before returning to IDLE.", "widget":"slider", "min":1, "max":15, "step":0.5}'
     - '// @input bool dumpFailedResponses = true {"hint":"Log the full raw envelope of a failed response as a FIXTURE| line, so it can be lifted straight out of the log into Assets/AI/fixtures (hard rule 5)."}'
     - // @input bool enableLogging = true

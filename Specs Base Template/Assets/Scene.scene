@@ -1782,7 +1782,6 @@
   Enabled: true
   ScriptAsset: !<reference> 8422abf6-abff-4885-b43c-1dc79531e613
   ScriptInputsDefault:
-    maxAnswerTokens: true
     failureMessage: true
     speakFailures: true
     enableLogging: true
@@ -1791,7 +1790,7 @@
   ScriptInputs:
     "":
       promptsAsset: !<reference.JsonAsset> 805a6898-a639-474f-974b-2e1e1ff9fbdf
-      maxAnswerTokens: !<float> 60.000000
+      maxAnswerTokens: !<float> 200.000000
       failureMessage: I could not answer that one.
       speakFailures: false
       enableLogging: true
@@ -1921,6 +1920,7 @@
     firePhrase: true
     requestTimeoutSec: true
     retryDelaySec: true
+    slotWaitAllowanceSec: true
     errorHoldSec: true
     dumpFailedResponses: true
     enableLogging: true
@@ -1934,6 +1934,7 @@
       firePhrase: help me build a campfire
       requestTimeoutSec: !<float> 25.000000
       retryDelaySec: 0.600000
+      slotWaitAllowanceSec: !<float> 45.000000
       errorHoldSec: !<float> 5.000000
       dumpFailedResponses: true
       enableLogging: true
@@ -3259,22 +3260,23 @@
     runOnStart: true
     probeRequest: true
     qaLessonRequest: true
+    keyboardSubmitText: true
     qaQuestion: true
-    qaAskAfterSec: true
-    scenario: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
     "":
       coordinator: !<MappingBased.AssignableType_1> 3ffc320f-3193-42e1-be4b-d53128a1e267
       engine: !<MappingBased.AssignableType_2> 6f1ce7e0-42ae-4354-939d-20de3ca2d381
+      keyboard: !<MappingBased.AssignableType_3> b8b75adb-59b2-40da-b6ef-e202b4ad2ecf
       brokenFixture: !<reference.JsonAsset> 404fc54d-e175-4494-9b18-27cd8b0ec81d
       runOnStart: false
       probeRequest: help me purify water
       qaLessonRequest: help me pitch a tent
+      keyboardSubmitText: how do I signal for rescue
       qaQuestion: what if the ground is wet
-      qaAskAfterSec: !<float> 16.000000
-      scenario: !<float> 0.000000
+      qaAskAfterSec: !<float> 26.000000
+      scenario: !<float> 3.000000
   ScriptTypes:
     "":
       {}
@@ -5961,6 +5963,7 @@
     qaHoldSec: true
     qaWrapChars: true
     keyboardToggleLabel: true
+    voicePendingHint: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -6001,6 +6004,7 @@
       qaHoldSec: !<float> 9.000000
       qaWrapChars: !<float> 46.000000
       keyboardToggleLabel: TYPE
+      voicePendingHint: VOICE INCOMING
   ScriptTypes:
     "":
       {}

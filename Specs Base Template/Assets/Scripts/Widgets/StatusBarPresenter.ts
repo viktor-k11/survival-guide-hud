@@ -141,7 +141,7 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
   @input
   @widget(new SliderWidget(2, 20, 1))
-  @hint("How long a spoken answer stays on screen. On a see-through display an answer with no text is easy to miss.")
+  @hint("How long a spoken answer stays up AFTER its voice has finished. The clock does not start while the answer is still being synthesized or spoken — otherwise the text expires before the sentence is said.")
   private qaHoldSec: number = 9;
 
   @input
@@ -149,6 +149,14 @@ export class StatusBarPresenter extends BaseScriptComponent {
   private qaWrapChars: number = 46;
 
   @input @hint("Copy shown on the keyboard affordance.") private keyboardToggleLabel: string = "TYPE";
+
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">Waiting for the voice</span>')
+  @ui.label('<span style="color: #94A3B8; font-size: 11px;">Synthesis measures 6.5-18.6 s. The step is readable the instant it arrives — text has never waited on audio — but the line under it used to sit blank for that whole window, which reads as "it did not hear me". This is what fills it.</span>')
+
+  @input
+  @hint("Shown in a lesson while the current step's audio is still being synthesized. Cleared the moment it speaks.")
+  private voicePendingHint: string = "VOICE INCOMING";
 
   private micVisual: RenderMeshVisual;
   private micMat: Material;
@@ -166,6 +174,9 @@ export class StatusBarPresenter extends BaseScriptComponent {
   private qaAnswer: string = "";
   private qaRemaining: number = 0;
   private speaking: boolean = false;
+  /** The user is owed a voice line that has not arrived yet. */
+  private narrationPending: boolean = false;
+  private pendingElapsed: number = 0;
   private tickerIndex: number = 0;
   private tickerElapsed: number = 0;
   private safetyWarning: string = "";
@@ -237,8 +248,12 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.qaAnswer = "";
       this.qaRemaining = 0;
     });
-    eventBus.subscribe(Events.narrationStateChanged, (p: { speaking: boolean }) => {
+    eventBus.subscribe(Events.narrationStateChanged, (p: { speaking: boolean; pending: boolean }) => {
       this.speaking = !!(p && p.speaking);
+      const pending = !!(p && p.pending);
+      if (pending !== this.narrationPending) this.pendingElapsed = 0;
+      this.narrationPending = pending;
+      this.applyVoice();
     });
     eventBus.subscribe(Events.distanceWarning, (p: { message: string }) => {
       this.rangeWarning = p && p.message ? p.message : "";
@@ -309,10 +324,17 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
     if (this.voiceState === "listening") setText(this.hintText, this.listeningHint);
     else if (this.voiceState === "finalizing") setText(this.hintText, this.finalizingHint);
-    else setText(this.hintText, this.mode === "IDLE" ? this.idleHint : "");
+    else if (this.mode === "IDLE") setText(this.hintText, this.idleHint);
+    // In a lesson the hint line is otherwise empty, so it is free to carry the
+    // one thing the user cannot see for themselves: that the voice is coming.
+    // onUpdate animates the trailing frame; this sets the first one so the line
+    // is never blank for a frame before the clock ticks.
+    else if (this.narrationPending) setText(this.hintText, this.voicePendingHint + " " + this.workingFrame());
+    else setText(this.hintText, "");
 
     if (theme) {
-      setTextColor(this.hintText, listening ? theme.accentAmber : theme.primaryPhosphor, theme.glowIntensity);
+      const warm = listening || (this.narrationPending && this.mode !== "IDLE");
+      setTextColor(this.hintText, warm ? theme.accentAmber : theme.primaryPhosphor, theme.glowIntensity);
     }
   }
 
@@ -399,9 +421,10 @@ export class StatusBarPresenter extends BaseScriptComponent {
     return body + (Math.floor(this.compileElapsed * 5) % 2 === 0 ? "_" : " ");
   }
 
-  private workingFrame(): string {
+  private workingFrame(clock?: number): string {
     if (!this.workingFrames || this.workingFrames.length === 0) return "";
-    const i = Math.floor(this.compileElapsed * this.workingTickHz) % this.workingFrames.length;
+    const t = typeof clock === "number" ? clock : this.compileElapsed;
+    const i = Math.floor(t * this.workingTickHz) % this.workingFrames.length;
     return this.workingFrames[i];
   }
 
@@ -441,6 +464,14 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
     if (this.busyRemaining > 0) this.busyRemaining -= dt;
 
+    // Hold the answer while its voice is still coming or still talking. The
+    // countdown is a tail AFTER the sentence, not a race against it: synthesis
+    // takes 6-18 s, so a hold that starts when the TEXT arrives runs out before
+    // the audio even begins, and the user hears an answer with nothing to read.
+    if (this.qaAnswer.length > 0 && (this.narrationPending || this.speaking)) {
+      this.qaRemaining = Math.max(this.qaRemaining, this.qaHoldSec);
+    }
+
     if (this.qaRemaining > 0) {
       this.qaRemaining -= dt;
       if (this.mode === "LESSON" && this.activeWarning().length === 0) {
@@ -455,6 +486,15 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.compileElapsed += dt;
       this.renderCompiling();
       return;
+    }
+
+    // Waiting for the voice. Same rule as COMPILING: something has to move, or
+    // a wait that can run to 18 s reads as a freeze. The instruction itself is
+    // already up on the guide panel and does not move — that is the point.
+    if (this.narrationPending && !this.speaking && this.mode !== "IDLE" && this.voiceState === "idle") {
+      this.pendingElapsed += dt;
+      setText(this.hintText, this.voicePendingHint + " " + this.workingFrame(this.pendingElapsed));
+      if (this.theme) setTextColor(this.hintText, this.theme.accentAmber, this.theme.glowIntensity);
     }
 
     // A cancellation / notice line survives a moment after returning to IDLE.
@@ -479,10 +519,17 @@ export class StatusBarPresenter extends BaseScriptComponent {
     // steady amber while the guide is talking — the one on-screen sign that
     // audio is playing at all, which matters on a display with no speaker icon.
     if (this.micMat && this.theme) {
-      const hz = this.voiceState === "listening" ? this.theme.pulseHz * 2.0 : this.theme.pulseHz;
+      const hz =
+        this.voiceState === "listening"
+          ? this.theme.pulseHz * 2.0
+          : this.narrationPending
+          ? this.theme.pulseHz * 1.5
+          : this.theme.pulseHz;
       const t = this.speaking ? 1.0 : pulse01(getTime(), hz);
       const base =
-        this.voiceState === "listening" || this.speaking ? this.theme.accentAmber : this.theme.primaryPhosphor;
+        this.voiceState === "listening" || this.speaking || this.narrationPending
+          ? this.theme.accentAmber
+          : this.theme.primaryPhosphor;
       // Never fully dark: on an additive display 0 means "gone", and a mic that
       // vanishes reads as broken rather than idle.
       const level = (0.45 + 0.55 * t) * this.theme.glowIntensity;

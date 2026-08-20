@@ -21,6 +21,7 @@
 import { eventBus, Events } from "./EventBus";
 import { LessonCoordinator } from "./LessonCoordinator";
 import { LessonEngine } from "./LessonEngine";
+import { KeyboardInput } from "./KeyboardInput";
 import { LessonRequestOutcome } from "./LessonPlanner";
 import { RequestStatePayload } from "./RequestTypes";
 import { inferLessonKind, validateLesson } from "./LessonValidator";
@@ -30,6 +31,11 @@ import { installRsgTokens, overrideGoogleToken } from "./RsgTokens";
 export class CoordinatorProbe extends BaseScriptComponent {
   @input private coordinator: LessonCoordinator;
   @input private engine: LessonEngine;
+
+  @input
+  @allowUndefined
+  @hint("Systems/KeyboardInput. Scenario 'keyboard' calls its submit() directly — the same method the return key calls — rather than emitting userRequest itself. Emitting the event would only prove the engine handles the event; this proves the KEYBOARD reaches it.")
+  private keyboard: KeyboardInput;
 
   @input
   @allowUndefined
@@ -47,6 +53,10 @@ export class CoordinatorProbe extends BaseScriptComponent {
   @input
   @hint("Scenario 'qa': the lesson to load first.")
   private qaLessonRequest: string = "help me pitch a tent";
+
+  @input
+  @hint("Scenario 'keyboard': the text pushed through KeyboardInput.submit().")
+  private keyboardSubmitText: string = "how do I signal for rescue";
 
   @input
   @hint("Scenario 'qa': the question asked mid-lesson. It must NOT match a navigation keyword, or the engine answers it locally with no AI call (hard rule 6).")
@@ -141,7 +151,14 @@ export class CoordinatorProbe extends BaseScriptComponent {
       });
       this.at(7.0, () => {
         this.log("=== KEYBOARD: submitting through the same seam the return key uses ===");
-        eventBus.emit(Events.userRequest, { text: "how do I signal for rescue", latencyMs: 0 });
+        if (!this.keyboard) {
+          this.log("FAIL: keyboard not wired — cannot prove the seam, only the event");
+          return;
+        }
+        // KeyboardInput.submit() is what options.onReturnKeyPressed calls. Going
+        // through it means this run exercises the real path from the keyboard's
+        // return key to userRequest, minus only the drawing of the keys.
+        this.keyboard.submit(this.keyboardSubmitText, "probe");
       });
       return;
     }
@@ -150,10 +167,15 @@ export class CoordinatorProbe extends BaseScriptComponent {
       eventBus.subscribe(Events.qaAnswered, (p: { answer: string; latencyMs: number; ok: boolean }) => {
         this.log('  ANSWER (' + (p && p.ok ? p.latencyMs + "ms" : "FAILED") + '): "' + (p ? p.answer : "") + '"');
       });
-      eventBus.subscribe(Events.narrationStateChanged, (p: { speaking: boolean; text: string; source: string }) => {
-        if (!p) return;
-        this.log("  AUDIO " + (p.speaking ? 'speaking (' + p.source + ') "' + p.text + '"' : "stopped"));
-      });
+      eventBus.subscribe(
+        Events.narrationStateChanged,
+        (p: { speaking: boolean; pending: boolean; pendingText: string; text: string; source: string }) => {
+          if (!p) return;
+          if (p.speaking) this.log('  AUDIO speaking (' + p.source + ') "' + p.text + '"');
+          else if (p.pending) this.log('  AUDIO pending — waiting on "' + p.pendingText + '"');
+          else this.log("  AUDIO stopped");
+        }
+      );
 
       this.at(0.5, () => {
         this.log("=== QA: loading a lesson first ===");
@@ -234,6 +256,7 @@ export class CoordinatorProbe extends BaseScriptComponent {
       rawEnvelope: payload,
       rawPayload: payload,
       latencyMs: 0,
+      queuedMs: 0,
       validation: validateLesson(payload, inferLessonKind(this.probeRequest, "")),
       transportError: false,
     };

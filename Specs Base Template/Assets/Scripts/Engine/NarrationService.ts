@@ -37,14 +37,44 @@
  *   2. `prewarmPhrases`: synthesized once at boot, in the background, spaced out
  *      so the warm-up never competes with a lesson request the user is waiting
  *      on. This is the path that works today with no recording session.
+ *
+ * ## Every synthesis goes through GatewayQueue
+ *
+ * Chaining the warm-ups fixed the warm-ups. It did nothing about a step-n+1
+ * prefetch landing on top of step-n's synthesis, or either of them landing on
+ * top of a lesson request — the same collision, just harder to see. All three
+ * now share one slot: prefetch and boot warm-ups at GW_BACKGROUND, the voice
+ * the user is waiting for at GW_NARRATION, and lesson/Q&A above both at GW_USER.
+ *
+ * ## Pending is a visible state, not silence
+ *
+ * Synthesis measures 6.5-18.6 s, so between a step appearing and its voice
+ * arriving there is a long window. The instruction is already on the guide
+ * panel — text has never waited on audio — but the HUD used to show nothing at
+ * all about the voice during that window, which reads as "it did not hear me".
+ * `narrationStateChanged` therefore carries `pending` alongside `speaking`, and
+ * the StatusBar renders it. Order is text, then a promise of voice, then voice.
  */
 import { eventBus, Events } from "./EventBus";
 import { OpenAI } from "RemoteServiceGateway.lspkg/HostedExternal/OpenAI";
 import { OPENAI_TTS_MODEL } from "./RsgModels";
+import {
+  gatewayIdle,
+  gatewaySubmit,
+  gatewayWasDropped,
+  GW_BACKGROUND,
+  GW_NARRATION,
+} from "./GatewayQueue";
 
 interface Utterance {
   text: string;
   source: string;
+}
+
+/** One caller waiting on a synthesis someone else already started. */
+interface Waiter {
+  onReady: (track: AudioTrackAsset) => void;
+  onFailed?: () => void;
 }
 
 @component
@@ -119,12 +149,31 @@ export class NarrationService extends BaseScriptComponent {
   private cache: { [key: string]: AudioTrackAsset } = {};
   /** Insertion order for eviction. Baked keys are never added here. */
   private cacheOrder: string[] = [];
-  /** text -> true while a synthesis is in flight, so we never ask twice. */
-  private inFlight: { [key: string]: boolean } = {};
+  /**
+   * text -> everyone waiting on a synthesis that is already in flight.
+   *
+   * This was a boolean, and the second caller for the same words was simply
+   * turned away. That is wrong in the two cases that matter most:
+   *
+   *   - A Q&A answer. `enqueue()` warms the text and then calls `advance()` to
+   *     play it. The warm won the race, so advance() was refused, and the track
+   *     landed in the cache with nobody to play it — **answers were never
+   *     spoken at all**, silently, from the day the queue was written.
+   *   - "next" arriving while step n+1's prefetch is still in flight — exactly
+   *     the case prefetch exists for. The step went silent.
+   *
+   * Coalescing instead of refusing fixes both, and still makes only one call.
+   */
+  private inFlight: { [key: string]: Waiter[] } = {};
 
   private queue: Utterance[] = [];
   private speaking: boolean = false;
   private currentText: string = "";
+  /**
+   * Text whose audio the user is waiting on right now. Drives the HUD's
+   * "voice incoming" line; empty when nothing is owed.
+   */
+  private pendingText: string = "";
   /**
    * Bumped whenever the step changes. A synthesis that resolves under an old
    * generation is cached but NOT played — that is the whole defence against
@@ -134,6 +183,7 @@ export class NarrationService extends BaseScriptComponent {
 
   private prewarmIndex: number = 0;
   private prewarmTimer: DelayedCallbackEvent;
+  private prewarmDeferrals: number = 0;
 
   onAwake(): void {
     this.prewarmTimer = this.createEvent("DelayedCallbackEvent");
@@ -231,34 +281,59 @@ export class NarrationService extends BaseScriptComponent {
       return;
     }
     this.log('cache MISS "' + preview(text) + '" — synthesizing');
+    // The user is now owed a voice line. Say so on the HUD immediately: the
+    // instruction is already readable, and silence with no explanation is the
+    // thing that reads as a failure.
+    this.setPending(text);
+    this.emitVoiceState("", source);
     const gen = this.generation;
-    this.synthesize(text, (track) => {
-      if (gen !== this.generation) {
-        this.log('discarding late audio for "' + preview(text) + '" (step moved on)');
-        return;
-      }
-      this.play(track, text, source);
-    });
+    this.synthesize(
+      text,
+      (track) => {
+        if (gen !== this.generation) {
+          this.log('discarding late audio for "' + preview(text) + '" (step moved on)');
+          return;
+        }
+        this.play(track, text, source);
+      },
+      () => {
+        if (gen !== this.generation) return;
+        this.setPending("");
+        this.emitVoiceState("", source);
+      },
+      GW_NARRATION
+    );
   }
 
   /** Say this once nothing else is speaking. Used for Q&A answers. */
   public enqueue(text: string, source: string): void {
     this.queue.push({ text: text, source: source });
     this.log('queued "' + preview(text) + '" (' + this.queue.length + " waiting)");
-    // Warm it now so it is ready the moment the current utterance ends.
-    this.warm(text, "queued");
+    // Warm it now so it is ready the moment the current utterance ends. This is
+    // an answer the user asked for, so it warms at narration priority, not as
+    // background work.
+    this.warm(text, "queued", GW_NARRATION);
     if (!this.speaking) this.advance();
   }
 
-  /** Synthesize into the cache without playing. Never throws, never blocks. */
-  public warm(text: string, source: string): void {
-    this.warmThen(text, source, null);
+  /**
+   * Synthesize into the cache without playing. Never throws, never blocks.
+   * Defaults to GW_BACKGROUND: a prefetch is by definition something nobody is
+   * waiting for, so it must never take the gateway slot ahead of work that is.
+   */
+  public warm(text: string, source: string, priority?: number): void {
+    this.warmThen(text, source, null, priority);
   }
 
   /** warm(), plus a callback that fires whether it succeeded or failed. */
-  private warmThen(text: string, source: string, done: (() => void) | null): void {
+  private warmThen(
+    text: string,
+    source: string,
+    done: (() => void) | null,
+    priority?: number
+  ): void {
     const key = normalize(text);
-    if (key.length === 0 || this.cache[key] || this.inFlight[key]) {
+    if (key.length === 0 || this.cache[key]) {
       if (done) done();
       return;
     }
@@ -268,7 +343,8 @@ export class NarrationService extends BaseScriptComponent {
         this.log('warmed "' + preview(text) + '" (' + source + ")");
         if (done) done();
       },
-      done ? done : undefined
+      done ? done : undefined,
+      typeof priority === "number" ? priority : GW_BACKGROUND
     );
   }
 
@@ -277,7 +353,8 @@ export class NarrationService extends BaseScriptComponent {
   private synthesize(
     text: string,
     onReady: (track: AudioTrackAsset) => void,
-    onFailed?: () => void
+    onFailed?: () => void,
+    priority?: number
   ): void {
     const key = normalize(text);
     if (key.length === 0) {
@@ -290,49 +367,89 @@ export class NarrationService extends BaseScriptComponent {
       onReady(cached);
       return;
     }
-    if (this.inFlight[key]) {
-      if (onFailed) onFailed();
-      return; // someone is already asking for these words
+    const waiting = this.inFlight[key];
+    if (waiting) {
+      // Someone is already asking for these words. Wait for THAT call rather
+      // than being turned away — see the note on inFlight.
+      waiting.push({ onReady: onReady, onFailed: onFailed });
+      this.log('joining in-flight synthesis for "' + preview(text) + '" (' + waiting.length + " waiting)");
+      return;
     }
-    this.inFlight[key] = true;
+    this.inFlight[key] = [{ onReady: onReady, onFailed: onFailed }];
 
-    const t0 = getTime();
+    let t0 = getTime();
     let settled = false;
+    const tier = typeof priority === "number" ? priority : GW_BACKGROUND;
 
     // Watchdog: a synthesis that never resolves must not pin the in-flight flag
     // forever, or that phrase can never be retried for the rest of the session.
+    //
+    // It starts on DISPATCH, not here. Now that requests queue, a job can sit
+    // waiting for the slot longer than the timeout itself, and a watchdog armed
+    // at submission would report a network timeout for a call that had not been
+    // made yet.
     const watchdog = this.createEvent("DelayedCallbackEvent");
     watchdog.bind(() => {
       if (settled) return;
       settled = true;
-      delete this.inFlight[key];
+      const waiters = this.takeWaiters(key);
       this.log('TIMEOUT after ' + this.synthesisTimeoutSec + 's for "' + preview(text) + '" — staying silent');
-      if (onFailed) onFailed();
+      for (let i = 0; i < waiters.length; i++) {
+        const f = waiters[i].onFailed;
+        if (f) f();
+      }
     });
-    watchdog.reset(this.synthesisTimeoutSec);
+    watchdog.enabled = false;
 
-    OpenAI.speech({ model: OPENAI_TTS_MODEL, input: text, voice: this.voice })
+    gatewaySubmit({
+      label: "tts:" + (tier === GW_NARRATION ? "now" : "warm"),
+      priority: tier,
+      onDispatch: () => {
+        t0 = getTime();
+        watchdog.enabled = true;
+        watchdog.reset(this.synthesisTimeoutSec);
+      },
+      run: () => OpenAI.speech({ model: OPENAI_TTS_MODEL, input: text, voice: this.voice }),
+    })
       .then((track: AudioTrackAsset) => {
         watchdog.enabled = false;
         if (settled) return;
         settled = true;
-        delete this.inFlight[key];
+        const waiters = this.takeWaiters(key);
         const ms = Math.round((getTime() - t0) * 1000);
-        this.log('synthesized ' + ms + 'ms "' + preview(text) + '"');
+        this.log(
+          'synthesized ' + ms + 'ms "' + preview(text) + '"' +
+            (waiters.length > 1 ? " (" + waiters.length + " waiting)" : "")
+        );
         this.store(key, track);
-        onReady(track);
+        for (let i = 0; i < waiters.length; i++) waiters[i].onReady(track);
       })
       .catch((error) => {
         watchdog.enabled = false;
         if (settled) return;
         settled = true;
-        delete this.inFlight[key];
+        const waiters = this.takeWaiters(key);
         const ms = Math.round((getTime() - t0) * 1000);
-        // Degrade to silence. The instruction is already on the guide panel;
-        // a lesson that stops because a voice failed would be a worse product.
-        this.log('FAILED after ' + ms + 'ms "' + preview(text) + '": ' + error + " — degrading to silent text");
-        if (onFailed) onFailed();
+        if (gatewayWasDropped(error)) {
+          // We dropped it on purpose to clear the way for the user. Not a fault.
+          this.log('skipped "' + preview(text) + '" — queue cleared for a user request');
+        } else {
+          // Degrade to silence. The instruction is already on the guide panel;
+          // a lesson that stops because a voice failed would be a worse product.
+          this.log('FAILED after ' + ms + 'ms "' + preview(text) + '": ' + error + " — degrading to silent text");
+        }
+        for (let i = 0; i < waiters.length; i++) {
+          const f = waiters[i].onFailed;
+          if (f) f();
+        }
       });
+  }
+
+  /** Detach and return everyone waiting on this key. */
+  private takeWaiters(key: string): Waiter[] {
+    const waiters = this.inFlight[key];
+    delete this.inFlight[key];
+    return waiters ? waiters : [];
   }
 
   private store(key: string, track: AudioTrackAsset): void {
@@ -355,22 +472,63 @@ export class NarrationService extends BaseScriptComponent {
 
   private play(track: AudioTrackAsset, text: string, source: string): void {
     if (!this.audio || !track) return;
-    this.audio.stop(true);
+    this.safeStop();
     this.audio.audioTrack = track;
-    this.audio.play(1);
+    try {
+      this.audio.play(1);
+    } catch (e) {
+      // Player disabled (HUD hidden). Stay silent rather than throwing into the bus.
+      this.log('cannot play "' + preview(text) + '" — audio player not enabled');
+      this.setPending("");
+      this.emitVoiceState("", source);
+      return;
+    }
     this.speaking = true;
     this.currentText = text;
-    eventBus.emit(Events.narrationStateChanged, { speaking: true, text: text, source: source });
+    this.setPending("");
+    this.emitVoiceState(text, source);
     this.log('speaking (' + source + ') "' + preview(text) + '"');
   }
 
   private stopAudio(): void {
-    if (this.audio) this.audio.stop(true);
+    this.safeStop();
     if (this.speaking) {
       this.speaking = false;
       this.currentText = "";
-      eventBus.emit(Events.narrationStateChanged, { speaking: false, text: "", source: "" });
     }
+    this.setPending("");
+    this.emitVoiceState("", "");
+  }
+
+  /**
+   * `audio.stop()` throws "[AudioComponent] Audio player is not enabled" when
+   * the component's object is disabled — which is exactly what ModeRouter does
+   * to HUDRoot on the SURVEY/IDLE transitions that call stopAudio(). The throw
+   * used to escape into the EventBus on every one of those transitions. There
+   * is nothing to recover from: not playing is the state we were asking for.
+   */
+  private safeStop(): void {
+    if (!this.audio) return;
+    try {
+      this.audio.stop(true);
+    } catch (e) {
+      // Already silent because the player is disabled. Nothing to do.
+    }
+  }
+
+  /** One place that publishes voice state, so `pending` can never drift. */
+  private emitVoiceState(text: string, source: string): void {
+    eventBus.emit(Events.narrationStateChanged, {
+      speaking: this.speaking,
+      pending: this.pendingText.length > 0,
+      pendingText: this.pendingText,
+      text: text,
+      source: source,
+    });
+  }
+
+  private setPending(text: string): void {
+    this.pendingText = text || "";
   }
 
   private advance(): void {
@@ -383,11 +541,22 @@ export class NarrationService extends BaseScriptComponent {
       return;
     }
     const gen = this.generation;
-    this.synthesize(next.text, (track) => {
-      if (gen !== this.generation) return;
-      if (!this.speaking) this.play(track, next.text, next.source);
-      else this.queue.unshift(next); // something started while we waited
-    });
+    this.setPending(next.text);
+    this.emitVoiceState("", next.source);
+    this.synthesize(
+      next.text,
+      (track) => {
+        if (gen !== this.generation) return;
+        if (!this.speaking) this.play(track, next.text, next.source);
+        else this.queue.unshift(next); // something started while we waited
+      },
+      () => {
+        if (gen !== this.generation) return;
+        this.setPending("");
+        this.emitVoiceState("", next.source);
+      },
+      GW_NARRATION
+    );
   }
 
   private onUpdate(): void {
@@ -397,7 +566,7 @@ export class NarrationService extends BaseScriptComponent {
     this.speaking = false;
     const finished = this.currentText;
     this.currentText = "";
-    eventBus.emit(Events.narrationStateChanged, { speaking: false, text: finished, source: "" });
+    this.emitVoiceState(finished, "");
     if (this.queue.length > 0) this.advance();
   }
 
@@ -428,11 +597,25 @@ export class NarrationService extends BaseScriptComponent {
       this.prewarmTimer.reset(this.prewarmGapSec);
     };
 
+    // Warm only into genuine idle. Warm-ups queue at GW_BACKGROUND so they can
+    // never overtake anything, but a warm-up already HOLDING the slot delays
+    // whatever comes next by its full 6-18 s — and the queue cannot cancel a
+    // call already on the wire. Not starting is the only version of "get out of
+    // the way" that actually works.
+    if (!gatewayIdle()) {
+      this.prewarmIndex--; // put the phrase back; nothing was spent on it
+      this.prewarmDeferrals++;
+      if (this.prewarmDeferrals % 5 === 1) this.log("pre-warm yielding — the gateway is busy");
+      this.prewarmTimer.enabled = true;
+      this.prewarmTimer.reset(Math.max(1.0, this.prewarmGapSec));
+      return;
+    }
+
     if (!phrase || phrase.length === 0) {
       scheduleNext();
       return;
     }
-    this.warmThen(phrase, "prewarm", scheduleNext);
+    this.warmThen(phrase, "prewarm", scheduleNext, GW_BACKGROUND);
   }
 
   /** Diagnostics only. */

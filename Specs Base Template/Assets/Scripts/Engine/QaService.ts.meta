@@ -52,7 +52,7 @@
       {}
   InputLines:
     - "// @input Asset.JsonAsset promptsAsset {\"hint\":\"Assets/AI/prompts.generated.json — the 'qa' entry is used here.\"}"
-    - '// @input float maxAnswerTokens = 60 {"hint":"Hard cap on answer length. This is spoken aloud while the user is holding a tent pole; two sentences is the product.", "widget":"slider", "min":20, "max":200, "step":5}'
+    - "// @input float maxAnswerTokens = 200 {\"hint\":\"Hard cap on answer length. Brevity is the PROMPT's job, not this number's — set too low, the model is cut off mid-sentence and a fragment gets spoken as if it were the answer. 60 produced the literal answer \\\"If\\\".\", \"widget\":\"slider\", \"min\":20, \"max\":400, \"step\":5}"
     - '// @input string failureMessage = "I could not answer that one." {"hint":"Shown (and spoken) when the guide cannot answer. Kept short on purpose."}'
     - '// @input bool speakFailures {"hint":"Speak failures as well as showing them. Off = the failure is text-only."}'
     - // @input bool enableLogging = true

@@ -31,6 +31,8 @@
     brokenFixture: false
     coordinator: false
     engine: false
+    keyboard: false
+    keyboardSubmitText: false
     probeRequest: false
     qaAskAfterSec: false
     qaLessonRequest: false
@@ -48,10 +50,12 @@
   DefaultScriptInputs:
     - coordinator: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
       engine: !<MappingBased.AssignableType_2> 00000000-0000-0000-0000-000000000000
+      keyboard: !<MappingBased.AssignableType_3> 00000000-0000-0000-0000-000000000000
       brokenFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
       runOnStart: false
       probeRequest: help me purify water
       qaLessonRequest: help me pitch a tent
+      keyboardSubmitText: how do I signal for rescue
       qaQuestion: what if the ground is wet
       qaAskAfterSec: !<float> 16.000000
       scenario: !<float> 0.000000
@@ -61,10 +65,12 @@
   InputLines:
     - // @input AssignableType_1 coordinator
     - // @input AssignableType_2 engine
+    - "// @input AssignableType_3 keyboard {\"hint\":\"Systems/KeyboardInput. Scenario 'keyboard' calls its submit() directly — the same method the return key calls — rather than emitting userRequest itself. Emitting the event would only prove the engine handles the event; this proves the KEYBOARD reaches it.\"}"
     - '// @input Asset.JsonAsset brokenFixture {"hint":"Assets/AI/fixtures/broken-lesson-9-steps-7-item-checklist.json — the malformed response injected in scenario 3."}'
     - '// @input bool runOnStart {"hint":"Turn OFF once the failure paths are proven. Every run costs real Gemini calls."}'
     - '// @input string probeRequest = "help me purify water" {"hint":"Request used for the duplicate/cancel scenarios."}'
     - "// @input string qaLessonRequest = \"help me pitch a tent\" {\"hint\":\"Scenario 'qa': the lesson to load first.\"}"
+    - "// @input string keyboardSubmitText = \"how do I signal for rescue\" {\"hint\":\"Scenario 'keyboard': the text pushed through KeyboardInput.submit().\"}"
     - "// @input string qaQuestion = \"what if the ground is wet\" {\"hint\":\"Scenario 'qa': the question asked mid-lesson. It must NOT match a navigation keyword, or the engine answers it locally with no AI call (hard rule 6).\"}"
     - "// @input float qaAskAfterSec = 16 {\"hint\":\"Scenario 'qa': seconds to wait for the lesson before asking. Must clear the lesson call plus its first narration.\", \"widget\":\"slider\", \"min\":5, \"max\":40, \"step\":1}"
     - "// @input float scenario {\"hint\":\"Which scripted run to perform. 'failures' costs two Gemini calls; 'happy' and 'marker' cost one each.\", \"widget\":\"combobox\", \"values\":[{\"label\":\"failures — the four failure paths\", \"value\":0}, {\"label\":\"happy — one real request, end to end\", \"value\":1}, {\"label\":\"marker — a site tap drives a real request\", \"value\":2}, {\"label\":\"qa — load a lesson, then ask a question mid-lesson\", \"value\":3}, {\"label\":\"keyboard — open the AR keyboard, then submit through the seam\", \"value\":4}]}"
