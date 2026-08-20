@@ -1,0 +1,88 @@
+- !<AssetImportMetadata/bb6b2577-1991-47d4-bdb4-1279f9f1097f>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> b6a35e66-fc95-40c9-b3a5-7cee1ec9748a
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> b6a35e66-fc95-40c9-b3a5-7cee1ec9748a
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 3f191af4-0ed1-4608-ad0e-b62f6cd836de
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/3f191af4-0ed1-4608-ad0e-b62f6cd836de>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 54adbc2d-756a-48c2-9267-b5d3407b5822
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    boundsPaddingCm: false
+    enableLogging: false
+    hideOnComplete: false
+    hoverCm: false
+    maxSizeCm: false
+    settledLevel: false
+    spinDegPerSec: false
+    startSizeCm: false
+    surveyGrid: false
+    theme: false
+    waveCeiling: false
+    waveFloor: false
+    waveHz: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      surveyGrid: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      startSizeCm: !<float> 90.000000
+      maxSizeCm: !<float> 900.000000
+      boundsPaddingCm: !<float> 80.000000
+      hoverCm: !<float> 2.000000
+      spinDegPerSec: !<float> 14.000000
+      waveHz: 0.900000
+      waveFloor: 0.250000
+      waveCeiling: !<float> 1.000000
+      settledLevel: 0.220000
+      hideOnComplete: false
+      enableLogging: false
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject surveyGrid {"hint":"WorldRoot/SurveyGrid — the ground plane. Exists at design time."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Sweep</span>"}'
+    - '// @input float startSizeCm = 90 {"hint":"Plane size at progress 0, centimetres. The sweep starts tight around the user and opens out."}'
+    - '// @input float maxSizeCm = 900 {"hint":"Largest the plane may grow, centimetres, whatever the sampled bounds say."}'
+    - '// @input float boundsPaddingCm = 80 {"hint":"Padding added around the sampled bounds so the grid edge sits outside the points, centimetres."}'
+    - '// @input float hoverCm = 2 {"hint":"Height above the sampled ground, centimetres. Small: it is a projection on the floor, not a floating sheet."}'
+    - "// @input float spinDegPerSec = 14 {\"hint\":\"Slow rotation, degrees per second. This is most of what sells 'scanning'.\", \"widget\":\"slider\", \"min\":0, \"max\":90, \"step\":1}"
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Brightness wave</span>"}'
+    - '// @input float waveHz = 0.9 {"hint":"Wave rate in Hz while the survey runs.", "widget":"slider", "min":0.1, "max":4, "step":0.1}'
+    - '// @input float waveFloor = 0.25 {"hint":"Dimmest point of the wave. Never 0: on an additive display 0 means gone, and a grid that vanishes reads as a crash.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input float waveCeiling = 1 {"hint":"Brightest point of the wave.", "widget":"slider", "min":0, "max":2, "step":0.05}'
+    - '// @input float settledLevel = 0.22 {"hint":"Level the grid settles to once the survey finishes. It stays up as the ground reference under the markers.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input bool hideOnComplete {"hint":"Hide the grid completely on surveyComplete instead of settling it."}'
+    - // @input bool enableLogging

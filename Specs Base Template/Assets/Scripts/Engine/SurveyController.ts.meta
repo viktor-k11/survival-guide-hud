@@ -1,0 +1,163 @@
+- !<AssetImportMetadata/60030ae4-d8f5-4419-bbeb-673b3ea8c180>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> f6f0dbea-4b0b-4e4d-a462-d8a70194e86a
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> f6f0dbea-4b0b-4e4d-a462-d8a70194e86a
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 0f8f719f-b34c-4e11-9022-9fc06e1f0778
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/0f8f719f-b34c-4e11-9022-9fc06e1f0778>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 8800a5a4-2620-450a-a8a2-0053d5b8d6d9
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    cameraObject: false
+    cellSizeM: false
+    cloudFixture: false
+    dedupeCellCm: false
+    durationSec: false
+    earlyExitCheckSec: false
+    earlyExitGroundCells: false
+    earlyExitRequiresTents: false
+    enableDebugKeys: false
+    enableLogging: false
+    filterHits: false
+    fireFootprintM: false
+    flatnessToleranceM: false
+    gridColumns: false
+    gridRows: false
+    keyFinishSurvey: false
+    keyRestartSurvey: false
+    logFirstNHits: false
+    maxDistanceM: false
+    maxPoints: false
+    minDurationSec: false
+    minFireToTentM: false
+    minTentSeparationM: false
+    minUpDot: false
+    pitchMaxDeg: false
+    pitchMinDeg: false
+    preferredMaxDistanceM: false
+    preferredMinDistanceM: false
+    rayRangeCm: false
+    raysPerFrame: false
+    runOnBoot: false
+    startDelaySec: false
+    tentFootprintM: false
+    useFixtureCloud: false
+    yawHalfAngleDeg: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      runOnBoot: true
+      startDelaySec: 0.500000
+      durationSec: !<float> 12.000000
+      minDurationSec: !<float> 3.000000
+      earlyExitGroundCells: !<float> 260.000000
+      earlyExitRequiresTents: !<float> 2.000000
+      earlyExitCheckSec: !<float> 1.000000
+      useFixtureCloud: false
+      cloudFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      raysPerFrame: !<float> 8.000000
+      gridColumns: !<float> 7.000000
+      gridRows: !<float> 5.000000
+      yawHalfAngleDeg: !<float> 28.000000
+      pitchMaxDeg: !<float> 6.000000
+      pitchMinDeg: !<float> -42.000000
+      rayRangeCm: !<float> 900.000000
+      filterHits: false
+      dedupeCellCm: !<float> 8.000000
+      maxPoints: !<float> 6000.000000
+      tentFootprintM: 2.500000
+      fireFootprintM: 1.200000
+      minFireToTentM: !<float> 3.000000
+      minTentSeparationM: !<float> 3.000000
+      cellSizeM: 0.250000
+      minUpDot: 0.850000
+      flatnessToleranceM: 0.120000
+      preferredMinDistanceM: 1.500000
+      preferredMaxDistanceM: !<float> 6.000000
+      maxDistanceM: !<float> 12.000000
+      logFirstNHits: !<float> 0.000000
+      enableDebugKeys: true
+      keyRestartSurvey: S
+      keyFinishSurvey: G
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Survey timing</span>"}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object. The survey rays are cast from here, through its view."}'
+    - '// @input bool runOnBoot = true {"hint":"Run the survey automatically when the Lens boots. Off = only the debug key starts it."}'
+    - '// @input float startDelaySec = 0.5 {"hint":"Wait this long after boot before sampling, so world tracking has settled."}'
+    - '// @input float durationSec = 12 {"hint":"Full survey length in seconds. The survey ALWAYS ends by this point.", "widget":"slider", "min":2, "max":30, "step":0.5}'
+    - '// @input float minDurationSec = 3 {"hint":"Never finish before this, however fast the ground fills in. Stops a lucky first frame from ending the survey instantly.", "widget":"slider", "min":0, "max":15, "step":0.5}'
+    - '// @input float earlyExitGroundCells = 260 {"hint":"Cheap precondition for the early exit, and the denominator of the coverage half of surveyProgress. Distinct ground cells. Set it very high to force the full duration."}'
+    - '// @input float earlyExitRequiresTents = 2 {"hint":"Early exit needs this many tent sites plus a fire. 2 = the user gets a real choice. If the terrain cannot offer that many, the survey simply runs its full duration and reports what it found."}'
+    - '// @input float earlyExitCheckSec = 1 {"hint":"How often the early-exit check runs the selector, in seconds. It is the only expensive thing in the loop, so it is not run every frame.", "widget":"slider", "min":0.25, "max":5, "step":0.25}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Terrain source</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Hard rule 5. A stored cloud makes the survey deterministic, and it is the ONLY way to exercise this on a desk: the Preview panel cannot feed a real one (see the note on cloudFixture).</span>"}'
+    - '// @input bool useFixtureCloud {"hint":"Read the point cloud from cloudFixture instead of casting World Query rays. The rest of the survey — timeline, progress, early exit, scoring, markers — is unchanged."}'
+    - "// @input Asset.JsonAsset cloudFixture {\"hint\":\"Assets/Survey/fixtures/*.json — a stored cloud in CENTIMETRES. The Preview panel's simulated depth resolves only about five taps per pose and its device camera never moves, so a live survey there tops out at a handful of points; a stored cloud is how the markers and the distance guard get verified off-device.\"}"
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Ray grid</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">World Query resolves at roughly 5 Hz, so more rays per frame does not mean more detail — it means wider coverage of whatever the user is looking at right now.</span>"}'
+    - '// @input float raysPerFrame = 8 {"hint":"Rays fired per frame. They walk through the lattice below, so the whole pattern is covered every few frames.", "widget":"slider", "min":1, "max":24, "step":1}'
+    - '// @input float gridColumns = 7 {"hint":"Lattice columns across the view."}'
+    - '// @input float gridRows = 5 {"hint":"Lattice rows down the view."}'
+    - '// @input float yawHalfAngleDeg = 28 {"hint":"Half-width of the ray fan in degrees, left and right of centre.", "widget":"slider", "min":5, "max":60, "step":1}'
+    - '// @input float pitchMaxDeg = 6 {"hint":"Top of the fan, degrees relative to the view centre. Slightly positive so a user looking level still samples ground ahead."}'
+    - '// @input float pitchMinDeg = -42 {"hint":"Bottom of the fan, degrees. Negative = downward. The ground is below eye level, so the fan is biased down."}'
+    - '// @input float rayRangeCm = 900 {"hint":"How far each ray reaches, centimetres."}'
+    - '// @input bool filterHits {"hint":"Smooth hit results over time. OFF for a survey: filtering trades positional truth for stability, and this is a measurement, not a placement."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Point cloud</span>"}'
+    - '// @input float dedupeCellCm = 8 {"hint":"Hits closer together than this collapse into one point, centimetres. Keeps a stare at one spot from swamping the cloud."}'
+    - '// @input float maxPoints = 6000 {"hint":"Hard cap on stored points. Reached, the survey keeps running but stops growing."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Site scoring — all pure inputs to SiteSelection.ts</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">METRES. These are passed straight into the pure selector; nothing here reads the scene.</span>"}'
+    - '// @input float tentFootprintM = 2.5 {"hint":"Tent footprint, metres square."}'
+    - '// @input float fireFootprintM = 1.2 {"hint":"Fire footprint, metres across."}'
+    - '// @input float minFireToTentM = 3 {"hint":"HARD CONSTRAINT: minimum fire-to-tent distance, metres. Cannot be met -> the fire is still placed and distanceWarning fires."}'
+    - '// @input float minTentSeparationM = 3 {"hint":"Two tent suggestions closer than this are the same site twice."}'
+    - '// @input float cellSizeM = 0.25 {"hint":"Binning resolution, metres."}'
+    - '// @input float minUpDot = 0.85 {"hint":"Surface counts as ground above this normal.y. 1 = perfectly level."}'
+    - '// @input float flatnessToleranceM = 0.12 {"hint":"Height spread across a footprint that scores flatness 0, metres."}'
+    - '// @input float preferredMinDistanceM = 1.5 {"hint":"Nearest comfortable site distance, metres."}'
+    - '// @input float preferredMaxDistanceM = 6 {"hint":"Furthest comfortable site distance, metres."}'
+    - '// @input float maxDistanceM = 12 {"hint":"Beyond this it is a hike, not a suggestion."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug</span>"}'
+    - "// @input float logFirstNHits {\"hint\":\"Log this many individual hits per survey, with position and normal. 0 = off. The way to tell 'the rays are missing' from 'the rays all land in the same place'.\"}"
+    - '// @input bool enableDebugKeys = true {"hint":"Turn off before shipping."}'
+    - '// @input string keyRestartSurvey = "S" {"hint":"Restart the survey from scratch."}'
+    - '// @input string keyFinishSurvey = "G" {"hint":"End the survey immediately with whatever has been collected."}'
+    - // @input bool enableLogging = true

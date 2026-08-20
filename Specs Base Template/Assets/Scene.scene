@@ -1228,7 +1228,8 @@
     - !<own> 8ef18146-99bf-429d-82ef-61610b69bc0c
     - !<own> 5e12f067-43bd-4f38-9045-4f53b420313b
   Components:
-    []
+    - !<own> c1ce35d7-2c6c-4b82-a08c-546f29d5832b
+    - !<own> e2350169-ffe1-4528-8048-de7a7801370d
 - !<AudioComponent/2b664962-d6ab-4b42-952b-6f039ea835b3>
   PrefabRemaps:
     []
@@ -1721,6 +1722,88 @@
     - !<own> 54130007-65c1-48d3-b9df-0866d8112e01
   Components:
     []
+- !<ScriptComponent/3ca706ac-504e-4407-a906-434ffcba1de2>
+  PrefabRemaps:
+    []
+  Name: SurveyController
+  Enabled: true
+  ScriptAsset: !<reference> f6f0dbea-4b0b-4e4d-a462-d8a70194e86a
+  ScriptInputsDefault:
+    runOnBoot: true
+    startDelaySec: true
+    durationSec: true
+    minDurationSec: true
+    earlyExitGroundCells: true
+    earlyExitRequiresTents: true
+    earlyExitCheckSec: true
+    useFixtureCloud: true
+    raysPerFrame: true
+    gridColumns: true
+    gridRows: true
+    yawHalfAngleDeg: true
+    pitchMaxDeg: true
+    pitchMinDeg: true
+    rayRangeCm: true
+    filterHits: true
+    dedupeCellCm: true
+    maxPoints: true
+    tentFootprintM: true
+    fireFootprintM: true
+    minFireToTentM: true
+    minTentSeparationM: true
+    cellSizeM: true
+    minUpDot: true
+    flatnessToleranceM: true
+    preferredMinDistanceM: true
+    preferredMaxDistanceM: true
+    maxDistanceM: true
+    logFirstNHits: true
+    enableDebugKeys: true
+    keyRestartSurvey: true
+    keyFinishSurvey: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
+      runOnBoot: true
+      startDelaySec: 0.500000
+      durationSec: !<float> 12.000000
+      minDurationSec: !<float> 3.000000
+      earlyExitGroundCells: !<float> 260.000000
+      earlyExitRequiresTents: !<float> 2.000000
+      earlyExitCheckSec: !<float> 1.000000
+      useFixtureCloud: false
+      cloudFixture: !<reference.JsonAsset> ebfb2502-5a00-484c-aa3c-9d398bf0fd2d
+      raysPerFrame: !<float> 8.000000
+      gridColumns: !<float> 7.000000
+      gridRows: !<float> 5.000000
+      yawHalfAngleDeg: !<float> 28.000000
+      pitchMaxDeg: !<float> 6.000000
+      pitchMinDeg: !<float> -42.000000
+      rayRangeCm: !<float> 900.000000
+      filterHits: false
+      dedupeCellCm: !<float> 8.000000
+      maxPoints: !<float> 6000.000000
+      tentFootprintM: 2.500000
+      fireFootprintM: 1.200000
+      minFireToTentM: !<float> 3.000000
+      minTentSeparationM: !<float> 3.000000
+      cellSizeM: 0.250000
+      minUpDot: 0.850000
+      flatnessToleranceM: 0.120000
+      preferredMinDistanceM: 1.500000
+      preferredMaxDistanceM: !<float> 6.000000
+      maxDistanceM: !<float> 12.000000
+      logFirstNHits: !<float> 0.000000
+      enableDebugKeys: true
+      keyRestartSurvey: S
+      keyFinishSurvey: G
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/3de2c7ea-1525-465a-9056-68565a4014a7>
   PrefabRemaps:
     []
@@ -1880,6 +1963,24 @@
     []
   Components:
     []
+- !<ColliderComponent/448e3790-8e55-4827-98f5-3036a14e74dd>
+  PrefabRemaps:
+    []
+  Name: Physics Collider
+  Enabled: true
+  Shape: !<Sphere>
+    FitVisual: false
+    Radius: 30.000000
+  Matter: !<reference> 00000000-0000-0000-0000-000000000000
+  Filter: !<reference> 00000000-0000-0000-0000-000000000000
+  OverlapFilter: !<reference> 00000000-0000-0000-0000-000000000000
+  WorldSettings: !<reference> 00000000-0000-0000-0000-000000000000
+  EnableSmoothing: false
+  PositionTension: 30.000000
+  RotationTension: 30.000000
+  ForceCompound: false
+  Intangible: false
+  ShowCollider: false
 - !<Text/44e35be1-1c1b-45f3-9579-29babf4c51cd>
   PrefabRemaps:
     []
@@ -2127,6 +2228,9 @@
     - !<own> 605b37ef-b3a7-4fb6-99e7-73e9eff9e8e8
     - !<own> 6c43a036-2903-4453-aba7-39ee61f0696d
     - !<own> 03db23b0-5f7c-437f-9cbf-b593819f9f82
+    - !<own> fe3cb1f2-3489-4b70-9be7-e2722a740893
+    - !<own> 71195d82-a360-449f-8944-0212698c6d4f
+    - !<own> 660b5888-03e7-4e92-9fcf-03f265655c09
   Components:
     []
 - !<Text/5608a90a-af26-49e0-8d63-6fdf1eecb7d3>
@@ -2485,7 +2589,8 @@
     - !<own> 96086876-3e97-44d9-82c7-b42ba16244cc
     - !<own> 7e18ef85-197a-4c4d-9822-ab7ccbb40274
   Components:
-    []
+    - !<own> 448e3790-8e55-4827-98f5-3036a14e74dd
+    - !<own> 7fe461fa-ff33-4772-8366-ed718f5ebcda
 - !<ScriptComponent/5f153ad7-2baa-4fd9-a298-0dcfad86da3b>
   PrefabRemaps:
     []
@@ -2693,6 +2798,21 @@
     - !<own> 80574bd1-697b-4bb5-b9ce-13b340146d82
   Components:
     - !<own> ccf4d3bc-d3c2-4580-b9c5-62f164ef7eef
+- !<SceneObject/660b5888-03e7-4e92-9fcf-03f265655c09>
+  PrefabRemaps:
+    []
+  Name: SiteMarkerPresenter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 7a6d9af3-0d0b-4737-90c6-f8e61a7cd3c5
 - !<SceneObject/67ae2874-924f-4bb5-be35-3defec700b04>
   PrefabRemaps:
     []
@@ -2834,6 +2954,44 @@
     []
   Components:
     - !<own> 3115182b-8469-4632-ac66-4146c4f25123
+- !<ScriptComponent/6ceb8c92-581e-4ac1-8a6c-048a08ebcc92>
+  PrefabRemaps:
+    []
+  Name: SurveyGridPresenter
+  Enabled: true
+  ScriptAsset: !<reference> b6a35e66-fc95-40c9-b3a5-7cee1ec9748a
+  ScriptInputsDefault:
+    startSizeCm: true
+    maxSizeCm: true
+    boundsPaddingCm: true
+    hoverCm: true
+    spinDegPerSec: true
+    waveHz: true
+    waveFloor: true
+    waveCeiling: true
+    settledLevel: true
+    hideOnComplete: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
+      surveyGrid: !<reference.SceneObject> a2cc28b7-e488-48b9-a985-dfe708eeb57b
+      startSizeCm: !<float> 90.000000
+      maxSizeCm: !<float> 900.000000
+      boundsPaddingCm: !<float> 80.000000
+      hoverCm: !<float> 2.000000
+      spinDegPerSec: !<float> 14.000000
+      waveHz: 0.900000
+      waveFloor: 0.250000
+      waveCeiling: !<float> 1.000000
+      settledLevel: 0.220000
+      hideOnComplete: false
+      enableLogging: false
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/6dbaab8f-d98a-4f36-b836-1d7c8a0cca87>
   PrefabRemaps:
     []
@@ -2932,6 +3090,21 @@
     []
   Components:
     - !<own> 7fde7718-cf2c-48f6-95c0-2b146886c024
+- !<SceneObject/71195d82-a360-449f-8944-0212698c6d4f>
+  PrefabRemaps:
+    []
+  Name: SurveyGridPresenter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 6ceb8c92-581e-4ac1-8a6c-048a08ebcc92
 - !<SceneObject/71e47ae8-e7da-438c-be22-b495f0fbd4fe>
   PrefabRemaps:
     []
@@ -3110,6 +3283,49 @@
     []
   Components:
     - !<own> cf505c8e-91bf-4696-87a0-2243ddc959ee
+- !<ScriptComponent/7a6d9af3-0d0b-4737-90c6-f8e61a7cd3c5>
+  PrefabRemaps:
+    []
+  Name: SiteMarkerPresenter
+  Enabled: true
+  ScriptAsset: !<reference> 0e419ccf-a75c-48e4-9c0b-e0dec2675afd
+  ScriptInputsDefault:
+    labelFormat: true
+    iconSizeCm: true
+    billboard: true
+    restingLevel: true
+    bestPeakLevel: true
+    bestPulseHz: true
+    enableDebugKeys: true
+    keyTentA: true
+    keyTentB: true
+    keyFire: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
+      tentA: !<reference.SceneObject> 2ac631e0-ec6e-40ca-a693-e7fecfca9ef6
+      tentB: !<reference.SceneObject> 7caadad1-652f-4093-973d-aef63612c5a1
+      fire: !<reference.SceneObject> 5e6bdf46-dda5-4e46-bf7c-87462dbdb3cd
+      cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
+      quadMesh: !<reference.RenderMesh> 9c7cf554-730c-4975-a208-a19a01740f30
+      iconMaterial: !<reference.Material> b70f04ba-96e8-415c-abfc-2f02f8869b09
+      labelFormat: "FLATNESS {P}%"
+      iconSizeCm: !<float> 14.000000
+      billboard: true
+      restingLevel: 0.550000
+      bestPeakLevel: 1.350000
+      bestPulseHz: !<float> 1.000000
+      enableDebugKeys: true
+      keyTentA: T
+      keyTentB: !<string> Y
+      keyFire: F
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/7aa85bd8-d423-42cd-b190-473711e94929>
   PrefabRemaps:
     []
@@ -3283,7 +3499,8 @@
     - !<own> 409a3fc5-1686-4942-90d0-d030e91e23ac
     - !<own> 8c479c71-1011-4f37-ab1b-6ca619435063
   Components:
-    []
+    - !<own> db7f05fa-6a95-4386-b4b9-70e90a595609
+    - !<own> c126f84b-e817-4542-b8ed-1bddba305e28
 - !<SceneObject/7d38e26c-8057-4165-94fe-51fcbe6e8b56>
   PrefabRemaps:
     []
@@ -3499,6 +3716,44 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<ScriptComponent/7fe461fa-ff33-4772-8366-ed718f5ebcda>
+  PrefabRemaps:
+    []
+  Name: Interactable
+  Enabled: true
+  ScriptAsset: !<reference> 652e631a-22d0-4941-9f74-2943df59f34c
+  ScriptInputsDefault:
+    targetingMode: true
+    targetingVisual: true
+    ignoreInteractionPlane: true
+    keepHoverOnTrigger: true
+    enableInstantDrag: true
+    isScrollable: true
+    allowMultipleInteractors: true
+    enablePokeDirectionality: true
+    acceptableXDirections: true
+    acceptableYDirections: true
+    acceptableZDirections: true
+    useFilteredPinch: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      targetingMode: !<float> 3.000000
+      targetingVisual: !<float> 1.000000
+      ignoreInteractionPlane: false
+      keepHoverOnTrigger: false
+      enableInstantDrag: false
+      isScrollable: false
+      allowMultipleInteractors: true
+      enablePokeDirectionality: false
+      acceptableXDirections: !<float> 0.000000
+      acceptableYDirections: !<float> 0.000000
+      acceptableZDirections: !<float> 1.000000
+      useFilteredPinch: false
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/80192b3e-40b9-4bfc-97ff-d04eb4e94315>
   PrefabRemaps:
     []
@@ -4711,6 +4966,44 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<ScriptComponent/c126f84b-e817-4542-b8ed-1bddba305e28>
+  PrefabRemaps:
+    []
+  Name: Interactable
+  Enabled: true
+  ScriptAsset: !<reference> 652e631a-22d0-4941-9f74-2943df59f34c
+  ScriptInputsDefault:
+    targetingMode: true
+    targetingVisual: true
+    ignoreInteractionPlane: true
+    keepHoverOnTrigger: true
+    enableInstantDrag: true
+    isScrollable: true
+    allowMultipleInteractors: true
+    enablePokeDirectionality: true
+    acceptableXDirections: true
+    acceptableYDirections: true
+    acceptableZDirections: true
+    useFilteredPinch: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      targetingMode: !<float> 3.000000
+      targetingVisual: !<float> 1.000000
+      ignoreInteractionPlane: false
+      keepHoverOnTrigger: false
+      enableInstantDrag: false
+      isScrollable: false
+      allowMultipleInteractors: true
+      enablePokeDirectionality: false
+      acceptableXDirections: !<float> 0.000000
+      acceptableYDirections: !<float> 0.000000
+      acceptableZDirections: !<float> 1.000000
+      useFilteredPinch: false
+  ScriptTypes:
+    "":
+      {}
 - !<ScriptComponent/c1692b36-dfd7-4eaf-b562-194fa4988a33>
   PrefabRemaps:
     []
@@ -4750,6 +5043,24 @@
   ScriptTypes:
     "":
       {}
+- !<ColliderComponent/c1ce35d7-2c6c-4b82-a08c-546f29d5832b>
+  PrefabRemaps:
+    []
+  Name: Physics Collider
+  Enabled: true
+  Shape: !<Sphere>
+    FitVisual: false
+    Radius: 30.000000
+  Matter: !<reference> 00000000-0000-0000-0000-000000000000
+  Filter: !<reference> 00000000-0000-0000-0000-000000000000
+  OverlapFilter: !<reference> 00000000-0000-0000-0000-000000000000
+  WorldSettings: !<reference> 00000000-0000-0000-0000-000000000000
+  EnableSmoothing: false
+  PositionTension: 30.000000
+  RotationTension: 30.000000
+  ForceCompound: false
+  Intangible: false
+  ShowCollider: false
 - !<RenderMeshVisual/c332d164-fe3e-42d6-921e-678b1c7a077c>
   PrefabRemaps:
     []
@@ -5148,7 +5459,8 @@
   Enabled: true
   ScriptAsset: !<reference> 97959d7c-1aed-4bdb-b547-9f9fe3338e2b
   ScriptInputsDefault:
-    {}
+    requestsOverride: true
+    repeatEach: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -5156,6 +5468,8 @@
       promptsAsset: !<reference.JsonAsset> 805a6898-a639-474f-974b-2e1e1ff9fbdf
       brokenFixture: !<reference.JsonAsset> 404fc54d-e175-4494-9b18-27cd8b0ec81d
       runOnStart: false
+      requestsOverride: ""
+      repeatEach: !<float> 1.000000
   ScriptTypes:
     "":
       {}
@@ -5337,6 +5651,24 @@
     - !<own> f74a6bbb-4fba-4d8b-9b4e-64dd1c3e9ac3
   Components:
     []
+- !<ColliderComponent/db7f05fa-6a95-4386-b4b9-70e90a595609>
+  PrefabRemaps:
+    []
+  Name: Physics Collider
+  Enabled: true
+  Shape: !<Sphere>
+    FitVisual: false
+    Radius: 30.000000
+  Matter: !<reference> 00000000-0000-0000-0000-000000000000
+  Filter: !<reference> 00000000-0000-0000-0000-000000000000
+  OverlapFilter: !<reference> 00000000-0000-0000-0000-000000000000
+  WorldSettings: !<reference> 00000000-0000-0000-0000-000000000000
+  EnableSmoothing: false
+  PositionTension: 30.000000
+  RotationTension: 30.000000
+  ForceCompound: false
+  Intangible: false
+  ShowCollider: false
 - !<SceneObject/dc94c942-c997-4fa6-907c-f4a4a26b1319>
   PrefabRemaps:
     []
@@ -5610,6 +5942,44 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<ScriptComponent/e2350169-ffe1-4528-8048-de7a7801370d>
+  PrefabRemaps:
+    []
+  Name: Interactable
+  Enabled: true
+  ScriptAsset: !<reference> 652e631a-22d0-4941-9f74-2943df59f34c
+  ScriptInputsDefault:
+    targetingMode: true
+    targetingVisual: true
+    ignoreInteractionPlane: true
+    keepHoverOnTrigger: true
+    enableInstantDrag: true
+    isScrollable: true
+    allowMultipleInteractors: true
+    enablePokeDirectionality: true
+    acceptableXDirections: true
+    acceptableYDirections: true
+    acceptableZDirections: true
+    useFilteredPinch: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      targetingMode: !<float> 3.000000
+      targetingVisual: !<float> 1.000000
+      ignoreInteractionPlane: false
+      keepHoverOnTrigger: false
+      enableInstantDrag: false
+      isScrollable: false
+      allowMultipleInteractors: true
+      enablePokeDirectionality: false
+      acceptableXDirections: !<float> 0.000000
+      acceptableYDirections: !<float> 0.000000
+      acceptableZDirections: !<float> 1.000000
+      useFilteredPinch: false
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/e2992fbb-b429-4083-af0e-1de392e6fa1f>
   PrefabRemaps:
     []
@@ -6183,6 +6553,21 @@
   ScriptTypes:
     "":
       {}
+- !<SceneObject/fe3cb1f2-3489-4b70-9be7-e2722a740893>
+  PrefabRemaps:
+    []
+  Name: SurveyController
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 3ca706ac-504e-4407-a906-434ffcba1de2
 - !<SceneObject/fe93d992-1114-4f1f-8bef-0a0bbd75747d>
   PrefabRemaps:
     []

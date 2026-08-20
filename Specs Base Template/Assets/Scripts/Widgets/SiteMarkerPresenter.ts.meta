@@ -1,0 +1,105 @@
+- !<AssetImportMetadata/0ec82598-e919-4ab1-8556-e15377a681c4>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 0e419ccf-a75c-48e4-9c0b-e0dec2675afd
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 0e419ccf-a75c-48e4-9c0b-e0dec2675afd
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 70a97fa0-788b-4533-b0a9-49beeb5a6ca4
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/70a97fa0-788b-4533-b0a9-49beeb5a6ca4>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: c89aab03-e0cc-4855-a049-79c17833ffeb
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    bestPeakLevel: false
+    bestPulseHz: false
+    billboard: false
+    cameraObject: false
+    enableDebugKeys: false
+    enableLogging: false
+    fire: false
+    iconMaterial: false
+    iconSizeCm: false
+    keyFire: false
+    keyTentA: false
+    keyTentB: false
+    labelFormat: false
+    quadMesh: false
+    restingLevel: false
+    tentA: false
+    tentB: false
+    theme: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      tentA: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      tentB: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      fire: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      quadMesh: !<reference.RenderMesh> 00000000-0000-0000-0000-000000000000
+      iconMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      labelFormat: "FLATNESS {P}%"
+      iconSizeCm: !<float> 14.000000
+      billboard: true
+      restingLevel: 0.550000
+      bestPeakLevel: 1.350000
+      bestPulseHz: !<float> 1.000000
+      enableDebugKeys: true
+      keyTentA: T
+      keyTentB: !<string> Y
+      keyFire: F
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Children are found by name (Icon / RatingLabel / PulseRing), so the marker contract is the object names in Docs/SCENE-MAP.md rather than nine inspector fields.</span>"}'
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject tentA {"hint":"WorldRoot/SiteMarker_Tent_A"}'
+    - '// @input SceneObject tentB {"hint":"WorldRoot/SiteMarker_Tent_B"}'
+    - '// @input SceneObject fire {"hint":"WorldRoot/SiteMarker_Fire"}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object — markers billboard their icon and label toward it. A flat quad seen edge-on is invisible, which looks exactly like a broken marker."}'
+    - '// @input Asset.RenderMesh quadMesh {"hint":"PH_Plane.mesh — the design-time Icon is a box, which maps an icon texture unreadably."}'
+    - '// @input Asset.Material iconMaterial {"hint":"PH_Icon.mat — the only material with ENABLE_BASE_TEX baked on. Assigning baseTex to any other PH_ material silently does nothing."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Look</span>"}'
+    - '// @input string labelFormat = "FLATNESS {P}%" {"hint":"Label text. {P} is replaced by the flatness percentage."}'
+    - '// @input float iconSizeCm = 14 {"hint":"Icon size, centimetres.", "widget":"slider", "min":1, "max":40, "step":1}'
+    - '// @input bool billboard = true {"hint":"Billboard the icon and label toward the camera each frame."}'
+    - '// @input float restingLevel = 0.55 {"hint":"Steady brightness for a runner-up marker.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - "// @input float bestPeakLevel = 1.35 {\"hint\":\"Peak brightness of the best marker's pulse. It is the recommendation, so it has to win the eye.\", \"widget\":\"slider\", \"min\":0, \"max\":2, \"step\":0.05}"
+    - '// @input float bestPulseHz = 1 {"hint":"Best-marker pulse rate, Hz.", "widget":"slider", "min":0.1, "max":4, "step":0.1}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug — one key per marker</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">There is no pinch in the Preview panel, so every marker needs a key. These call the SAME method the pinch handler calls.</span>"}'
+    - // @input bool enableDebugKeys = true
+    - '// @input string keyTentA = "T"'
+    - '// @input string keyTentB = "Y"'
+    - '// @input string keyFire = "F"'
+    - // @input bool enableLogging = true

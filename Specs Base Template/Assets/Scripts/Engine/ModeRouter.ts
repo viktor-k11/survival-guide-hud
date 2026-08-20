@@ -49,7 +49,11 @@ export class ModeRouter extends BaseScriptComponent {
 
     if (mode === "IDLE") {
       hud = true;
-      world = false;
+      // WorldRoot stays up in IDLE so the site markers survive the survey and
+      // remain standing on the terrain while the user decides what to ask for.
+      // Its contents are individually disabled, so this shows only what a
+      // presenter has actually placed.
+      world = true;
     } else if (mode === "LESSON") {
       hud = true;
       world = this.worldVisibleInLesson;

@@ -84,6 +84,7 @@ export function requestLesson(userText: string, systemPrompt: string): Promise<L
           ok: false,
           plan: null,
           issues: [{ code: "EMPTY_RESPONSE" as any, path: "", message: "Request failed: " + message }],
+          degradations: [],
           summary: "Could not reach the guide.",
         },
       };

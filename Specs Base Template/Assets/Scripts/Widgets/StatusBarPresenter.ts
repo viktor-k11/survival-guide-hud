@@ -85,6 +85,14 @@ export class StatusBarPresenter extends BaseScriptComponent {
   private tickerIndex: number = 0;
   private tickerElapsed: number = 0;
   private safetyWarning: string = "";
+  /**
+   * Range warnings (currently: the survey's fire-too-close guard) live in their
+   * own field rather than sharing safetyWarning, because the two have different
+   * lifetimes. A safety gate is cleared by mode; a range warning is a statement
+   * about the terrain that must survive SURVEY -> IDLE, or it would blink out
+   * at the exact moment the markers appear.
+   */
+  private rangeWarning: string = "";
 
   onAwake(): void {
     this.createEvent("OnStartEvent").bind(() => this.onStart());
@@ -134,6 +142,15 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.safetyWarning = p && p.pending && p.warning ? p.warning : "";
       this.applyWarning();
     });
+    eventBus.subscribe(Events.distanceWarning, (p: { message: string }) => {
+      this.rangeWarning = p && p.message ? p.message : "";
+      this.applyWarning();
+    });
+    // A fresh survey re-measures the terrain, so last survey's verdict is void.
+    eventBus.subscribe(Events.surveyStarted, () => {
+      this.rangeWarning = "";
+      this.applyWarning();
+    });
 
     this.applyFace();
   }
@@ -149,6 +166,8 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
     if (idle) {
       this.safetyWarning = "";
+      // rangeWarning is deliberately NOT cleared here: the survey ends by
+      // returning to IDLE, and that is precisely when the warning matters.
       this.tickerElapsed = 0;
       setText(this.lessonTitle, "");
       this.showTicker();
@@ -173,12 +192,19 @@ export class StatusBarPresenter extends BaseScriptComponent {
     }
   }
 
+  /** Safety gates outrank range warnings: one blocks the step, the other advises. */
+  private activeWarning(): string {
+    if (this.safetyWarning.length > 0) return this.safetyWarning;
+    return this.rangeWarning;
+  }
+
   private applyWarning(): void {
-    const showing = this.safetyWarning.length > 0;
+    const warning = this.activeWarning();
+    const showing = warning.length > 0;
     setEnabled(this.warningStrip, showing);
 
     if (showing) {
-      setText(this.tickerText, this.safetyWarning);
+      setText(this.tickerText, warning);
       if (this.theme) {
         setTextColor(this.tickerText, this.theme.warningColor, this.theme.glowIntensity);
         setColor(this.stripMat, this.theme.warningColor, this.theme.glowIntensity);
@@ -206,7 +232,7 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
     // Ticker: only in IDLE, and never while it is showing a live transcript
     // or a warning.
-    if (this.mode === "IDLE" && this.safetyWarning.length === 0 && this.voiceState === "idle") {
+    if (this.mode === "IDLE" && this.activeWarning().length === 0 && this.voiceState === "idle") {
       this.tickerElapsed += dt;
       if (this.tickerElapsed >= this.tickerIntervalSec) {
         this.tickerElapsed = 0;

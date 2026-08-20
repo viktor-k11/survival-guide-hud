@@ -11,7 +11,7 @@
  */
 import { eventBus, Events } from "./EventBus";
 import { LessonCompanion, LessonPlan, LessonStep } from "./LessonSchema";
-import { inferLessonKind, validateLesson } from "./LessonValidator";
+import { describeDegradations, inferLessonKind, validateLesson } from "./LessonValidator";
 
 export type EngineMode = "IDLE" | "SURVEY" | "LESSON" | "SOS" | "COMPLETE";
 
@@ -158,6 +158,23 @@ export class LessonEngine extends BaseScriptComponent {
     // The ONLY input seam: whatever produced the transcript is irrelevant here.
     eventBus.subscribe(Events.userRequest, (p: { text: string }) => {
       this.handleTranscript(p ? p.text : "");
+    });
+
+    // The survey does not own the mode; this does. SurveyController reports
+    // facts ("started", "complete") and the state machine decides what mode
+    // that means, so there is still exactly one owner of `mode` — the same
+    // reason ModeRouter owns root visibility instead of the presenters.
+    eventBus.subscribe(Events.surveyStarted, () => {
+      if (this.mode === "IDLE") this.setMode("SURVEY");
+      else this.log("surveyStarted ignored: mode is " + this.mode);
+    });
+    eventBus.subscribe(Events.surveyComplete, () => {
+      if (this.mode === "SURVEY") this.setMode("IDLE");
+    });
+    // Nothing acts on a chosen site yet — starting a lesson from one is the
+    // next task. Logged so the seam is visible in a run rather than only in code.
+    eventBus.subscribe(Events.siteSelected, (p: { kind: string; slot: string }) => {
+      this.log("siteSelected " + (p ? p.slot + " (" + p.kind + ")" : "?") + " — no lesson wired to this yet");
     });
 
     if (this.enableDebugKeys) this.bindDebugKeys();
@@ -322,6 +339,14 @@ export class LessonEngine extends BaseScriptComponent {
     if (!result.ok) {
       this.log("loadFromFixture(" + label + "): REJECTED — " + result.summary);
       return;
+    }
+    // A degraded lesson is still loaded — that is the point. Log what it cost
+    // so a model quietly getting sloppier shows up here rather than nowhere.
+    if (result.degradations.length > 0) {
+      this.log(
+        "loadFromFixture(" + label + "): DEGRADED x" + result.degradations.length +
+          " — " + describeDegradations(result.degradations)
+      );
     }
     this.log("loadFromFixture(" + label + "): valid, " + result.plan.steps.length + " steps");
     this.loadLesson(result.plan);

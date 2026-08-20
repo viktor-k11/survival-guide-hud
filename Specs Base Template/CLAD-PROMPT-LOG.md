@@ -1542,3 +1542,218 @@ absent, icon falling back to the lesson's water drop. Nothing stale.
   session, by `CaptureRuntimeViewTool` this time rather than the GraphQL query.
   Removed again. The scene guard catches it; treat it as expected after any
   session that captures or queries the preview.
+
+---
+
+## Prompt — validator degradation + boot terrain survey
+
+> First, apply the validator change you proposed — you were right. A malformed
+> companion degrades to null and the lesson survives, with the degradation logged
+> and counted. Reserve hard rejection for structural failures where there is no
+> usable lesson: unparseable JSON, missing steps array, step count out of range,
+> missing instruction text. Re-run the water request three times and confirm it
+> now yields a usable lesson every time. Also gitignore .font_tmp/.
+>
+> Then the terrain survey.
+>
+> /specs-world-query
+>
+> 1. SurveyController in Scripts/Engine/. On boot the lens enters SURVEY mode and
+>    samples real surfaces with grid raycasts as the user looks around, building
+>    a point map with normals. Duration is an @input, default 12 s, with an early
+>    exit once enough usable surface has been collected — on demo day I do not
+>    want to stand still for twelve seconds if eight will do.
+>    Emit surveyProgress(0..1) continuously and surveyComplete(sites) at the end.
+>
+> 2. Split the maths from the scene, hard. Site selection must be a PURE function:
+>    input a point cloud (positions + normals), output ranked candidate sites. No
+>    SceneObject access, no World Query calls, no time dependency inside it.
+>    Saturday's test pass will feed it synthetic clouds with no Lens Studio in the
+>    loop, and that only works if the seam is clean now.
+>    Scoring: flatness x usable area x sensible distance from the user.
+>    Select the top 2 tent candidates (need roughly a 2.5 m rectangle) and 1 fire
+>    site (roughly a 1.2 m circle), with a hard constraint: the fire site must be
+>    at least 3 m from every tent candidate. If the constraint cannot be met,
+>    place the fire at the best available spot and raise distanceWarning rather
+>    than failing.
+>
+> 3. SurveyGrid visual: a ground-projected phosphor grid wave that follows the
+>    sampled area, driven by surveyProgress. Draft quality is fine — my partner
+>    restyles it Saturday — but it must read as "the lens is looking around",
+>    because this is the opening shot of the demo.
+>
+> 4. SiteMarker placement on surveyComplete: the three existing markers move to
+>    the selected sites and show a rating label ("FLATNESS 94%"). The best
+>    candidate pulses brighter. Pinch-tap on a marker emits siteSelected{kind,
+>    position, score} — the engine does NOT start a lesson yet, that is the next
+>    task. Make the markers tappable with SIK and give me a keyboard debug key
+>    per marker as well, since I cannot pinch in preview.
+>
+> 5. distanceWarning shows the StatusBar warning strip reading "FIRE TOO CLOSE TO
+>    SHELTER" in the warning colour. No TTS yet.
+>
+> Everything bright saturated emissive, no dark fills (rule 2). All visuals are
+> existing design-time objects (rule 1) — WorldRoot must be visible during SURVEY
+> and IDLE, and ModeRouter owns that.
+>
+> Tell me which preview simulation environment gives World Query real surfaces to
+> hit, and verify the whole flow there rather than reasoning about it. Report:
+> how many points sampled, the three chosen sites with scores, whether the 3 m
+> constraint held, and total survey time. Attach a preview screenshot of the grid
+> mid-sweep and of the markers placed with their labels.
+>
+> Per rule 4, append to CLAD-PROMPT-LOG.md, then commit:
+> feat: boot survey, site markers, distance guard
+
+**Done:** `LessonValidator` now degrades malformed companions to `null` instead of
+binning the lesson; added `Engine/SiteSelection.ts` (pure), `Engine/SurveyController.ts`,
+`Engine/SurveyTypes.ts`, `Widgets/SurveyGridPresenter.ts`, `Widgets/SiteMarkerPresenter.ts`,
+stored terrain fixtures under `Assets/Survey/fixtures/`, and the `siteSelected` /
+`surveyStarted` events.
+
+### 1. The validator: the water lesson was not flaky, it was broken
+
+The degrade path went in as agreed — companion problems, a missing title, a
+missing safety flag and an over-long checklist are all repaired and recorded in
+a new `degradations[]`, while `issues[]` keeps its old meaning of "fatal". Hard
+rejection is now only: empty payload, unparseable JSON, missing `steps`, step
+count outside 4–6, and a step with no instruction text.
+
+Three live runs of "help me purify water" (probe gained `requestsOverride` +
+`repeatEach` so a request can be repeated without editing code):
+
+```
+[LESSON] plan: 1 request(s) x 3 run(s) each
+run 1/3  latency=11119ms  validator=PASS  DEGRADED x1
+run 2/3  latency=13225ms  validator=PASS  DEGRADED x1
+run 3/3  latency=10856ms  validator=PASS  DEGRADED x1
+         steps[0].companion.items [BAD_COMPANION_FIELDS] -> companion dropped
+[LESSON] TALLY usable=3 unusable=0 degradedRuns=3
+```
+
+**The surprise: at temperature 0 the failure is not intermittent, it is total.**
+All three responses were byte-identical, each emitting `{"type":"checklist"}`
+with no `items` on step 1. That request was never a one-in-three flake — every
+single ask threw away a good five-step lesson over one undrawable widget. Raw
+response saved as `lesson-help-me-purify-water-DEGRADES-step1-checklist.raw.json`.
+
+Two judgement calls worth flagging:
+
+- **A safety-gated step with no warning text keeps its gate** and gets generic
+  copy, rather than having the flag cleared. Clearing it would silently remove a
+  safety gate the model asked for — the one degradation that could hurt someone.
+- **An over-long checklist is truncated, not dropped.** The widget has six rows
+  and the first six items are still useful.
+- `HOLOGRAM_OUT_OF_RANGE` is deliberately **not** clamped. Showing stage 5 when
+  the model asked for stage 7 is a confidently wrong picture; no picture is the
+  honest degradation.
+
+`.font_tmp/` was already in `.gitignore` from the previous session. Added
+`.icon_tmp/` alongside it — same MCP-leftover category.
+
+### 2. Which preview environment gives World Query real surfaces: all of them, and it does not help
+
+Verified rather than reasoned, and the answer is worth more than the question.
+The Interactive simulation scenes **do** return genuine surfaces — `Colorful
+Home` gives real room geometry (walls with sideways normals, floor at several
+heights; the up-facing filter correctly kept 2 of 6 points), `Sunlit Outdoor`
+gives a flat ground plane at y = -173 cm. But:
+
+- only the **middle of the ray fan** ever resolves — hits came back for lattice
+  cells 16/17/18 of 35, a cone of roughly ±9°, everything else `null`;
+- 944 rays over 12 s produced 81 hits (~7 Hz), matching the documented ~5 Hz;
+- **the simulated device camera never moves.** `MovePreviewCamera` drives the
+  editor viewport, not the tracked `Camera Object`, which sat at (0,0,0) through
+  every pan while the hit positions stayed frozen.
+
+Result: **3 distinct points in Sunlit Outdoor, 6 in Colorful Home, no matter how
+long the survey runs.** A 2.5 m tent footprint needs ~60 covered cells. No
+preview environment can feed a survey, so the terrain itself became a fixture
+(hard rule 5): `Assets/Survey/fixtures/*.json`, generated deterministically by
+`Tools/make-survey-fixtures.py`, sourced via `useFixtureCloud` + `cloudFixture`.
+Both sources funnel through one `acceptPoint`, so the deterministic run cannot
+drift from the live one. **`useFixtureCloud` ships OFF** — on the glasses a
+fixture would put markers on terrain that is not there.
+
+The fixtures deviate from the letter of rule 5 by living in `Assets/Survey/
+fixtures/` rather than `Assets/AI/fixtures/`: a terrain cloud is not a Gemini
+response, and mixing them would muddy "every raw Gemini response is a fixture".
+Say the word and they move.
+
+### 3. Results — the numbers asked for
+
+Open clearing, `survey-open-clearing.json`, 676-point cloud:
+
+```
+survey complete in 6.76s (early exit) source=fixture points=381 usable=381 cells=381 sites=3
+  TENT_A at (137.5, -172.9, -337.5)cm score=0.562 flatness=81% coverage=70% dist=3.64m cells=70
+  TENT_B at (-187.5, -173.2, -262.5)cm score=0.549 flatness=81% coverage=70% dist=3.23m cells=70
+  FIRE   at (-62.5, -172.6, -562.5)cm score=0.510 flatness=86% coverage=66% dist=5.66m cells=12
+  fireToNearestTent=3.01m (min 3m) — tents 2, fire clear by 3.01 m
+[MARKER] placed 3/3 markers, best=TENT_A
+```
+
+**6.76 s of the 12 s budget** — the "eight will do" case, on 381 of 676 points.
+The 3 m constraint held at 3.01 m. Cramped fixture: 1 tent, fire at 1.03 m, ran
+the full 12 s, `DISTANCE WARNING: FIRE TOO CLOSE TO SHELTER (1.03m < 3m)`, strip
+shown in warning red.
+
+The pure selector was also exercised outside Lens Studio entirely — synthetic
+clouds under plain `node --experimental-strip-types`, which is the seam Saturday
+needs: flat clearing, impossible-constraint patch, floor-plus-wall (wall
+rejected: 10201 usable of 12221), 30 cm rubble (nothing found), and determinism
+(same result with the point order reversed).
+
+### 4. Three bugs found by running it, not by reasoning
+
+1. **A flat plateau in the distance score made every candidate score exactly
+   1.000.** On uniform ground flatness and coverage are 1 everywhere, so the
+   winner fell out of the coordinate tiebreak and the survey confidently marked
+   the far corner of the sampled patch. The distance factor now **peaks in the
+   middle** of the comfortable band, which is a real preference rather than an
+   artefact of iteration order.
+2. **"Enough usable surface" cannot mean "N distinct ground cells."** A scan
+   spread thinly over a wide area hits the cell count while leaving every 2.5 m
+   footprint full of holes — the survey early-exited pleased with itself and
+   reported *zero* sites. The readiness test is now the selector itself, run at
+   most once a second behind a cheap cell-count gate.
+3. **And then it early-exited on a bad answer.** With `tents>=2 && fire` as the
+   condition, one run stopped at 5.76 s having placed the fire **0.9 m** from a
+   tent and raised the warning; two seconds more ground would have found a spot
+   3 m clear. The condition now also requires `!distanceWarning`. If the terrain
+   genuinely cannot satisfy it, the full duration runs out and the warning is an
+   honest result rather than an impatient one.
+
+Also, one fixture-design correction that is really a spec insight: the first
+clouds wrapped the user in ground, and the survey duly suggested a campsite
+**behind their head**. A survey only ever collects what the user looked at, so
+the fixtures now cover the forward arc only.
+
+### 5. Notable decisions / open issues
+
+- **`SurveyGrid` is one flat quad, so the "grid wave" is a pulse, not travelling
+  lines.** It follows the sampled bounds, grows with progress, spins slowly and
+  rides a brightness wave — it reads as scanning, and it is draft quality as
+  agreed. A grid-textured or shader-driven material swaps in without touching
+  `SurveyGridPresenter`.
+- **`vec3.forward()` in Lens Studio is (0, 0, +1)** — the opposite of the -Z
+  forward convention the coordinate system otherwise uses. The view basis is
+  built by rotating (0,0,-1) explicitly rather than trusting `transform.forward`
+  or `transform.back`. Verified by the first-hit log landing in front and below.
+- **Markers billboard yaw-only.** A world-space quad seen edge-on is invisible,
+  which looks exactly like a broken marker; pitching toward the head as well
+  would tip the labels off the horizon.
+- `SiteMarker_*` gained a `ColliderComponent` (sphere, r = 30 cm, `fitVisual`
+  **off**) and SIK `Interactable` at design time. `fitVisual` must stay off —
+  the marker root has no visual, so fitting collapses the collider to nothing
+  and pinches stop working silently.
+- **`siteSelected` has no consumer yet, on purpose.** `LessonEngine` logs it and
+  says so. The seam is exercised now so wiring a lesson to it next is a one-line
+  subscribe.
+- **The tent markers sit below the preview's vertical crop** at 3.4 m out (27°
+  below the horizon). Nothing is wrong — the device camera in preview looks dead
+  level and cannot be tilted — but it means the headset-view screenshot shows the
+  fire marker only; the all-three frame is an orthographic runtime capture.
+- The `AiPreviewAgent Handler` root object was re-injected again by the runtime
+  query/capture tools. Removed, guard re-run clean. Still expected after any
+  session that inspects the preview.

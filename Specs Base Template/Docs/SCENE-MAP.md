@@ -123,6 +123,12 @@ placed against real terrain, not the head.
 | `WorldRoot/SiteMarker_*/Icon` | The site's pictogram | `surveyComplete` |
 | `WorldRoot/SiteMarker_*/RatingLabel` | Score readout, e.g. `"FLATNESS 94%"` | `surveyComplete` |
 | `WorldRoot/SiteMarker_*/PulseRing` | Ground ring that pulses to draw attention / signal range | `surveyComplete`, `distanceWarning` |
+
+> **Each `SiteMarker_*` also carries a `ColliderComponent` (sphere, r = 30 cm,
+> `fitVisual` off) and SIK's `Interactable`, both added at DESIGN time.** They
+> are what makes a marker pinch-tappable. `fitVisual` must stay off: the marker
+> root has no visual of its own, so fitting would collapse the collider to
+> nothing and the marker would silently stop responding to pinches.
 | `WorldRoot/ZoneWidget` | Ground outline marking a work area. **Supports both forms** — enable exactly one child | `stepChanged`, `propPlaced` |
 | `WorldRoot/ZoneWidget/ZoneCircle` | Circular form (ring) | `stepChanged` |
 | `WorldRoot/ZoneWidget/ZoneRect` | Rectangular form; group of four edges | `stepChanged` |
@@ -157,6 +163,9 @@ placed against real terrain, not the head.
 | `Systems/ChecklistPresenter` | `Widgets/ChecklistPresenter.ts` — six rows, sequential highlight, shows only as many as the step needs. |
 | `Systems/GaugeTimerPresenter` | `Widgets/GaugeTimerPresenter.ts` — countdown ring + MM:SS on `timerTick`. |
 | `Systems/CompanionRouter` | `Widgets/CompanionRouter.ts` — the single `companionChanged` handler; switches Zone/Timer/Checklist/Compass and hides all four on `type: null`. |
+| `Systems/SurveyController` | `Engine/SurveyController.ts` — the boot survey. Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys S (restart) / G (finish now). |
+| `Systems/SurveyGridPresenter` | `Widgets/SurveyGridPresenter.ts` — drives `WorldRoot/SurveyGrid` from `surveyProgress`: follows the sampled bounds, grows, spins, rides a brightness wave. |
+| `Systems/SiteMarkerPresenter` | `Widgets/SiteMarkerPresenter.ts` — places the three markers on `surveyComplete`, labels them `FLATNESS NN%`, pulses the best one, and emits `siteSelected` on pinch or debug key T / Y / F. |
 | `RSG Smoke Test [TEMP]` | Throwaway diagnostics. Carries **two** ScriptComponents: `RsgSmokeTest.ts` (now **disabled** — it passed, and it cost ~18s of API calls per boot) and `LessonProbe.ts` (the lesson-planner proving run). Delete the object and both scripts when done — see `TOKENS.md`. |
 
 > **Do not put permanent plumbing inside a `[TEMP]` object.** Token installation
@@ -192,8 +201,21 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 
 `modeChanged` · `lessonStarted` · `stepChanged` · `companionChanged` ·
 `hologramStage` · `timerTick` · `checklistUpdated` · `safetyPending` ·
-`propPlaced` · `lessonCompleted` · `surveyProgress` · `surveyComplete` ·
-`distanceWarning`
+`propPlaced` · `lessonCompleted` · `surveyStarted` · `surveyProgress` ·
+`surveyComplete` · `siteSelected` · `distanceWarning`
+
+Survey payload shapes live in `Engine/SurveyTypes.ts` — a types-only module both
+sides import, so the presenters never import `SurveyController` (which would
+drag `WorldQueryModule` into a widget) and the engine never imports a presenter.
+**Positions on the bus are CENTIMETRES**, ready for `setWorldPosition`.
+
+### Who owns `mode` during a survey
+
+`SurveyController` does NOT set the mode. It reports facts — started, complete —
+and `LessonEngine` decides those mean `SURVEY` and `IDLE`. Same rule as
+`ModeRouter` owning root visibility: one owner, or it becomes a race about who
+set what. `ModeRouter` now shows `WorldRoot` in **IDLE as well as SURVEY**, so
+the markers stay standing after the survey hands back to idle.
 
 ### `companionChanged` is a ROUTER event, not a surface
 
@@ -244,6 +266,59 @@ operation, not a state transition.
 Nothing implements either event yet. The engine is complete without them: it
 advances on user input regardless of whether audio ever plays, which is exactly
 the property that keeps a slow or failed TTS from freezing the lesson.
+
+## The Preview panel cannot feed a survey
+
+Measured 2026-08-20, not assumed. World Query **does** work in the Preview's
+Interactive simulation scenes and it returns genuine surfaces:
+
+| Interactive scene | What World Query returns |
+|---|---|
+| `Sunlit Outdoor` | a flat ground plane at y = -173 cm, normals exactly up |
+| `Colorful Home` | real room geometry — walls with sideways normals, floor at several heights |
+| `Plane` | the bare ground plane (project default) |
+
+The problem is not the surfaces, it is how few taps resolve and that the head
+never moves:
+
+- Only the **centre of the ray fan** ever returns a hit. Of a 7 x 5 lattice
+  spanning ±28° yaw and +6°..-42° pitch, hits came back for lattice cells
+  16/17/18 only — a cone of about ±9°. Everything else returned `null`.
+- The throttle is real: 944 rays cast over 12 s produced 81 hits (~9%, ≈7 Hz),
+  matching the documented ~5 Hz resolve rate.
+- **The simulated device camera is pinned at the origin.** `MovePreviewCamera`
+  moves the editor viewport, not the tracked `Camera Object`; the Lens-side
+  camera stayed at (0,0,0) through every pan and the hits never moved.
+
+Net: **3 distinct points in Sunlit Outdoor, 6 in Colorful Home, however long the
+survey runs.** A tent footprint needs ~60 covered cells. No preview environment
+can supply that, so verifying the markers, labels and the distance guard on a
+desk requires a stored cloud.
+
+### Stored terrain: `Assets/Survey/fixtures/`
+
+Hard rule 5, applied to terrain instead of to Gemini. `SurveyController` has
+`useFixtureCloud` + `cloudFixture`: with the toggle on, the survey sources its
+points from a stored JSON cloud and never casts a ray. Everything else — the
+timeline, `surveyProgress`, the early exit, scoring, markers, the warning strip
+— runs identically, because both sources funnel through the same `acceptPoint`.
+
+| Fixture | What it is for |
+|---|---|
+| `survey-open-clearing.json` | 6.4 x 6.4 m clearing ahead of the user. The good case: 2 tents + a fire clear by 3.01 m, no warning. |
+| `survey-cramped-camp.json` | 3.2 m clearing ringed by rubble. The constraint case: 1 tent, fire 1.03 m away, `distanceWarning` raised. |
+
+Both are generated by `python3 Tools/make-survey-fixtures.py` — deterministic,
+so regenerating produces byte-identical files.
+
+> **`useFixtureCloud` ships OFF.** On device the real World Query path is the
+> point; a fixture would put markers on terrain that is not there, which is
+> worse than no markers. Turn it on to demo or debug on a desk, and turn it
+> back off before going to the glasses.
+
+> The clouds only cover the arc **in front** of the user, because that is what a
+> survey actually collects. An early version wrapped the user in ground and duly
+> suggested a campsite behind their head.
 
 ## Scene hygiene guard
 

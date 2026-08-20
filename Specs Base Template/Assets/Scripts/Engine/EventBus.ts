@@ -29,11 +29,23 @@ export const Events = {
   propPlaced: "propPlaced",
   /** Final step done. */
   lessonCompleted: "lessonCompleted",
-  /** Terrain survey progress, 0..1. */
+  /** Terrain survey has begun. Payload: { durationSec }. */
+  surveyStarted: "surveyStarted",
+  /** Terrain survey progress, 0..1. Payload: SurveyProgressPayload. */
   surveyProgress: "surveyProgress",
-  /** Terrain survey finished; site markers can be shown. */
+  /** Terrain survey finished; site markers can be shown. Payload: SurveyCompletePayload. */
   surveyComplete: "surveyComplete",
-  /** User strayed too far from the active zone / site. */
+  /**
+   * The user picked a site marker. Payload: SiteSelectedPayload.
+   * Nothing starts a lesson from this yet — that is deliberate, and the next
+   * task. Emitting it now means the seam exists and is already exercised.
+   */
+  siteSelected: "siteSelected",
+  /**
+   * A distance constraint could not be met. Payload: DistanceWarningPayload.
+   * Raised by the survey when the fire cannot clear the tents; later also when
+   * the user strays from an active zone.
+   */
   distanceWarning: "distanceWarning",
 
   // --- Voice input (VoiceInput.ts) ---------------------------------------

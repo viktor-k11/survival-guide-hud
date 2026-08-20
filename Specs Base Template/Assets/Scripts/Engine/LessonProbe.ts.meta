@@ -30,6 +30,8 @@
   ScriptInputsHidden:
     brokenFixture: false
     promptsAsset: false
+    repeatEach: false
+    requestsOverride: false
     runOnStart: false
   ScriptTypesHidden:
     {}
@@ -43,6 +45,8 @@
     - promptsAsset: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
       brokenFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
       runOnStart: true
+      requestsOverride: ""
+      repeatEach: !<float> 1.000000
   ScriptTypes:
     -
       {}
@@ -50,3 +54,5 @@
     - '// @input Asset.JsonAsset promptsAsset {"hint":"Assets/AI/prompts.generated.json — built from the .txt sources by Tools/build-prompts.py"}'
     - '// @input Asset.JsonAsset brokenFixture {"hint":"Assets/AI/fixtures/broken-lesson-9-steps-7-item-checklist.json — the deliberately invalid case"}'
     - '// @input bool runOnStart = true {"hint":"Turn off once the planner is wired into the real engine."}'
+    - '// @input string requestsOverride {"hint":"Comma-separated requests. Empty = the standard three (campfire / tent / water)."}'
+    - '// @input float repeatEach = 1 {"hint":"How many times to run EACH request. Set to 3 to prove an intermittent model failure is actually fixed — one green run means nothing when the fault only appears sometimes."}'

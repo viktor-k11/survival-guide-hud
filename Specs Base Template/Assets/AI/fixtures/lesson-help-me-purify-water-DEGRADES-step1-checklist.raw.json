@@ -1,0 +1,19 @@
+{
+  "candidates": [
+    {
+      "content": {
+        "role": "model",
+        "parts": [
+          {
+            "text": "{\n  \"title\": \"Purify Water\",\n  \"steps\": [\n    {\n      \"instruction\": \"Collect water from the cleanest available source into a container.\",\n      \"companion\": {\n        \"type\": \"checklist\",\n        \"shape\": null,\n        \"size_m\": null,\n        \"stage\": null\n      },\n      \"safety\": false,\n      \"warning\": null\n    },\n    {\n      \"instruction\": \"Pour the collected water through a clean cloth or coffee filter to remove large particles.\",\n      \"companion\": {\n        \"type\": \"checklist\",\n        \"items\": [\n          \"Clean cloth ready\",\n          \"Coffee filter ready\",\n          \"Second container ready\"\n        ],\n        \"shape\": null,\n        \"size_m\": null,\n        \"stage\": null\n      },\n      \"safety\": false,\n      \"warning\": null\n    },\n    {\n      \"instruction\": \"Transfer the filtered water into a heat-safe pot or container.\",\n      \"companion\": null,\n      \"safety\": false,\n      \"warning\": null\n    },\n    {\n      \"instruction\": \"Bring the water to a rolling boil for at least one minute.\",\n      \"companion\": {\n        \"type\": \"timer\",\n        \"duration_sec\": 60,\n        \"label\": \"Boil time\",\n        \"shape\": null,\n        \"size_m\": null,\n        \"stage\": null\n      },\n      \"safety\": true,\n      \"warning\": \"Boiling water is extremely hot; handle with care to avoid burns.\"\n    },\n    {\n      \"instruction\": \"Allow the water to cool completely before transferring it to a clean, sealed container.\",\n      \"companion\": {\n        \"type\": \"checklist\",\n        \"items\": [\n          \"Water cooled\",\n          \"Clean container ready\",\n          \"Container sealed\"\n        ],\n        \"shape\": null,\n        \"size_m\": null,\n        \"stage\": null\n      },\n      \"safety\": false,\n      \"warning\": null\n    }\n  ]\n}"
+          }
+        ]
+      },
+      "finishReason": "STOP",
+      "avgLogprobs": -0.2116769370386156
+    }
+  ],
+  "modelVersion": "gemini-2.5-flash",
+  "createTime": "2026-08-20T19:13:28.220791Z",
+  "responseId": "2FGHave8DZOB48AP0vvdoA4"
+}

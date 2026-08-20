@@ -42,3 +42,5 @@ __pycache__/
 
 # Font preview downloads left behind by the FontSelector MCP tool.
 .font_tmp/
+# Same, from the IconSelector MCP tool.
+.icon_tmp/

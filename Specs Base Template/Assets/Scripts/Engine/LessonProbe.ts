@@ -10,7 +10,7 @@
  * without touching code.
  */
 import { requestLesson } from "./LessonPlanner";
-import { inferLessonKind, validateLesson } from "./LessonValidator";
+import { describeDegradations, inferLessonKind, validateLesson } from "./LessonValidator";
 
 @component
 export class LessonProbe extends BaseScriptComponent {
@@ -26,6 +26,14 @@ export class LessonProbe extends BaseScriptComponent {
   @hint("Turn off once the planner is wired into the real engine.")
   private runOnStart: boolean = true;
 
+  @input
+  @hint("Comma-separated requests. Empty = the standard three (campfire / tent / water).")
+  private requestsOverride: string = "";
+
+  @input
+  @hint("How many times to run EACH request. Set to 3 to prove an intermittent model failure is actually fixed — one green run means nothing when the fault only appears sometimes.")
+  private repeatEach: number = 1;
+
   onAwake(): void {
     this.createEvent("OnStartEvent").bind(() => {
       if (this.runOnStart) this.run();
@@ -34,6 +42,25 @@ export class LessonProbe extends BaseScriptComponent {
 
   private log(msg: string): void {
     print("[LESSON] " + msg);
+  }
+
+  private passCount: number = 0;
+  private failCount: number = 0;
+  private degradedCount: number = 0;
+
+  /** Override list wins when non-empty; otherwise the standard three. */
+  private resolveRequests(): string[] {
+    const raw = (this.requestsOverride || "").trim();
+    if (raw.length === 0) {
+      return ["help me build a campfire", "help me pitch a tent", "help me purify water"];
+    }
+    const parts = raw.split(",");
+    const out: string[] = [];
+    for (let i = 0; i < parts.length; i++) {
+      const t = parts[i].trim();
+      if (t.length > 0) out.push(t);
+    }
+    return out.length > 0 ? out : ["help me purify water"];
   }
 
   private run(): void {
@@ -52,25 +79,46 @@ export class LessonProbe extends BaseScriptComponent {
     this.log("loaded lesson system prompt (" + lessonPrompt.length + " chars)");
 
     // Sequential, so the log reads in order and the calls do not interleave.
-    const requests = ["help me build a campfire", "help me pitch a tent", "help me purify water"];
+    const requests = this.resolveRequests();
+    const reps = Math.max(1, Math.round(this.repeatEach));
+    this.log("plan: " + requests.length + " request(s) x " + reps + " run(s) each");
+
     let chain: Promise<any> = Promise.resolve();
-    for (let i = 0; i < requests.length; i++) {
-      const req = requests[i];
-      chain = chain.then(() => this.runOne(req, lessonPrompt));
+    this.passCount = 0;
+    this.failCount = 0;
+    this.degradedCount = 0;
+    for (let r = 0; r < reps; r++) {
+      for (let i = 0; i < requests.length; i++) {
+        const req = requests[i];
+        const tag = reps > 1 ? " [run " + (r + 1) + "/" + reps + "]" : "";
+        chain = chain.then(() => this.runOne(req, lessonPrompt, tag));
+      }
     }
-    chain.then(() => this.runBrokenCase());
+    chain.then(() => {
+      this.log(
+        "TALLY usable=" + this.passCount + " unusable=" + this.failCount +
+          " degradedRuns=" + this.degradedCount
+      );
+      this.runBrokenCase();
+    });
   }
 
-  private runOne(userText: string, prompt: string): Promise<void> {
-    this.log('--- request: "' + userText + '" ---');
+  private runOne(userText: string, prompt: string, tag: string): Promise<void> {
+    this.log('--- request: "' + userText + '"' + tag + ' ---');
     return requestLesson(userText, prompt).then((outcome) => {
       const v = outcome.validation;
-      this.log('"' + userText + '" latency=' + outcome.latencyMs + "ms validator=" + (v.ok ? "PASS" : "FAIL"));
+      this.log('"' + userText + '"' + tag + " latency=" + outcome.latencyMs + "ms validator=" + (v.ok ? "PASS" : "FAIL"));
 
       if (!v.ok) {
+        this.failCount++;
         this.log("validator issues: " + JSON.stringify(v.issues));
         this.log("summary: " + v.summary);
       } else {
+        this.passCount++;
+        if (v.degradations.length > 0) {
+          this.degradedCount++;
+          this.log("DEGRADED x" + v.degradations.length + " — " + describeDegradations(v.degradations));
+        }
         const plan = v.plan;
         const companions: string[] = [];
         let safetyCount = 0;
@@ -110,6 +158,9 @@ export class LessonProbe extends BaseScriptComponent {
     const kind = inferLessonKind("help me build a campfire", "");
     const result = validateLesson(payload, kind);
 
+    // This fixture is 9 steps with a 7-item checklist. The step count is the
+    // structural failure and still rejects; the over-long checklist would only
+    // have been truncated. Rejection here is about the step count, not the widget.
     this.log("broken fixture validator=" + (result.ok ? "PASS (UNEXPECTED)" : "FAIL (expected)"));
     this.log("summary: " + result.summary);
     this.log("issueCount=" + result.issues.length);
