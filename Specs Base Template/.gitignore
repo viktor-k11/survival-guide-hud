@@ -36,3 +36,6 @@ Assets/Scripts/Engine/RsgTokenLocal.ts.meta
 # Not project content; it re-appears on demand and must not ship in the Lens.
 Packages/AiPreviewAgentInspect.lspkg
 Packages/AiPreviewAgentInspect.lspkg.meta
+# Python bytecode from Tools/ scripts
+__pycache__/
+*.pyc

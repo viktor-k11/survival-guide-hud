@@ -1,0 +1,64 @@
+- !<AssetImportMetadata/5fb598a2-0406-4ca4-90e6-492a593ebd5e>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 92642b22-89e0-4ad2-a391-d3f98bc93bcc
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 92642b22-89e0-4ad2-a391-d3f98bc93bcc
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> b4735317-f9b2-4c32-8919-a97df7dd21e2
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/b4735317-f9b2-4c32-8919-a97df7dd21e2>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 2ecabdae-4fff-4605-9c1b-123a66a011c4
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    accuracyMode: false
+    debugKeyChoice: false
+    enableDebugTrigger: false
+    enableLogging: false
+    silenceUntilTerminationMs: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - silenceUntilTerminationMs: !<float> 1200.000000
+      accuracyMode: !<float> 0.000000
+      enableDebugTrigger: true
+      debugKeyChoice: !<float> 0.000000
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Capture</span>"}'
+    - '// @input float silenceUntilTerminationMs = 1200 {"hint":"Milliseconds of silence before ASR marks a phrase final. Lower = snappier, more likely to cut the user off mid-sentence."}'
+    - '// @input float accuracyMode {"hint":"Trade accuracy against speed. 0 = HighAccuracy, 1 = Balanced, 2 = HighSpeed.", "widget":"combobox", "values":[{"label":"HighAccuracy", "value":0}, {"label":"Balanced", "value":1}, {"label":"HighSpeed", "value":2}]}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Desktop debug trigger</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Hand pinch does not work in Lens Studio Preview. Click the Preview panel to focus it, then hold SPACE to record and release to stop. Runs the same code path as the pinch.</span>"}'
+    - '// @input bool enableDebugTrigger = true {"hint":"Enable the hold-to-record debug key. Leave ON for desktop work; turn OFF before shipping."}'
+    - '// @input float debugKeyChoice {"hint":"Which key holds to record. Space by default. Lens KeyPressEvent only sees A-Z, 0-9, Space, Backspace, arrows and modifiers.", "widget":"combobox", "values":[{"label":"Space", "value":0}, {"label":"V", "value":1}, {"label":"T", "value":2}]}'
+    - '// @ui {"widget":"separator"}'
+    - "// @input bool enableLogging = true {\"hint\":\"Print [ASR] breadcrumbs at every transition. Without these, 'voice does not work' is undiagnosable.\"}"

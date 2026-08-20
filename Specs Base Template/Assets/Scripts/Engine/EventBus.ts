@@ -35,6 +35,19 @@ export const Events = {
   surveyComplete: "surveyComplete",
   /** User strayed too far from the active zone / site. */
   distanceWarning: "distanceWarning",
+
+  // --- Voice input (VoiceInput.ts) ---------------------------------------
+  /** Mic state changed. Payload: { state: "idle" | "listening" | "finalizing" }. */
+  voiceStateChanged: "voiceStateChanged",
+  /** Live partial transcript while the user is still speaking. Payload: { text }. */
+  voiceInterim: "voiceInterim",
+  /**
+   * A completed user request. Payload: { text, latencyMs }.
+   * This is THE seam every later feature plugs into: the lesson planner, the
+   * in-lesson Q&A router and the local navigation keyword matcher all listen
+   * here. Nothing downstream should ever touch the ASR module directly.
+   */
+  userRequest: "userRequest",
 } as const;
 
 export type EventName = (typeof Events)[keyof typeof Events];

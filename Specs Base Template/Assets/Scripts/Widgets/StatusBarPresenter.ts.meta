@@ -1,0 +1,72 @@
+- !<AssetImportMetadata/121f3db1-bb5e-41e8-aee0-b5a4c7a2e3ba>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 257187a9-f1b3-41f5-a65d-5ea6d074c28b
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 257187a9-f1b3-41f5-a65d-5ea6d074c28b
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> d67a7ade-9b9f-44e1-9e9c-941051dced58
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/d67a7ade-9b9f-44e1-9e9c-941051dced58>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: a78f572c-f2a0-4a45-8dec-cbf8a41de15c
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    finalizingHint: false
+    hintText: false
+    hudRoot: false
+    idleHint: false
+    listeningHint: false
+    micIcon: false
+    statusBar: false
+    tickerText: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - hudRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      statusBar: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      micIcon: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      hintText: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      tickerText: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      idleHint: PINCH & HOLD — ASK FOR HELP
+      listeningHint: LISTENING… RELEASE WHEN DONE
+      finalizingHint: THINKING…
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">All must already exist in the scene. This script never creates any of them.</span>"}'
+    - '// @input SceneObject hudRoot {"hint":"HUDRoot. Enabled on start so the StatusBar is visible. Ownership moves to the mode router when that lands."}'
+    - '// @input SceneObject statusBar {"hint":"HUDRoot/StatusBar"}'
+    - '// @input SceneObject micIcon {"hint":"HUDRoot/StatusBar/MicIcon"}'
+    - '// @input Component.Text hintText {"hint":"HUDRoot/StatusBar/HintText"}'
+    - '// @input Component.Text tickerText {"hint":"HUDRoot/StatusBar/ExampleTicker — reused as the live transcript line"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Copy</span>"}'
+    - '// @input string idleHint = "PINCH & HOLD — ASK FOR HELP" {"hint":"Shown when idle."}'
+    - '// @input string listeningHint = "LISTENING… RELEASE WHEN DONE" {"hint":"Shown while the mic is capturing."}'
+    - '// @input string finalizingHint = "THINKING…" {"hint":"Shown between release and the final transcript arriving."}'

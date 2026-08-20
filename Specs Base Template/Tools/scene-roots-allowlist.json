@@ -1,0 +1,49 @@
+{
+  "_comment": [
+    "Known-good root-level SceneObjects for Assets/Scene.scene.",
+    "Anything at scene root NOT listed here is flagged by Tools/check-scene-roots.py.",
+    "",
+    "Why this file exists: package installs and MCP tools have twice injected a",
+    "root object that would have shipped in the Lens (the RemoteServiceGateway",
+    "examples prefab, and AiPreviewAgent Handler from the runtime-inspection",
+    "tool). Those are silent - nothing errors, the object just rides along into",
+    "the commit. This is the tripwire.",
+    "",
+    "Adding a name here is a deliberate act. If the checker flags something you",
+    "actually want, add it WITH a reason in 'notes' - do not just silence it.",
+    "",
+    "'must_be_disabled_trees' enforces hard rule 1: every object in those",
+    "trees must ship disabled. This drifts silently - ticking a checkbox in",
+    "the Objects panel while inspecting is enough to break it."
+  ],
+  "allowed": [
+    "Camera Object",
+    "Lighting",
+    "SpectaclesInteractionKit",
+    "Systems",
+    "HUDRoot",
+    "WorldRoot",
+    "VisualConfig",
+    "RSG Smoke Test [TEMP]"
+  ],
+  "notes": {
+    "Camera Object": "Stock render camera.",
+    "Lighting": "Stock environment lighting rig.",
+    "SpectaclesInteractionKit": "SIK prefab. Required for hand interaction.",
+    "HUDRoot": "Head-locked HUD tree. See Docs/SCENE-MAP.md.",
+    "WorldRoot": "World-anchored terrain tree. See Docs/SCENE-MAP.md.",
+    "VisualConfig": "Theme @input holder. Enabled on purpose; draws nothing.",
+    "RSG Smoke Test [TEMP]": "TEMPORARY diagnostic - remove this entry when RsgSmokeTest.ts is deleted.",
+    "Systems": "Always-enabled container for runtime controllers (VoiceInput, StatusBarPresenter). Must stay ENABLED: HUDRoot/WorldRoot ship disabled per hard rule 1, so something enabled has to turn them on."
+  },
+  "known_offenders": {
+    "RemoteServiceGatewayExamples": "Auto-added by InstallLensStudioPackage for RemoteServiceGateway. Delete it; it carries placeholder credential fields.",
+    "AiPreviewAgent Handler": "Auto-added by the Lens Studio MCP runtime scene-inspection tool. Delete it; the package is git-ignored.",
+    "APIKeyWarning": "Ships with some RSG example scenes. Not needed here.",
+    "GUIDE_ReadAndDisable": "Ships with some RSG example scenes. Not needed here."
+  },
+  "must_be_disabled_trees": [
+    "HUDRoot",
+    "WorldRoot"
+  ]
+}

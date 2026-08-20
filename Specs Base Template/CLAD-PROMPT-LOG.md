@@ -762,3 +762,184 @@ not part of the "hierarchy to create" list that the disable rule covers.
 - Final verification walked the live tree via the Editor API rather than
   trusting the applies: 7 root objects, 70 objects across the two trees,
   **zero still enabled**, `Headlock` component `enabled=false`.
+
+---
+
+## 2026-08-20 — scene-hygiene guard + /specs-asr hold-to-talk voice input
+
+**Prompt (verbatim):**
+
+> Two follow-ups from the skeleton task, then the ASR work.
+>
+> Follow-ups:
+> a) Document in SCENE-MAP.md that companionChanged is a router event, not a
+>    surface: it carries a companion type (zone / timer / checklist / compass)
+>    and enables the corresponding existing widget. No new object should ever be
+>    created for it.
+> b) Scene hygiene: twice now a package install or an MCP tool has injected an
+>    object into Scene.scene that would have shipped in the Lens (RSG examples
+>    prefab, AiPreviewAgent Handler). Add a repeatable guard — a small script or
+>    documented check that lists every root-level SceneObject and flags anything
+>    not in the known-good set (HUDRoot, WorldRoot, VisualConfig, Camera objects,
+>    SIK rig, RSG Smoke Test [TEMP]). Wire it so I can run it before any commit.
+>    Put the known-good set in a file, not in your head.
+>
+> Then:
+>
+> /specs-asr
+>
+> Hold-to-talk voice capture. Scope: input plumbing only — no lesson logic, no
+> Gemini calls, no state machine. That is the next task.
+>
+> 1. VoiceInput in Scripts/Engine/: pinch-and-hold starts capture, release ends
+>    it. Emit interim transcripts continuously and one final transcript at
+>    release. Expose the final transcript through a single callback
+>    onUserRequest(text) and an EventBus event — this is the seam every later
+>    feature plugs into, so keep it clean.
+> 2. A debug trigger is mandatory: hand pinch does not work in Lens Studio
+>    preview, and I must be able to test voice on the desktop. Add a keyboard
+>    key (hold to record, release to stop) that goes through exactly the same
+>    code path as the pinch. Not a separate branch — the same path.
+> 3. A thin StatusBar presenter in Scripts/Widgets/ that shows mic state
+>    (idle / listening) and the live interim transcript. Per hard rule 3 it
+>    subscribes to the EventBus and contains no logic. It enables existing
+>    StatusBar children — it creates nothing.
+> 4. Handle microphone permission and report what the user has to approve on
+>    device the first time.
+> 5. Run it in preview and report: does the debug key produce a final transcript,
+>    how accurate, and what is the latency from release to final transcript.
+>    Log with a clear [ASR] prefix.
+>
+> Per rule 4, append to CLAD-PROMPT-LOG.md, then commit:
+> feat: hold-to-talk ASR with interim transcript in StatusBar
+
+**Summary:** Added the scene-hygiene guard (with a pre-commit hook) and
+documented `companionChanged`. Built `VoiceInput` (Engine) and
+`StatusBarPresenter` (Widgets) wired through the EventBus. The **hold-SPACE
+debug trigger works and drives the full capture cycle**; the presenter reacts
+correctly. **Speech accuracy and true release→final latency are NOT measured** —
+see the honest caveat under item 5.
+
+**(a) `companionChanged` documented as a router event** in `SCENE-MAP.md`, with
+the payload→widget table (`zone`→`ZoneWidget`, `timer`→`GaugeTimer`,
+`checklist`→`Checklist`, `compass`→`CompassRose`) and an explicit statement that
+a handler switches among existing objects and never creates one. If a fifth
+companion is ever needed, its object goes into the tree at design time first.
+
+**(b) Scene-hygiene guard.** `Tools/check-scene-roots.py` +
+`Tools/scene-roots-allowlist.json` (the known-good set lives in the file, not in
+anyone's head). It parses `Assets/Scene.scene` directly, so it needs no running
+Lens Studio and works in a hook or CI. `Tools/pre-commit` is symlinked into
+`.git/hooks/pre-commit` and runs automatically whenever `Assets/Scene.scene` is
+staged; `git commit --no-verify` bypasses it.
+
+The allowlist also records `known_offenders` (the RSG examples prefab,
+`AiPreviewAgent Handler`, `APIKeyWarning`, `GUIDE_ReadAndDisable`) so the next
+person recognises them on sight.
+
+**The guard grew a second check, because a second kind of drift showed up
+mid-task.** While wiring the ASR objects I found `HUDRoot`, `HUDRoot/GuidePanel`,
+`HUDRoot/GuidePanel/BackingPlate` and `WorldRoot` **enabled** in the editor,
+having been disabled at the previous commit. Most likely someone ticked the
+checkboxes in the Objects panel to look at the guide panel — completely
+harmless in itself, and completely silent, but it breaks hard rule 1 the moment
+it is saved. So the checker now also walks the full `Children:` tree and fails
+on any enabled object inside `must_be_disabled_trees` (`HUDRoot`, `WorldRoot`).
+Verified with a negative test against a patched copy of the scene: flipping
+`BackingPlate` to enabled is detected as `HUDRoot/GuidePanel/BackingPlate`.
+
+Parsing note: object names containing YAML-special characters are emitted
+quoted (`Name: "RSG Smoke Test [TEMP]"`), which the first version of the checker
+mis-flagged. It unquotes now — caught because the tool flagged a name I knew was
+legitimate.
+
+**1. `VoiceInput.ts` (Engine).** Hold-to-talk with **one code path for both
+triggers**: pinch and debug key both call `beginCapture()` / `endCapture()`.
+There is deliberately no separate debug branch, so desktop testing exercises
+shipping code. Output seam:
+
+- `onUserRequest(text)` — direct callback for a single owner
+- EventBus `userRequest` — payload `{ text, latencyMs }`, for everything else
+- `voiceInterim` — live partials; `voiceStateChanged` — `idle`/`listening`/`finalizing`
+
+Nothing downstream should touch `AsrModule` directly. Three new event constants
+were added to `EventBus.ts` for this.
+
+Two edge cases handled: (i) ASR can fire its final **after** `stopTranscribing()`
+resolves, or not at all if the user released before speaking — so there is a
+fallback to the last interim, and delivery funnels through one `deliverFinal()`
+guarded by a `finalDelivered` flag so a request can neither be dropped nor
+double-emitted; (ii) if silence terminates a phrase while the user is *still
+holding*, the text is kept but not delivered — release is what commits a
+request.
+
+**2. The debug trigger is a real keyboard key — I was initially wrong about
+this.** My first pass concluded the Lens runtime had no keyboard API (grep for
+`KeyDownEvent`/`KeyUpEvent`/`KeyboardInput` found only the AR `TextInputSystem`)
+and I implemented a mouse press-and-hold instead. The events are actually named
+**`KeyPressEvent` / `KeyReleaseEvent`** with a `Keys` enum — found via the
+`InjectPreviewGesture` tool docs, which list the keys the lens runtime receives.
+Replaced the mouse fallback with the real thing: **hold SPACE** (selectable
+Space/V/T in the Inspector). Key auto-repeat is harmless because `beginCapture()`
+only acts when state is `idle`.
+
+**3. `StatusBarPresenter.ts` (Widgets).** Subscribes to the three voice events;
+contains no logic. `MicIcon` visible only while listening, `HintText` swaps
+idle/listening/finalizing copy, `ExampleTicker` carries the live interim
+transcript. All five object references are `@input`s; it creates nothing.
+
+**4. Microphone permission.** Snap OS prompts once on the first capture on
+device; the user approves microphone access for the Lens. Logged at boot so it
+is visible in the Logger. **Worth knowing now: using ASR disables camera frame
+access** unless Extended Permissions are granted — that matters because the
+terrain survey will want camera/depth. Flagged for the survey task.
+
+**5. Preview results — what was and was not verified.**
+
+Verified, from the `[ASR]` log and a runtime screenshot:
+
+```
+[ASR] ready. triggers: pinch(left+right) + hold-SPACE | silence=1200ms mode=HighAccuracy
+[ASR] press [debug:SPACE] — starting capture
+[ASR] startTranscribing() called
+[ASR] release [debug:SPACE] — interim so far: ""
+[ASR] stopTranscribing() resolved
+[ASR] no speech captured (fallback-on-stop, 0ms) — nothing emitted
+```
+
+- The key path fires, the ASR session starts and stops cleanly, and the state
+  machine returns to idle.
+- **Zero ASR errors across every run** — no `Unauthenticated`, no `NoInternet`,
+  no `InternalError`. The session is genuinely opening in Preview.
+- The EventBus seam works across the Engine/Widget boundary: a screenshot taken
+  mid-hold shows `MicIcon` enabled and `HintText` reading
+  `"LISTENING… RELEASE WHEN DONE"`, then idle again on release.
+
+**NOT verified — and I could not verify it:** accuracy, and the real
+release→final latency. I can inject keystrokes into the preview but **cannot
+inject microphone audio**, so no speech ever reached ASR. The `0ms` above is the
+empty-input fallback path, *not* a transcription latency, and must not be quoted
+as one. Getting real numbers needs a human: focus the Preview panel, hold SPACE,
+speak, release, and read the `[ASR] FINAL (...) latency_release_to_final=...ms
+text="..."` line.
+
+**Notable decisions / open issues:**
+
+- **New root object `Systems`** (enabled) holds `VoiceInput` and
+  `StatusBarPresenter`. Something already-running has to enable `HUDRoot`, which
+  ships disabled. Added to the allowlist deliberately, with a reason — which is
+  the workflow the allowlist is meant to enforce.
+- **`StatusBarPresenter` currently enables `HUDRoot` on start.** That is
+  arguably mode-router responsibility, not presenter responsibility, but no mode
+  router exists yet and without it nothing is visible to test. Noted in
+  `SCENE-MAP.md` as ownership that moves when the router lands.
+- **`QueryRuntimeSceneTool` resets the running Lens** (it re-initialises its
+  inspection package), which silently wiped an in-progress capture and made the
+  presenter look broken. Screenshots do not have this effect. Use
+  `CaptureRuntimeViewTool` to observe transient runtime state, not the GraphQL
+  query. It also re-injects `AiPreviewAgent Handler` every time — removed again,
+  and the guard is exactly what catches it.
+- ASR is documented as working in Preview (per the specs-asr skill) and the
+  clean session open/close supports that. The older RSG skill claims ASR is
+  device-only; on this evidence the specs-asr skill is the accurate one, but
+  since no audio was ever transcribed neither claim is fully settled here.

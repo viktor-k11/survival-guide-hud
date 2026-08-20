@@ -1,0 +1,30 @@
+#!/bin/sh
+#
+# Scene hygiene pre-commit hook.
+#
+# Install (from the repo root):
+#     ln -sf "../../Specs Base Template/Tools/pre-commit" .git/hooks/pre-commit
+#
+# Blocks a commit when Assets/Scene.scene has a root-level SceneObject that is
+# not in Tools/scene-roots-allowlist.json. Bypass with `git commit --no-verify`
+# if you genuinely need to.
+
+set -e
+
+REPO_ROOT=$(git rev-parse --show-toplevel)
+CHECKER="$REPO_ROOT/Specs Base Template/Tools/check-scene-roots.py"
+
+[ -f "$CHECKER" ] || exit 0
+
+# Only bother when the scene is actually part of this commit.
+if git diff --cached --name-only | grep -q "Assets/Scene.scene"; then
+    echo "[pre-commit] checking scene roots..."
+    if ! python3 "$CHECKER"; then
+        echo ""
+        echo "[pre-commit] BLOCKED. Fix the scene or update the allowlist."
+        echo "[pre-commit] Override with: git commit --no-verify"
+        exit 1
+    fi
+fi
+
+exit 0

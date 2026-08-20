@@ -128,7 +128,15 @@ placed against real terrain, not the head.
 | Path | What it is |
 |---|---|
 | `VisualConfig` | `VisualConfig.ts` — theme `@input`s only: `primaryPhosphor`, `accentAmber`, `warningColor`, `glowIntensity`, `panelOpacity`, `font`. No logic, no subscriptions. Enabled so it is editable in the Inspector. |
+| `Systems` | **Enabled** container for runtime controllers. Has to be enabled: `HUDRoot` and `WorldRoot` ship disabled, so something already running must turn them on. |
+| `Systems/VoiceInput` | `Engine/VoiceInput.ts` — hold-to-talk capture. Pinch, or hold the debug key. Emits `voiceStateChanged` / `voiceInterim` / `userRequest`. |
+| `Systems/StatusBarPresenter` | `Widgets/StatusBarPresenter.ts` — drives `StatusBar`. Subscribes to the bus, enables existing children, writes text. No logic. |
 | `RSG Smoke Test [TEMP]` | Throwaway RSG diagnostic. Delete this object and `RsgSmokeTest.ts` once RSG work is done — see `TOKENS.md`. |
+
+> `StatusBarPresenter` currently enables `HUDRoot` on start, because something
+> has to and no mode router exists yet. **That ownership moves to the mode
+> router** when it lands — a presenter should not be deciding that the HUD is
+> visible.
 
 ## Event vocabulary
 
@@ -139,5 +147,44 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `propPlaced` · `lessonCompleted` · `surveyProgress` · `surveyComplete` ·
 `distanceWarning`
 
-`companionChanged` has no object bound to it yet — the companion/persona
-surface is not built.
+### `companionChanged` is a ROUTER event, not a surface
+
+It has **no object of its own and must never get one.** It carries a companion
+*type* — `zone` | `timer` | `checklist` | `compass` — and its only job is to
+enable the corresponding widget that already exists in this tree:
+
+| Payload type | Enables |
+|---|---|
+| `zone` | `WorldRoot/ZoneWidget` (then one of `ZoneCircle` / `ZoneRect`) |
+| `timer` | `HUDRoot/GaugeTimer` |
+| `checklist` | `HUDRoot/Checklist` |
+| `compass` | `WorldRoot/CompassRose` |
+
+A handler for this event switches among those four; it does **not** create
+anything. If a future step seems to need a fifth companion, the object for it
+must be added to this tree at design time first (hard rule 1) and documented
+here — never instantiated in response to the event.
+
+## Scene hygiene guard
+
+Package installs and MCP tools have twice injected a root-level object that
+would have shipped in the Lens (`RemoteServiceGatewayExamples`,
+`AiPreviewAgent Handler`). Nothing errors when this happens — the object just
+rides along into the commit.
+
+```
+python3 Tools/check-scene-roots.py          # check; exit 1 if a stray root exists
+python3 Tools/check-scene-roots.py --list   # just list the roots
+```
+
+The known-good set lives in `Tools/scene-roots-allowlist.json`, which also
+records the offenders already seen. A `pre-commit` hook (`Tools/pre-commit`)
+runs the check automatically whenever `Assets/Scene.scene` is staged. Install
+it in a fresh clone with:
+
+```
+ln -sf "../../Specs Base Template/Tools/pre-commit" .git/hooks/pre-commit
+```
+
+**Adding a name to the allowlist is a deliberate act** — do it with a note
+saying what the object is and who owns it, never just to silence the check.
