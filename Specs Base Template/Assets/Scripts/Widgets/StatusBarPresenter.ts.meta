@@ -28,6 +28,9 @@
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
+    busyHoldSec: false
+    compilingLineSec: false
+    compilingLines: false
     finalizingHint: false
     hintText: false
     iconMaterial: false
@@ -41,7 +44,10 @@
     tickerIntervalSec: false
     tickerPrompts: false
     tickerText: false
+    typewriterCharsPerSec: false
     warningStrip: false
+    workingFrames: false
+    workingTickHz: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -70,6 +76,19 @@
         - '"help me pitch a tent"'
         - '"how do I treat a burn"'
       tickerIntervalSec: 2.500000
+      typewriterCharsPerSec: !<float> 26.000000
+      compilingLines: !<string[]>
+        - SURVEYING KNOWLEDGE
+        - DRAFTING STEPS
+        - CHECKING SAFETY
+        - PLACING WIDGETS
+      compilingLineSec: 2.200000
+      workingTickHz: !<float> 3.000000
+      workingFrames: !<string[]>
+        - ·
+        - ··
+        - ···
+      busyHoldSec: 2.500000
   ScriptTypes:
     -
       {}
@@ -93,3 +112,12 @@
     - '// @input string finalizingHint = "THINKING…"'
     - '// @input string[] tickerPrompts = {"\"help me build a campfire\"","\"help me purify water\"","\"how do I signal for rescue\"","\"help me pitch a tent\"","\"how do I treat a burn\""} {"hint":"Rotating idle examples. These teach the user the system takes any request, not two.", "widget":"text_area"}'
     - '// @input float tickerIntervalSec = 2.5 {"hint":"Seconds each example stays up.", "widget":"slider", "min":1, "max":8, "step":0.5}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Compiling — the 12-second wait</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Gemini takes 10.9-15 s and that will not change. These settings are what stops the wait reading as a crash.</span>"}'
+    - '// @input float typewriterCharsPerSec = 26 {"hint":"Typewriter speed for echoing the request back, characters per second.", "widget":"slider", "min":6, "max":80, "step":1}'
+    - '// @input string[] compilingLines = {"SURVEYING KNOWLEDGE","DRAFTING STEPS","CHECKING SAFETY","PLACING WIDGETS"} {"hint":"Status lines cycled while the guide is thinking. Short, active, and honest about what is happening.", "widget":"text_area"}'
+    - '// @input float compilingLineSec = 2.2 {"hint":"Seconds each status line holds.", "widget":"slider", "min":0.8, "max":6, "step":0.1}'
+    - '// @input float workingTickHz = 3 {"hint":"How often the working ticker advances, Hz. This is the guarantee that SOMETHING moves every second.", "widget":"slider", "min":1, "max":8, "step":0.5}'
+    - '// @input string[] workingFrames = {"·","··","···"} {"hint":"Frames of the working ticker, cycled at workingTickHz."}'
+    - "// @input float busyHoldSec = 2.5 {\"hint\":\"How long the 'still working' notice stays up when a second request is ignored.\", \"widget\":\"slider\", \"min\":0.5, \"max\":6, \"step\":0.5}"

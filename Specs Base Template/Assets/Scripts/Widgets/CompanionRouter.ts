@@ -13,6 +13,7 @@
  * lives.
  */
 import { eventBus, Events } from "../Engine/EventBus";
+import { LessonAnchorPayload } from "../Engine/RequestTypes";
 import { VisualConfig } from "../Engine/VisualConfig";
 import { isolateMaterial, setColor, setEnabled } from "./WidgetUtils";
 
@@ -29,11 +30,38 @@ export class CompanionRouter extends BaseScriptComponent {
 
   @input private enableLogging: boolean = true;
 
+  /**
+   * Where the zone stands when the lesson came from a site marker, in
+   * centimetres, world. null = the design-time spot in front of the user.
+   *
+   * Kept here rather than in the engine because it is a placement decision
+   * about an existing widget, which is exactly this router's job. The engine
+   * only ever says WHICH companion; the anchor says WHERE.
+   */
+  private anchor: { x: number; y: number; z: number } | null = null;
+  /** The authored position, restored whenever a lesson arrives with no anchor. */
+  private zoneHomePosition: vec3 | null = null;
+
   onAwake(): void {
     this.createEvent("OnStartEvent").bind(() => this.onStart());
   }
 
   private onStart(): void {
+    if (this.zoneWidget) this.zoneHomePosition = this.zoneWidget.getTransform().getLocalPosition();
+
+    eventBus.subscribe(Events.lessonAnchorChanged, (p: LessonAnchorPayload) => {
+      this.anchor = p && p.position ? p.position : null;
+      if (this.enableLogging) {
+        print(
+          "[COMPANION] anchor " +
+            (this.anchor
+              ? "(" + this.anchor.x.toFixed(0) + ", " + this.anchor.y.toFixed(0) + ", " + this.anchor.z.toFixed(0) + ")cm"
+              : "default")
+        );
+      }
+      this.placeZone();
+    });
+
     eventBus.subscribe(
       Events.companionChanged,
       (p: { type: string | null; companion: any }) => this.route(p)
@@ -64,6 +92,7 @@ export class CompanionRouter extends BaseScriptComponent {
     if (type === "zone") {
       const c = p.companion;
       const rect = c && c.shape === "rect";
+      this.placeZone();
       setEnabled(this.zoneWidget, true);
       setEnabled(this.zoneCircle, !rect);
       setEnabled(this.zoneRect, rect);
@@ -77,6 +106,25 @@ export class CompanionRouter extends BaseScriptComponent {
     }
     // hologram_stage has no companion widget of its own — HologramRoot is
     // driven by the separate hologramStage event.
+  }
+
+  /**
+   * Puts the zone on the chosen site, or back at its authored spot.
+   *
+   * The zone is a child of WorldRoot, so the anchor — which arrives in world
+   * centimetres straight from the survey — goes in through setWorldPosition
+   * and needs no conversion. A tent lesson started from the tent marker then
+   * draws its footprint on the ground the survey actually rated, instead of
+   * two metres in front of whoever is standing there.
+   */
+  private placeZone(): void {
+    if (!this.zoneWidget) return;
+    const t = this.zoneWidget.getTransform();
+    if (this.anchor) {
+      t.setWorldPosition(new vec3(this.anchor.x, this.anchor.y, this.anchor.z));
+    } else if (this.zoneHomePosition) {
+      t.setLocalPosition(this.zoneHomePosition);
+    }
   }
 
   /** size_m is metres; scene units are centimetres. */

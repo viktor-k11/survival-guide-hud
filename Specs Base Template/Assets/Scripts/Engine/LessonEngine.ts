@@ -475,6 +475,11 @@ export class LessonEngine extends BaseScriptComponent {
 
   public stop(): void {
     this.log("stop() — resetting from " + this.mode);
+    // Announced BEFORE the reset, and unconditionally: setMode() is a no-op
+    // when the mode is unchanged, so a "stop" spoken while a request is
+    // compiling (engine still IDLE) would otherwise be silent and the Gemini
+    // call would run to completion and load a lesson the user cancelled.
+    this.emit(Events.stopRequested, { from: this.mode });
     this.plan = null;
     this.stepIndex = 0;
     this.safetyPending = false;
@@ -488,6 +493,11 @@ export class LessonEngine extends BaseScriptComponent {
   public sos(): void {
     this.stopTimer();
     this.setMode("SOS");
+  }
+
+  /** Read-only mode, for diagnostics. Nothing may set the mode from outside. */
+  public currentMode(): EngineMode {
+    return this.mode;
   }
 
   /** Called by the (future) prop system when a training prop is placed. */

@@ -1757,3 +1757,188 @@ the fixtures now cover the forward arc only.
 - The `AiPreviewAgent Handler` root object was re-injected again by the runtime
   query/capture tools. Removed, guard re-run clean. Still expected after any
   session that inspects the preview.
+
+---
+
+## Prompt — the full vertical: voice and markers both drive real lessons
+
+> Connect the full vertical. This is the task where the product starts existing.
+>
+> 1. Voice path: lessonRequested{text} → LessonPlanner (Gemini) → validator →
+>    LessonEngine.start(). The engine still never calls anything itself — a
+>    coordinator in Scripts/Engine/ owns this chain and feeds the engine.
+>
+> 2. The COMPILING state is a feature, not a spinner. Measured latency is
+>    10.9–14.8 s and we cannot shorten it, so it has to read as deliberate work.
+>    In StatusBar: typewriter the request back to the user ("HELP ME PURIFY
+>    WATER"), then cycle short status lines on a timer (for example SURVEYING
+>    KNOWLEDGE / DRAFTING STEPS / PLACING WIDGETS). Something must visibly change
+>    at least once per second — a frozen frame for eleven seconds reads as a
+>    crash. Add an AssemblingLesson VFX placeholder object driven by the same
+>    state; my partner replaces the visual Saturday, the hook must exist now.
+>
+> 3. Site markers: pinch-tap (or the debug key) on a marker sends a fixed phrase
+>    through the SAME Gemini path — "help me pitch a tent" / "help me build a
+>    campfire". They must not load fixtures. The plan stays generative; the
+>    marker is a shortcut for speaking, nothing more. Pass the site position
+>    through so zone companions anchor at that spot on the ground rather than in
+>    front of the user.
+>
+> 4. Failure handling, all of it visible and none of it fatal:
+>    - request already in progress → ignore the new one, tell the user, do not
+>      queue a second Gemini call
+>    - "stop" during COMPILING → abort and return to IDLE; a late response must
+>      not resurrect the cancelled lesson
+>    - network or API error → one automatic retry, then a friendly error state in
+>      the StatusBar with the reason, and back to IDLE
+>    - hard validation failure → error state, engine alive, raw response logged
+>      and saved as a fixture
+>    Prove each of these four, not just the happy path. Fake the failures if you
+>    have to (bad token, malformed injected response) and report what I would see.
+>
+> 5. Then run the real thing 5 times each: "help me build a campfire", "help me
+>    pitch a tent", "help me purify water". Report a table: success rate,
+>    latency, step count, degradations. I need to know the failure rate before I
+>    put this in front of judges, and one run tells me nothing — you already
+>    showed the same request can return 6 steps once and 4 the next time.
+>
+> Save preview screenshots of the COMPILING state and of a completed lesson to
+> Docs/screens/ per the CLAUDE.md rule.
+>
+> Per rule 4, append to CLAD-PROMPT-LOG.md, then commit:
+> feat: full vertical — survey icons and voice both drive lessons
+
+**Done:** `Engine/LessonCoordinator.ts` owns the whole asynchronous chain;
+`Engine/RequestTypes.ts` carries its payloads; `Widgets/AssemblingLessonPresenter.ts`
+drives a new design-time `HUDRoot/AssemblingLesson`; `StatusBarPresenter` gained
+a COMPILING face; `CompanionRouter` anchors the zone to a chosen site;
+`Engine/CoordinatorProbe.ts` is the scripted failure-path proof.
+
+### 1. The vertical
+
+`LessonCoordinator` subscribes to `lessonRequested` and `siteSelected`, calls
+the planner, validates, and hands a finished plan to `engine.loadLesson()` — the
+same public entry point a fixture uses. The engine still calls nothing and is
+still testable without a network. Marker taps map `kind` to a phrase
+(`tentPhrase` / `firePhrase`, both `@input`) and go through the identical Gemini
+path; **no fixture is involved**, verified in the log: `marker TENT_A (tent) ->
+"help me pitch a tent"` then a real 10.9 s call returning a 4-step plan.
+
+The site position rides along as `lessonAnchorChanged`, emitted **before**
+`loadLesson` because `loadLesson` walks straight into step 0 and announces its
+companion. The tent lesson's first step is a `zone rect 2.5 m`, and it landed at
+`anchor (138, -173, -338)cm` — the surveyed site — instead of in front of the
+user's face.
+
+### 2. Cancellation is a generation counter, not a flag
+
+Promises cannot be cancelled, so `requestId` increments on every new request and
+every abort, and each resolution drops itself if the id has moved on. This is the
+only thing standing between the demo and a lesson materialising eight seconds
+after the user said "stop". Proven in the log:
+`dropping response for stale request #1 (current #2)` — and no `lessonStarted`
+followed it.
+
+"Stop" during COMPILING needed a new event. `LessonEngine.stop()` calls
+`setMode("IDLE")`, but the engine is ALREADY idle while a request compiles, and
+`setMode` is a no-op when the mode does not change — so `modeChanged` never
+fires and the coordinator would never hear the cancellation. `stop()` now emits
+`stopRequested` unconditionally, before it resets.
+
+### 3. The four failure paths, and what the user sees
+
+All four run from `CoordinatorProbe` (`scenario: failures`). What the HUD was
+told, verbatim from the run:
+
+| Failure | What happens | StatusBar shows |
+|---|---|---|
+| Duplicate request | second request ignored, **one** Gemini call, state stays COMPILING | `ONE AT A TIME — STILL WORKING` for 2.5 s, then back to the status lines |
+| "stop" mid-compile | aborted at once; the real response arrived 9 s later and was dropped | `REQUEST CANCELLED`, then IDLE |
+| Bad API token | attempt 1 failed at 5.5 s, retried once, attempt 2 failed at 11.9 s | `CONNECTION LOST — RETRYING`, then `NO ANSWER FROM THE GUIDE — CHECK CONNECTION`, then IDLE after 5 s |
+| Malformed response | rejected, engine untouched (`mode=IDLE`), envelope dumped | `THE GUIDE'S ANSWER WAS UNREADABLE`, then IDLE |
+
+The network failure is a **real** one: `overrideGoogleToken()` installs a junk
+token and the gateway returns `Proxy error: token is not valid`. The malformed
+response is injected from the stored broken fixture through
+`coordinator.handleOutcome()` — the same method the live path calls, so the test
+cannot drift from production. Failed responses are printed as
+`FIXTURE|<slug>-<tag>|<envelope>` lines, liftable straight into
+`Assets/AI/fixtures/`.
+
+Retries are deliberately **transport-only**. A response the model actually
+produced will come back the same way at temperature 0; spending another 12 s to
+be told the same thing is worse than saying so.
+
+### 4. The 15-run matrix
+
+Five runs each, real Gemini, current schema:
+
+| request | runs | usable | latency min/med/max | steps | degradations |
+|---|---|---|---|---|---|
+| help me build a campfire | 5 | **5/5** | 8.2 / 8.4 / 10.4 s | 6 every run | 0 of 5 |
+| help me pitch a tent | 5 | **5/5** | 8.6 / 8.8 / 9.0 s | 4 every run | 0 of 5 |
+| help me purify water | 5 | **5/5** | 10.5 / 10.7 / 11.4 s | 5 every run | 5 of 5 |
+
+`TALLY usable=15 unusable=0 degradedRuns=5`. **Failure rate 0/15.** Overall
+latency 8.2-11.4 s, median 8.9 — faster than the 10.9-14.8 s quoted in the
+prompt, which was measured before `MAX_STEPS` came down from 8 to 6.
+
+**A correction worth having before judges:** the request that "returned 6 steps
+once and 4 the next time" is not model flakiness. At temperature 0 every one of
+the five runs per request came back **byte-identical** — same step count, same
+companions, same wording. The step-count variance in the old notes came from
+lowering `MAX_STEPS` between measurements. The one degradation is likewise
+deterministic: water drops `items` from the step-1 checklist every single time.
+Treat determinism as a property of *this model version at temperature 0*, not a
+guarantee — but on the day, the same words will produce the same lesson.
+
+### 5. THE BIG ONE: the whole HUD was outside the display
+
+Caught only because this task required a *preview panel* screenshot rather than
+an orthographic runtime capture. `CaptureRuntimeViewTool` frames whatever you
+point it at and **does not respect the device frustum** — every HUD verification
+in this project so far has been done with it, so nobody noticed that a wearer
+could not see any of it.
+
+Measured: content only reaches the SPECS display within roughly **±16-18°** of
+view centre — about ±19 cm at the authored 60 cm distance. The HUD spanned
+x ∈ [-45, +50] and y ∈ [-34, +38] cm. **StatusBar, GuidePanel, Checklist and
+GaugeTimer were all outside it.** The idle hint, the ticker, the lesson panel:
+none of it was ever on screen. The first COMPILING screenshot showed a bare
+street and a giant donut.
+
+Fixed by moving `HUDRoot` from `z = -60` to `z = -120`, which halves every
+angular offset while preserving the composition exactly, plus four small nudges
+(`StatusBar` y 30→24, `GuidePanel` x 36→18, `Checklist` x -36→-20, `GaugeTimer`
+y -26→-20). Budget recorded in SCENE-MAP: at z = -120, keep every drawn **edge**
+within ±34 cm of the HUD origin. Both committed screenshots are preview-panel
+captures taken after the fix — `Docs/screens/compiling-preview.jpg` shows
+`HELP ME PURIFY WATER` / `CHECKING SAFETY ···` with the badge, and
+`lesson-loaded-preview.jpg` shows the finished `Purify Water` panel at `01/05`.
+
+This is a layout change to work the partner owns. It is the minimum that makes
+the feature visible; the composition is theirs to redo on Saturday, now against
+a known budget.
+
+### 6. Notable decisions / open issues
+
+- **The COMPILING guarantee is the 3 Hz working ticker, not the status lines.**
+  Lines cycle every 2.2 s, which alone would leave two-second frozen frames. The
+  ticker advances at `workingTickHz` between them, and the typewriter fills the
+  first ~0.8 s. Nothing on screen holds still for more than a third of a second.
+- **The retry does not re-type the request.** Re-running the typewriter mid-wait
+  reads as the Lens starting over rather than continuing.
+- `AssemblingLesson` is a torus and a disc. The contract the partner must keep is
+  the object path and `COMPILING -> enabled`; if the replacement is a
+  VFXComponent, the spin/pulse code in the presenter is dead weight and can go.
+- **The marker scenario emits `siteSelected` directly** rather than driving a
+  pinch — MCP has no key injection and the tent markers sit below the preview
+  crop. Everything downstream of that event is the real path. The presenter's
+  own emission of `siteSelected` (pinch and debug key) was proven last session.
+- `worldVisibleInLesson` is now **on** — the zone anchors to real ground, so
+  WorldRoot has to be up during a lesson.
+- `Docs/screens/` is new; I could not find the CLAUDE.md rule the prompt refers
+  to, so I created the directory and saved there as asked. Screenshots are JPEG:
+  the PNGs were 2 MB each and this repo does not need that.
+- The `AiPreviewAgent Handler` root was injected twice more and removed twice.
+  Expected after any session that captures or queries the preview.

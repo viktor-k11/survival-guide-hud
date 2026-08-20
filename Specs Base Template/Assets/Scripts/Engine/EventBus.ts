@@ -66,6 +66,24 @@ export const Events = {
   safetyRejected: "safetyRejected",
   /** An unmatched transcript in IDLE. Payload: { text }. Someone else calls Gemini. */
   lessonRequested: "lessonRequested",
+  /**
+   * The user asked to stop. Payload: { from }.
+   * Emitted by the engine even when the mode does not change, because "stop"
+   * during COMPILING must cancel the in-flight Gemini call and the engine is
+   * still sitting in IDLE at that point — modeChanged would never fire.
+   */
+  stopRequested: "stopRequested",
+  /**
+   * The lesson-request chain changed state. Payload: RequestStatePayload.
+   * IDLE / COMPILING / BUSY / ERROR. This is what the StatusBar and the
+   * assembling-lesson VFX render.
+   */
+  requestStateChanged: "requestStateChanged",
+  /**
+   * Where this lesson's ground content belongs. Payload: LessonAnchorPayload.
+   * Emitted immediately before the plan reaches the engine.
+   */
+  lessonAnchorChanged: "lessonAnchorChanged",
   /** An unmatched transcript during a LESSON. Payload: { title, stepInstruction, question }. */
   qaRequested: "qaRequested",
   /**

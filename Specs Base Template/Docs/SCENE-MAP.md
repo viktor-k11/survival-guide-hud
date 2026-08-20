@@ -107,6 +107,9 @@ Local origin sits 60 cm in front of the user.
 | `HUDRoot/GaugeTimer/Track` | Static full ring — the 100% reference | `timerTick` |
 | `HUDRoot/GaugeTimer/Fill` | Progress ring, scaled/swept against `Track` | `timerTick` |
 | `HUDRoot/GaugeTimer/Label` | `"MM:SS"` remaining | `timerTick` |
+| `HUDRoot/AssemblingLesson` | **Placeholder VFX** shown only while a lesson is compiling. Swap the contents, keep the path | `requestStateChanged` |
+| `HUDRoot/AssemblingLesson/Ring` | Spinning amber torus | `requestStateChanged` |
+| `HUDRoot/AssemblingLesson/Core` | Counter-pulsing green disc | `requestStateChanged` |
 
 ## WorldRoot — world-anchored
 
@@ -163,6 +166,8 @@ placed against real terrain, not the head.
 | `Systems/ChecklistPresenter` | `Widgets/ChecklistPresenter.ts` — six rows, sequential highlight, shows only as many as the step needs. |
 | `Systems/GaugeTimerPresenter` | `Widgets/GaugeTimerPresenter.ts` — countdown ring + MM:SS on `timerTick`. |
 | `Systems/CompanionRouter` | `Widgets/CompanionRouter.ts` — the single `companionChanged` handler; switches Zone/Timer/Checklist/Compass and hides all four on `type: null`. |
+| `Systems/LessonCoordinator` | `Engine/LessonCoordinator.ts` — **the only thing that calls Gemini for a lesson.** Owns `lessonRequested`/`siteSelected` -> planner -> validator -> `engine.loadLesson()`, plus every failure path. |
+| `Systems/AssemblingLessonPresenter` | `Widgets/AssemblingLessonPresenter.ts` — enables and animates `HUDRoot/AssemblingLesson` while `requestStateChanged.state === "COMPILING"`. |
 | `Systems/SurveyController` | `Engine/SurveyController.ts` — the boot survey. Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys S (restart) / G (finish now). |
 | `Systems/SurveyGridPresenter` | `Widgets/SurveyGridPresenter.ts` — drives `WorldRoot/SurveyGrid` from `surveyProgress`: follows the sampled bounds, grows, spins, rides a brightness wave. |
 | `Systems/SiteMarkerPresenter` | `Widgets/SiteMarkerPresenter.ts` — places the three markers on `surveyComplete`, labels them `FLATNESS NN%`, pulses the best one, and emits `siteSelected` on pinch or debug key T / Y / F. |
@@ -202,7 +207,21 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `modeChanged` · `lessonStarted` · `stepChanged` · `companionChanged` ·
 `hologramStage` · `timerTick` · `checklistUpdated` · `safetyPending` ·
 `propPlaced` · `lessonCompleted` · `surveyStarted` · `surveyProgress` ·
-`surveyComplete` · `siteSelected` · `distanceWarning`
+`surveyComplete` · `siteSelected` · `distanceWarning` · `stopRequested` ·
+`requestStateChanged` · `lessonAnchorChanged`
+
+Request-chain payload shapes live in `Engine/RequestTypes.ts`, alongside
+`SurveyTypes.ts`, for the same reason: presenters render this state and must not
+import the coordinator to do it.
+
+### `stopRequested` exists because `setMode` is a no-op on no change
+
+"Stop" spoken while a request is compiling has to cancel the Gemini call — but
+the engine is sitting in `IDLE` at that moment, so `setMode("IDLE")` changes
+nothing and `modeChanged` never fires. `LessonEngine.stop()` therefore emits
+`stopRequested` unconditionally, before it resets. Without it the cancelled
+request runs to completion and loads a lesson the user dismissed ten seconds
+earlier — which on stage looks like the Lens acting on its own.
 
 Survey payload shapes live in `Engine/SurveyTypes.ts` — a types-only module both
 sides import, so the presenters never import `SurveyController` (which would
@@ -266,6 +285,58 @@ operation, not a state transition.
 Nothing implements either event yet. The engine is complete without them: it
 advances on user input regardless of whether audio ever plays, which is exactly
 the property that keeps a slow or failed TTS from freezing the lesson.
+
+## THE DISPLAY FRUSTUM IS MUCH SMALLER THAN THE HUD WAS AUTHORED FOR
+
+Found 2026-08-20 by looking at a Preview **panel** screenshot instead of an
+orthographic runtime capture. Everything in this project had been verified with
+`CaptureRuntimeViewTool`, which frames whatever you point it at and **does not
+respect the device frustum**. It will happily show you a HUD that a wearer
+cannot see.
+
+Measured against the SPECS 27 preview: content is only on the display within
+roughly **±16-18° of the view centre**. At the original `HUDRoot` distance of
+60 cm that is a window of about ±19 cm. The authored HUD spanned x ∈ [-45, +50]
+and y ∈ [-34, +38] cm — so **the StatusBar, the GuidePanel, the Checklist and
+the GaugeTimer were all outside the display**, all of the time. The idle hint,
+the example ticker and the whole lesson panel were invisible on device.
+
+The fix keeps the composition and moves it into the frustum:
+
+| Object | Was | Now | Why |
+|---|---|---|---|
+| `HUDRoot` | `z = -60` | `z = -120` | Halves every angular offset at a stroke. The layout is unchanged; it is simply further away, so it subtends half as much. |
+| `HUDRoot/StatusBar` | `y = 30` | `y = 24` | `LessonTitle` sits at `+8` above it and was clipping the top edge. |
+| `HUDRoot/GuidePanel` | `x = 36` | `x = 18` | Its plate is 28 cm wide, so the right half was off-display. Still the right-side panel. |
+| `HUDRoot/Checklist` | `x = -36` | `x = -20` | Mirrors the panel. |
+| `HUDRoot/GaugeTimer` | `y = -26` | `y = -20` | Ring radius 8 cm; the bottom was clipped. |
+
+**The budget, for anyone moving these again:** at `z = -120`, keep every drawn
+pixel within **±34 cm of the HUD origin**, edges included — not centres. A
+28 cm-wide plate centred at x = 20 has its edge at 34 and is already at the
+limit.
+
+> **Verify HUD layout with `PreviewPanelTool screenshot`, never with
+> `CaptureRuntimeViewTool`.** The ortho capture is for reading text and checking
+> content; only the preview panel tells you whether the wearer can see it.
+
+## The COMPILING state
+
+A lesson takes **10.8-14.8 s** and nothing in the project can shorten it. The
+wait is therefore designed rather than hidden:
+
+1. `StatusBarPresenter` **types the request back** into `HintText`, character by
+   character with a blinking caret, so the first answer the user gets is "yes, I
+   heard you".
+2. `ExampleTicker` then **cycles status lines** (`SURVEYING KNOWLEDGE`,
+   `DRAFTING STEPS`, `CHECKING SAFETY`, `PLACING WIDGETS`) every
+   `compilingLineSec`, each with a **working ticker** advancing at
+   `workingTickHz` (3 Hz default).
+3. `HUDRoot/AssemblingLesson` spins and pulses for the duration.
+
+The rule the settings exist to guarantee: **something visibly changes at least
+once a second.** Eleven seconds of an unchanging frame reads as a crash whatever
+the frame says. The 3 Hz ticker is the floor even when a status line is holding.
 
 ## The Preview panel cannot feed a survey
 

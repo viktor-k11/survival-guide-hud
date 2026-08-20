@@ -25,6 +25,13 @@ export interface LessonRequestOutcome {
   latencyMs: number;
   /** Never null — a transport failure still produces a structured result. */
   validation: LessonValidationResult;
+  /**
+   * True when the request never reached a usable response: no network, gateway
+   * refusal, bad token, malformed envelope. The coordinator retries THESE and
+   * only these — retrying a response the model actually produced just burns
+   * another 12 s to be told the same thing.
+   */
+  transportError: boolean;
 }
 
 function nowMs(): number {
@@ -69,6 +76,9 @@ export function requestLesson(userText: string, systemPrompt: string): Promise<L
         rawPayload: rawPayload,
         latencyMs: latencyMs,
         validation: validation,
+        // An empty payload means the envelope came back without usable text —
+        // a transport-shaped failure even though the promise resolved.
+        transportError: rawPayload.length === 0,
       };
     })
     .catch((error) => {
@@ -87,6 +97,7 @@ export function requestLesson(userText: string, systemPrompt: string): Promise<L
           degradations: [],
           summary: "Could not reach the guide.",
         },
+        transportError: true,
       };
     });
 }

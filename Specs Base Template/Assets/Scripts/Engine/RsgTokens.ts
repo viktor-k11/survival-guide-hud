@@ -23,6 +23,16 @@ export function installRsgTokens(): void {
   credentials.googleToken = RSG_TOKENS.google;
 }
 
+/**
+ * FAULT INJECTION. Replaces the Google token so the next Gemini call fails at
+ * the gateway, which is the only honest way to exercise the coordinator's
+ * network-failure path without unplugging the machine. Call installRsgTokens()
+ * to put the real one back.
+ */
+export function overrideGoogleToken(token: string): void {
+  credentials.googleToken = token;
+}
+
 /** Masked form for logs — never print a whole token. */
 export function tokenFingerprint(token: string): string {
   if (!token || token.indexOf("[INSERT") === 0) return "<unset>";

@@ -1,9 +1,24 @@
 /**
- * StatusBar presenter — two faces, switched by modeChanged.
+ * StatusBar presenter — three faces now, switched by modeChanged and
+ * requestStateChanged.
  *
- * IDLE   : pulsing mic, standing hint, and a rotating example ticker.
- * LESSON : lesson title, mic state, and a warning strip that appears on
- *          safetyPending and clears on confirm.
+ * IDLE      : pulsing mic, standing hint, and a rotating example ticker.
+ * COMPILING : the request typed back to the user, then cycling status lines.
+ * LESSON    : lesson title, mic state, and a warning strip that appears on
+ *             safetyPending and clears on confirm.
+ *
+ * ## COMPILING is a feature, not a spinner
+ *
+ * A lesson takes 10.9-15 s to come back and that cannot be shortened, so the
+ * wait has to read as deliberate work rather than a hang. Two rules follow:
+ *
+ * 1. **The request is typed back**, character by character, in the user's own
+ *    words. It answers "did it hear me?" before it answers anything else, and
+ *    it fills the first second and a half with motion.
+ * 2. **Something changes at least three times a second.** The status line
+ *    cycles every couple of seconds, but between cycles the working ticker
+ *    advances at workingTickHz. Eleven seconds of an unchanging frame reads as
+ *    a crash no matter what the frame says.
  *
  * Hard rule 3: subscribes to the EventBus, contains no logic, decides nothing.
  * Hard rule 1: enables and populates objects that already exist; creates none.
@@ -13,6 +28,7 @@
  * slow, legible cycle rather than a fast scroll.
  */
 import { eventBus, Events } from "../Engine/EventBus";
+import { RequestStatePayload } from "../Engine/RequestTypes";
 import { VisualConfig } from "../Engine/VisualConfig";
 import {
   formatClock,
@@ -75,6 +91,44 @@ export class StatusBarPresenter extends BaseScriptComponent {
   @hint("Seconds each example stays up.")
   private tickerIntervalSec: number = 2.5;
 
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">Compiling — the 12-second wait</span>')
+  @ui.label('<span style="color: #94A3B8; font-size: 11px;">Gemini takes 10.9-15 s and that will not change. These settings are what stops the wait reading as a crash.</span>')
+
+  @input
+  @widget(new SliderWidget(6, 80, 1))
+  @hint("Typewriter speed for echoing the request back, characters per second.")
+  private typewriterCharsPerSec: number = 26;
+
+  @input
+  @hint("Status lines cycled while the guide is thinking. Short, active, and honest about what is happening.")
+  @widget(new TextAreaWidget())
+  private compilingLines: string[] = [
+    "SURVEYING KNOWLEDGE",
+    "DRAFTING STEPS",
+    "CHECKING SAFETY",
+    "PLACING WIDGETS",
+  ];
+
+  @input
+  @widget(new SliderWidget(0.8, 6.0, 0.1))
+  @hint("Seconds each status line holds.")
+  private compilingLineSec: number = 2.2;
+
+  @input
+  @widget(new SliderWidget(1.0, 8.0, 0.5))
+  @hint("How often the working ticker advances, Hz. This is the guarantee that SOMETHING moves every second.")
+  private workingTickHz: number = 3.0;
+
+  @input
+  @hint("Frames of the working ticker, cycled at workingTickHz.")
+  private workingFrames: string[] = ["·", "··", "···"];
+
+  @input
+  @widget(new SliderWidget(0.5, 6.0, 0.5))
+  @hint("How long the 'still working' notice stays up when a second request is ignored.")
+  private busyHoldSec: number = 2.5;
+
   private micVisual: RenderMeshVisual;
   private micMat: Material;
   private stripVisual: RenderMeshVisual;
@@ -82,6 +136,12 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
   private mode: string = "IDLE";
   private voiceState: string = "idle";
+  private requestState: string = "IDLE";
+  private requestText: string = "";
+  private requestError: string = "";
+  private compileElapsed: number = 0;
+  private busyMessage: string = "";
+  private busyRemaining: number = 0;
   private tickerIndex: number = 0;
   private tickerElapsed: number = 0;
   private safetyWarning: string = "";
@@ -142,6 +202,7 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.safetyWarning = p && p.pending && p.warning ? p.warning : "";
       this.applyWarning();
     });
+    eventBus.subscribe(Events.requestStateChanged, (p: RequestStatePayload) => this.onRequestState(p));
     eventBus.subscribe(Events.distanceWarning, (p: { message: string }) => {
       this.rangeWarning = p && p.message ? p.message : "";
       this.applyWarning();
@@ -170,7 +231,8 @@ export class StatusBarPresenter extends BaseScriptComponent {
       // returning to IDLE, and that is precisely when the warning matters.
       this.tickerElapsed = 0;
       setText(this.lessonTitle, "");
-      this.showTicker();
+      // Do not stamp an example prompt over a request that is mid-compile.
+      if (this.requestState === "IDLE") this.showTicker();
     }
 
     this.applyVoice();
@@ -183,6 +245,9 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
     setEnabled(this.micIcon, true);
 
+    // While compiling, the hint line IS the typewriter. Leave it alone.
+    if (this.requestState === "COMPILING") return;
+
     if (this.voiceState === "listening") setText(this.hintText, this.listeningHint);
     else if (this.voiceState === "finalizing") setText(this.hintText, this.finalizingHint);
     else setText(this.hintText, this.mode === "IDLE" ? this.idleHint : "");
@@ -192,9 +257,14 @@ export class StatusBarPresenter extends BaseScriptComponent {
     }
   }
 
-  /** Safety gates outrank range warnings: one blocks the step, the other advises. */
+  /**
+   * Priority: a safety gate blocks the step, a request error means the thing
+   * the user just asked for did not happen, and a range warning is advice.
+   * In that order.
+   */
   private activeWarning(): string {
     if (this.safetyWarning.length > 0) return this.safetyWarning;
+    if (this.requestError.length > 0) return this.requestError;
     return this.rangeWarning;
   }
 
@@ -216,6 +286,83 @@ export class StatusBarPresenter extends BaseScriptComponent {
     }
   }
 
+  // -------------------------------------------------------------- compiling
+
+  private onRequestState(p: RequestStatePayload): void {
+    if (!p) return;
+    const previous = this.requestState;
+
+    if (p.state === "BUSY") {
+      // Not a state change — the coordinator is still compiling. Only the
+      // second line changes, and only for a moment.
+      this.busyMessage = p.message;
+      this.busyRemaining = this.busyHoldSec;
+      return;
+    }
+
+    this.requestState = p.state;
+    this.requestText = (p.requestText || "").toUpperCase();
+
+    if (p.state === "COMPILING") {
+      // Restart the typewriter on entry, but NOT on the retry: re-typing the
+      // request halfway through the wait would read as the Lens starting over.
+      if (previous !== "COMPILING") this.compileElapsed = 0;
+      this.requestError = "";
+      this.busyRemaining = 0;
+    } else if (p.state === "ERROR") {
+      this.requestError = p.message;
+      this.busyRemaining = 0;
+    } else {
+      // IDLE. A message here is a cancellation notice, not an error.
+      this.requestError = "";
+      this.busyRemaining = 0;
+      this.compileElapsed = 0;
+      if (p.message.length > 0) {
+        this.busyMessage = p.message;
+        this.busyRemaining = this.busyHoldSec;
+      }
+    }
+
+    this.applyFace();
+    this.applyWarning();
+  }
+
+  /** The typed-so-far request, with a blinking caret while it is still typing. */
+  private typedRequest(): string {
+    const full = this.requestText;
+    const shown = Math.min(full.length, Math.floor(this.compileElapsed * this.typewriterCharsPerSec));
+    const body = full.substring(0, shown);
+    if (shown >= full.length) return body;
+    // Blink at 2.5 Hz so the caret itself is one of the things that moves.
+    return body + (Math.floor(this.compileElapsed * 5) % 2 === 0 ? "_" : " ");
+  }
+
+  private workingFrame(): string {
+    if (!this.workingFrames || this.workingFrames.length === 0) return "";
+    const i = Math.floor(this.compileElapsed * this.workingTickHz) % this.workingFrames.length;
+    return this.workingFrames[i];
+  }
+
+  private compilingLine(): string {
+    if (this.busyRemaining > 0 && this.busyMessage.length > 0) return this.busyMessage;
+    if (!this.compilingLines || this.compilingLines.length === 0) return "WORKING";
+    // Lines start only after the request has finished typing, so the two
+    // motions never compete for the same beat.
+    const typingSec = this.requestText.length / Math.max(1, this.typewriterCharsPerSec);
+    const since = Math.max(0, this.compileElapsed - typingSec);
+    const i = Math.floor(since / Math.max(0.1, this.compilingLineSec)) % this.compilingLines.length;
+    return this.compilingLines[i] + " " + this.workingFrame();
+  }
+
+  private renderCompiling(): void {
+    setText(this.hintText, this.typedRequest());
+    setText(this.tickerText, this.compilingLine());
+    if (this.theme) {
+      setTextColor(this.hintText, this.theme.accentAmber, this.theme.glowIntensity);
+      setTextColor(this.tickerText, this.theme.primaryPhosphor, this.theme.glowIntensity);
+    }
+  }
+
   // ----------------------------------------------------------------- ticker
 
   private showTicker(): void {
@@ -229,6 +376,23 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
   private onUpdate(): void {
     const dt = getDeltaTime();
+
+    if (this.busyRemaining > 0) this.busyRemaining -= dt;
+
+    // COMPILING repaints every frame. That is the point: the typewriter, the
+    // caret and the working ticker are all functions of this clock.
+    if (this.requestState === "COMPILING") {
+      this.compileElapsed += dt;
+      this.renderCompiling();
+      return;
+    }
+
+    // A cancellation / notice line survives a moment after returning to IDLE.
+    if (this.busyRemaining > 0 && this.busyMessage.length > 0 && this.mode === "IDLE") {
+      setText(this.tickerText, this.busyMessage);
+      if (this.theme) setTextColor(this.tickerText, this.theme.accentAmber, this.theme.glowIntensity);
+      return;
+    }
 
     // Ticker: only in IDLE, and never while it is showing a live transcript
     // or a warning.

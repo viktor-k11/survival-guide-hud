@@ -1,0 +1,61 @@
+- !<AssetImportMetadata/0fafe7d3-5e46-4fc2-8ec4-f44f11b3209a>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 052a3c37-2be2-4786-9cb6-143f595b044b
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 052a3c37-2be2-4786-9cb6-143f595b044b
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> aeb10f5f-8c70-4b2b-b837-82ea9c952205
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/aeb10f5f-8c70-4b2b-b837-82ea9c952205>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 1b9fbf6b-439b-45a4-8da8-12dd61199e5e
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    brokenFixture: false
+    coordinator: false
+    engine: false
+    probeRequest: false
+    runOnStart: false
+    scenario: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - coordinator: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      engine: !<MappingBased.AssignableType_2> 00000000-0000-0000-0000-000000000000
+      brokenFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      runOnStart: false
+      probeRequest: help me purify water
+      scenario: !<float> 0.000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 coordinator
+    - // @input AssignableType_2 engine
+    - '// @input Asset.JsonAsset brokenFixture {"hint":"Assets/AI/fixtures/broken-lesson-9-steps-7-item-checklist.json — the malformed response injected in scenario 3."}'
+    - '// @input bool runOnStart {"hint":"Turn OFF once the failure paths are proven. Every run costs real Gemini calls."}'
+    - '// @input string probeRequest = "help me purify water" {"hint":"Request used for the duplicate/cancel scenarios."}'
+    - "// @input float scenario {\"hint\":\"Which scripted run to perform. 'failures' costs two Gemini calls; 'happy' and 'marker' cost one each.\", \"widget\":\"combobox\", \"values\":[{\"label\":\"failures — the four failure paths\", \"value\":0}, {\"label\":\"happy — one real request, end to end\", \"value\":1}, {\"label\":\"marker — a site tap drives a real request\", \"value\":2}]}"

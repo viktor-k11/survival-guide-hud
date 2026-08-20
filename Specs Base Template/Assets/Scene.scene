@@ -863,6 +863,21 @@
     []
   Components:
     - !<own> de4bdb45-7033-4f1c-9830-1fbb2bc8579a
+- !<SceneObject/14af6541-2706-45ef-8442-7279ae4300f7>
+  PrefabRemaps:
+    []
+  Name: LessonCoordinator
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 3ffc320f-3193-42e1-be4b-d53128a1e267
 - !<RenderMeshVisual/15cdde04-8131-4bf1-918e-8c9f68930c43>
   PrefabRemaps:
     []
@@ -1197,6 +1212,26 @@
     ring-3_end_end_end: !<reference> b93dfa60-41bd-4999-ac0f-4b2f1df2bdaf
     thumb-3_end_end_end_end: !<reference> 08e3cc22-f2e1-49fb-9ddc-145fe6547ce3
     pinky-3_end_end: !<reference> d08269e3-acd4-4156-b5b9-477ca259611d
+- !<RenderMeshVisual/29886b6e-040a-4093-aa0f-44102257915b>
+  PrefabRemaps:
+    []
+  Name: Render Mesh Visual
+  Enabled: true
+  RenderOrder: 0
+  StretchMode: Stretch
+  VerticalAlignment: Center
+  HorizontalAlignment: Center
+  MeshShadowMode: None
+  ShadowColor: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+  ShadowDensity: 1.000000
+  Materials:
+    - !<reference> 8b856c7d-3e39-4baf-933d-cd41aea24a77
+  Mesh: !<reference> 7dae7bc2-70b2-4c11-86c5-ce440c6bed48
+  Skin: !<reference> 00000000-0000-0000-0000-000000000000
+  BlendShapesEnabled: true
+  BlendNormals: false
+  BlendShapes:
+    {}
 - !<SceneObject/29e813c4-b07a-4335-b0b4-a52d621583ad>
   PrefabRemaps:
     []
@@ -1696,7 +1731,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 36.000000, y: -4.000000, z: 0.000000}
+    Position: {x: 18.000000, y: -4.000000, z: 0.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -1819,6 +1854,36 @@
     - !<own> 988c408a-99dc-47e6-b7c4-efbf4bf8dc3c
   Components:
     []
+- !<ScriptComponent/3ffc320f-3193-42e1-be4b-d53128a1e267>
+  PrefabRemaps:
+    []
+  Name: LessonCoordinator
+  Enabled: true
+  ScriptAsset: !<reference> e5898e10-17e1-4f50-9b93-cebd4696ef54
+  ScriptInputsDefault:
+    tentPhrase: true
+    firePhrase: true
+    requestTimeoutSec: true
+    retryDelaySec: true
+    errorHoldSec: true
+    dumpFailedResponses: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      engine: !<MappingBased.AssignableType_1> 6f1ce7e0-42ae-4354-939d-20de3ca2d381
+      promptsAsset: !<reference.JsonAsset> 805a6898-a639-474f-974b-2e1e1ff9fbdf
+      tentPhrase: help me pitch a tent
+      firePhrase: help me build a campfire
+      requestTimeoutSec: !<float> 25.000000
+      retryDelaySec: 0.600000
+      errorHoldSec: !<float> 5.000000
+      dumpFailedResponses: true
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/4051028a-c608-4a97-b3d5-1a3912a7c007>
   PrefabRemaps:
     []
@@ -2102,7 +2167,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: -26.000000, z: 0.000000}
+    Position: {x: 0.000000, y: -20.000000, z: 0.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -2231,6 +2296,8 @@
     - !<own> fe3cb1f2-3489-4b70-9be7-e2722a740893
     - !<own> 71195d82-a360-449f-8944-0212698c6d4f
     - !<own> 660b5888-03e7-4e92-9fcf-03f265655c09
+    - !<own> 14af6541-2706-45ef-8442-7279ae4300f7
+    - !<own> e1a83603-e87c-47a1-85ec-d9b6ef726220
   Components:
     []
 - !<Text/5608a90a-af26-49e0-8d63-6fdf1eecb7d3>
@@ -3007,6 +3074,29 @@
     - !<own> 4c195c04-c397-454e-bd08-3485f37d84fe
   Components:
     []
+- !<ScriptComponent/6dc1ea70-350f-40d9-ad51-ec670e9eb4ad>
+  PrefabRemaps:
+    []
+  Name: CoordinatorProbe
+  Enabled: true
+  ScriptAsset: !<reference> 052a3c37-2be2-4786-9cb6-143f595b044b
+  ScriptInputsDefault:
+    runOnStart: true
+    probeRequest: true
+    scenario: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      coordinator: !<MappingBased.AssignableType_1> 3ffc320f-3193-42e1-be4b-d53128a1e267
+      engine: !<MappingBased.AssignableType_2> 6f1ce7e0-42ae-4354-939d-20de3ca2d381
+      brokenFixture: !<reference.JsonAsset> 404fc54d-e175-4494-9b18-27cd8b0ec81d
+      runOnStart: false
+      probeRequest: help me purify water
+      scenario: !<float> 0.000000
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/6e7c062a-6aa3-4e19-828d-b4c61ff36782>
   PrefabRemaps:
     []
@@ -3242,7 +3332,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 0.000000, z: -60.000000}
+    Position: {x: 0.000000, y: 0.000000, z: -120.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -3251,6 +3341,7 @@
     - !<own> 3b077941-fcf7-4a64-9a43-7f86d30f8e98
     - !<own> b6b6739a-e41f-4c3b-8960-b25bc418e832
     - !<own> 49a1b55b-f6ad-43e2-b30e-0fa466d5b780
+    - !<own> dd42ee4d-a774-4363-bc88-9d7945edc88d
   Components:
     - !<own> 63044c0b-1b51-4826-893d-625d96689f39
 - !<SceneObject/7917299a-74b2-4d32-bb04-303b1fcff748>
@@ -3471,7 +3562,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 30.000000, z: 0.000000}
+    Position: {x: 0.000000, y: 24.000000, z: 0.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -3536,6 +3627,7 @@
     - !<own> fdeee8e9-3f3b-450c-bb7d-398b938b231b
     - !<own> 2b664962-d6ab-4b42-952b-6f039ea835b3
     - !<own> d0ceb458-4828-4327-aff5-5c2a9e3560bf
+    - !<own> 6dc1ea70-350f-40d9-ad51-ec670e9eb4ad
 - !<SceneObject/7e18ef85-197a-4c4d-9822-ab7ccbb40274>
   PrefabRemaps:
     []
@@ -3950,7 +4042,6 @@
   Enabled: true
   ScriptAsset: !<reference> 7f17bd3d-b43d-45d0-bfc1-45563e9069db
   ScriptInputsDefault:
-    worldVisibleInLesson: true
     enableLogging: true
   ScriptTypesDefault:
     {}
@@ -3958,7 +4049,7 @@
     "":
       hudRoot: !<reference.SceneObject> 7900773a-f725-480b-b9c2-013b043f3fe1
       worldRoot: !<reference.SceneObject> ea7dbcaf-e057-4f57-a13d-23656d867f62
-      worldVisibleInLesson: false
+      worldVisibleInLesson: true
       enableLogging: true
   ScriptTypes:
     "":
@@ -4135,6 +4226,34 @@
     []
   Components:
     - !<own> 44e35be1-1c1b-45f3-9579-29babf4c51cd
+- !<ScriptComponent/8e9a1377-0597-4895-9557-bc148f631fd4>
+  PrefabRemaps:
+    []
+  Name: AssemblingLessonPresenter
+  Enabled: true
+  ScriptAsset: !<reference> 7251fda0-3c21-4f2c-bf71-d599a1588a3a
+  ScriptInputsDefault:
+    spinDegPerSec: true
+    pulseHz: true
+    pulseFloor: true
+    pulseCeiling: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
+      root: !<reference.SceneObject> dd42ee4d-a774-4363-bc88-9d7945edc88d
+      ring: !<reference.SceneObject> b1477256-70c0-4188-8874-17f17980553f
+      core: !<reference.SceneObject> aa684e0e-609b-47ed-bfb2-7a01d6a88ed6
+      spinDegPerSec: !<float> 220.000000
+      pulseHz: !<float> 2.000000
+      pulseFloor: 0.350000
+      pulseCeiling: 1.300000
+      enableLogging: false
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/8ef18146-99bf-429d-82ef-61610b69bc0c>
   PrefabRemaps:
     []
@@ -4587,6 +4706,21 @@
     []
   Components:
     - !<own> 11c4bb09-7c38-4023-9802-74f9f28709a9
+- !<SceneObject/aa684e0e-609b-47ed-bfb2-7a01d6a88ed6>
+  PrefabRemaps:
+    []
+  Name: Core
+  Enabled: false
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 90.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.500000, y: 1.500000, z: 1.500000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> f6177121-5073-4a94-a31e-9715c402550c
 - !<SceneObject/abfa4c71-3560-46f0-9471-90e212f21185>
   PrefabRemaps:
     []
@@ -4680,6 +4814,21 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<SceneObject/b1477256-70c0-4188-8874-17f17980553f>
+  PrefabRemaps:
+    []
+  Name: Ring
+  Enabled: false
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 90.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 4.000000, y: 4.000000, z: 4.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 29886b6e-040a-4093-aa0f-44102257915b
 - !<SceneObject/b22d97e6-4c06-4135-af29-d26adb2b9d86>
   PrefabRemaps:
     []
@@ -4783,7 +4932,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: -36.000000, y: 0.000000, z: 0.000000}
+    Position: {x: -20.000000, y: 0.000000, z: 0.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -5535,6 +5684,12 @@
     finalizingHint: true
     tickerPrompts: true
     tickerIntervalSec: true
+    typewriterCharsPerSec: true
+    compilingLines: true
+    compilingLineSec: true
+    workingTickHz: true
+    workingFrames: true
+    busyHoldSec: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -5558,6 +5713,19 @@
         - '"help me pitch a tent"'
         - '"how do I treat a burn"'
       tickerIntervalSec: 2.500000
+      typewriterCharsPerSec: !<float> 26.000000
+      compilingLines: !<string[]>
+        - SURVEYING KNOWLEDGE
+        - DRAFTING STEPS
+        - CHECKING SAFETY
+        - PLACING WIDGETS
+      compilingLineSec: 2.200000
+      workingTickHz: !<float> 3.000000
+      workingFrames: !<string[]>
+        - ·
+        - ··
+        - ···
+      busyHoldSec: 2.500000
   ScriptTypes:
     "":
       {}
@@ -5712,6 +5880,22 @@
     HasSegmentScaleCompensation: false
   Children:
     - !<own> d4a9c5e3-fe96-4824-9b20-59f5ad39eabd
+  Components:
+    []
+- !<SceneObject/dd42ee4d-a774-4363-bc88-9d7945edc88d>
+  PrefabRemaps:
+    []
+  Name: AssemblingLesson
+  Enabled: false
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 3.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> b1477256-70c0-4188-8874-17f17980553f
+    - !<own> aa684e0e-609b-47ed-bfb2-7a01d6a88ed6
   Components:
     []
 - !<Text/de4bdb45-7033-4f1c-9830-1fbb2bc8579a>
@@ -5942,6 +6126,21 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<SceneObject/e1a83603-e87c-47a1-85ec-d9b6ef726220>
+  PrefabRemaps:
+    []
+  Name: AssemblingLessonPresenter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 8e9a1377-0597-4895-9557-bc148f631fd4
 - !<ScriptComponent/e2350169-ffe1-4528-8048-de7a7801370d>
   PrefabRemaps:
     []
@@ -6427,6 +6626,26 @@
     - !<own> 9468c53c-f76f-49b7-8a49-b5ec6af1c5a3
   Components:
     []
+- !<RenderMeshVisual/f6177121-5073-4a94-a31e-9715c402550c>
+  PrefabRemaps:
+    []
+  Name: Render Mesh Visual
+  Enabled: true
+  RenderOrder: 0
+  StretchMode: Stretch
+  VerticalAlignment: Center
+  HorizontalAlignment: Center
+  MeshShadowMode: None
+  ShadowColor: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+  ShadowDensity: 1.000000
+  Materials:
+    - !<reference> f0e07aff-bdf4-468e-8570-8a4b93b81ecd
+  Mesh: !<reference> 6884be15-c342-4070-8cd6-2d077195654c
+  Skin: !<reference> 00000000-0000-0000-0000-000000000000
+  BlendShapesEnabled: true
+  BlendNormals: false
+  BlendShapes:
+    {}
 - !<SceneObject/f648ff05-c401-4297-9de7-7aaffc1d778e>
   PrefabRemaps:
     []
