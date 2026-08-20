@@ -1,0 +1,72 @@
+- !<AssetImportMetadata/b644dded-7670-4c11-a086-85453f873a9b>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 56904431-93d8-48d2-9985-12d5030276b6
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 56904431-93d8-48d2-9985-12d5030276b6
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 1d39ea3d-e3eb-4a1b-b591-8b976362f48c
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/1d39ea3d-e3eb-4a1b-b591-8b976362f48c>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 847574f8-5c3c-4457-8c3d-23174e801d9a
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    cameraObject: false
+    dedupeCellCm: false
+    fanHalfAngleDeg: false
+    fanSteps: false
+    logIntervalSec: false
+    rayRangeCm: false
+    raysPerFrame: false
+    runOnStart: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      runOnStart: false
+      logIntervalSec: !<float> 1.000000
+      dedupeCellCm: !<float> 8.000000
+      raysPerFrame: !<float> 8.000000
+      rayRangeCm: !<float> 900.000000
+      fanHalfAngleDeg: !<float> 20.000000
+      fanSteps: !<float> 5.000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Camera tracking probe [TEMP]</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Answers: does the tracked device camera translate under keyboard drive in Interactive Preview Mode? Delete once the answer is in SCENE-MAP.</span>"}'
+    - "// @input SceneObject cameraObject {\"hint\":\"The TRACKED camera — 'Camera Object', the one carrying DeviceTracking. NOT the editor viewport camera; the difference is the entire point of this probe.\"}"
+    - '// @input bool runOnStart {"hint":"Off by default. Every run casts real World Query rays."}'
+    - '// @input float logIntervalSec = 1 {"widget":"slider", "min":0.25, "max":5, "step":0.25}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Ray sampling — mirrors SurveyController</span>"}'
+    - '// @input float dedupeCellCm = 8 {"hint":"MUST match SurveyController.dedupeCellCm (8) or the distinct-point count stops being comparable to the 3/6 baseline."}'
+    - // @input float raysPerFrame = 8
+    - // @input float rayRangeCm = 900
+    - "// @input float fanHalfAngleDeg = 20 {\"hint\":\"Half-width of the ray fan in degrees, yaw and pitch. The survey's own lattice spans +-28 yaw and +6..-42 pitch; this is a coarser stand-in whose only job is to keep finding surface while walking.\"}"
+    - // @input float fanSteps = 5

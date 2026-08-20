@@ -969,6 +969,35 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<ScriptComponent/193fe250-e586-412f-b8d9-01bf42624be3>
+  PrefabRemaps:
+    []
+  Name: CameraTrackProbe
+  Enabled: true
+  ScriptAsset: !<reference> 56904431-93d8-48d2-9985-12d5030276b6
+  ScriptInputsDefault:
+    runOnStart: true
+    logIntervalSec: true
+    dedupeCellCm: true
+    raysPerFrame: true
+    rayRangeCm: true
+    fanHalfAngleDeg: true
+    fanSteps: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
+      runOnStart: false
+      logIntervalSec: !<float> 1.000000
+      dedupeCellCm: !<float> 8.000000
+      raysPerFrame: !<float> 8.000000
+      rayRangeCm: !<float> 900.000000
+      fanHalfAngleDeg: !<float> 20.000000
+      fanSteps: !<float> 5.000000
+  ScriptTypes:
+    "":
+      {}
 - !<ScriptComponent/198357e0-b273-4bbc-9023-96c88c5cf3a8>
   PrefabRemaps:
     []
@@ -4119,6 +4148,7 @@
     - !<own> d0ceb458-4828-4327-aff5-5c2a9e3560bf
     - !<own> 6dc1ea70-350f-40d9-ad51-ec670e9eb4ad
     - !<own> 9255f1a5-4750-408e-ae08-4a2bfc96d64b
+    - !<own> 193fe250-e586-412f-b8d9-01bf42624be3
 - !<SceneObject/7e18ef85-197a-4c4d-9822-ab7ccbb40274>
   PrefabRemaps:
     []

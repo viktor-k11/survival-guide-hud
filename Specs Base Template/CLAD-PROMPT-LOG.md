@@ -2580,3 +2580,169 @@ the presenter owns its brightness via panelOpacity).
 **Failed / skipped: nothing.** The three SPECS textured GLBs were superseded
 mid-batch by the untextured correction, not failed — the authored replacements
 overwrote them. Every stage produced its deliverable.
+
+---
+
+## Prompt — measurement: does the tracked device camera translate in Interactive Preview Mode?
+
+> Measurement, not a feature. Settle one question: does the TRACKED device camera
+> actually translate when a human drives Interactive Preview Mode with the keyboard?
+>
+> Docs/SCENE-MAP.md currently states the simulated device camera is pinned at the
+> origin. That conclusion was drawn from the MCP MovePreviewCamera tool, which moves
+> the editor viewport. It may be wrong about the platform [...]
+>
+> 1. Add a throwaway probe [...] that logs, once per second: the tracked Camera
+>    Object's getWorldPosition(), the cumulative distance travelled since start, and
+>    the number of DISTINCT World Query hit points accumulated so far.
+> 2. Check whether /specs-preview-interaction can drive the preview keyboard for you.
+>    If it cannot — say so plainly and stop there [...]
+> 3. What we need out of the run: (a) does world position change at all when W is
+>    held; (b) how far before tracking degrades or resets; (c) re-run the terrain
+>    survey WHILE WALKING vs the 3 / 6 static points; (d) whether floor-level content
+>    within ~5.7 m becomes visible when the wearer looks down.
+>
+> Report the numbers. Then correct Docs/SCENE-MAP.md — both sections — stating
+> explicitly what was measured (the MCP tool) versus what was concluded (the
+> platform) [...] If useFixtureCloud turns out to be unnecessary for the demo, say
+> so; do NOT delete it either way [...]
+
+**The old claim was wrong. The camera translates, the agent can drive the keys,
+and the survey yield is 10x better while walking — but `useFixtureCloud` still
+earns its place, for a different reason than the one recorded.**
+
+### 2. Could the toolkit drive the keyboard? Yes — but not via the named skill
+
+`/specs-preview-interaction` is a **synthetic hand** (Pinch / Hover / Poke /
+Drag / Gesture / Release / Rotate). It has no key action, and stopping there
+would have handed the keyboard back to the user. **I nearly did** — the skill
+doc is unambiguous, and inferring "so the toolkit cannot send keys" from it is
+the same shape of reasoning that produced the bug I was sent to fix. Checking
+the actual tool schemas instead found:
+
+**`InjectPreviewGesture` sends keys.** `{type:"key", key:"W", state:"start"}`
+presses and holds; `state:"end"` releases; a `gestures` array scripts sequences.
+No human needed — every number below was collected by the agent.
+
+**Overlap worth knowing:** injected keys reach the Lens's `KeyPressEvent` too,
+so `W`/`D` also fire LessonEngine's fixture-load debug keys and `S` fires
+SurveyController's restart. The walking runs below therefore also loaded a
+fixture lesson — harmless here (it moves no camera and casts no rays), but it
+is why `S` could not be used to restart the survey mid-walk, and the boot survey
+was used instead.
+
+### a. Does world position change when W is held? YES
+
+`Engine/CameraTrackProbe.ts` reads the tracked `Camera Object`'s own
+`getWorldPosition()` from inside the Lens — not the editor viewport, not an
+inference.
+
+```
+[TRACK] t=1s  pos=(47.4, -0.0, 130.1)cm travelled=0.0cm    distinctPoints=0
+[TRACK] t=14s pos=(47.4, -0.0, 130.1)cm travelled=0.0cm    distinctPoints=2   <- 14 s static, exact
+[TRACK] t=15s pos=(38.5, -0.0, 131.1)cm travelled=9.0cm    distinctPoints=2   <- W pressed
+[TRACK] t=19s pos=(-101.7, -0.0, 146.6)cm travelled=150.0cm distinctPoints=7
+[TRACK] t=23s pos=(-549.0, 0.0, 196.0)cm travelled=600.0cm distinctPoints=21  <- W released
+```
+
+Held exactly still for 14 s to the decimal, then smooth continuous translation
+to **6.00 m**. `Y` never drifts (0.0 throughout) — this is clean horizontal
+translation, not tracking noise.
+
+### b. How far before it degrades or resets? 19.4 m, and it never did
+
+A second hold ran the total to **1944.0 cm — 19.44 m — with no degradation, no
+reset, no jump.** Position stayed monotonic; the run ended because I released
+the key, not because tracking failed. The hit rate *improved* with movement:
+~8 % of rays connect standing still, ~39 % walking.
+
+**The real limit is the scene, not the tracking.** One survey accidentally ran
+22-33 m out and collapsed to a 1 % hit rate — we had walked off the edge of
+`Sunlit Outdoor`'s geometry. Useful range is roughly the first ~20 m.
+
+**`MovePreviewCamera` drives the SAME camera** — the decisive measurement:
+
+```
+MovePreviewCamera getPose -> position (-3724.72, 0, 546.55) rotation (358.5, 6.3, 0)
+[TRACK]           same instant -> pos=(-3724.7, 0.0, 546.5)cm pitch=358.5 yaw=6.3
+MovePreviewCamera reset   -> (0,0,0)
+[TRACK]           next sample -> pos=(0.0, 0.0, 0.0)cm pitch=0.0 yaw=0.0
+```
+
+Identical in both directions. The old note's "moves the editor viewport, not the
+tracked Camera Object" is false. The likeliest origin of the error: `reset`
+leaves the camera at (0,0,0), and `orbit`/`rotate` change rotation only — so a
+session of resets and orbits reads exactly like "pinned at the origin" if you
+never try a translation command.
+
+### c. Survey while walking: 3 -> 30 points
+
+12 s boot survey, `Sunlit Outdoor`, camera reset to origin before each run:
+
+| Run | Walked | points | usable | cells | sites |
+|---|---|---|---|---|---|
+| Static (the recorded baseline) | 0 m | **3** | 0 | 0 | 0 |
+| Straight walk | 12.7 m | **30** | 30 | 24 | 0 |
+| Strafe attempt | 8.9 m | **17** | 17 | 11 | 0 |
+
+**~10x the points, scaling with distance** (~2.4 points/metre), not with path
+shape — the "zig-zag" run showed `Z` never changing, so `A`/`D` produced no
+lateral offset and it was really just a shorter straight line.
+
+**`sites` is 0 in every live run.** The selector wants ~60 covered ground cells
+for a tent footprint; the best walk delivered 24. A walk sweeps a *line*; a
+footprint needs *area*.
+
+### d. Floor content within 5.7 m: visible if you look down
+
+The ±16-18 ° limit is **angular relative to gaze**, so the 5.7 m figure only
+applies to a wearer staring at the horizon. `S1_Footprint` at 3 m, eye 1.73 m up
+(a 30 ° depression):
+
+| Gaze pitch | Result | Screenshot |
+|---|---|---|
+| 0 ° | not visible | `frustum-3m-level-gaze.jpg` |
+| −15 ° | just clipping in at the bottom | `frustum-3m-look-down-15.jpg` |
+| −30 ° | comfortably in frame | `frustum-3m-look-down-30.jpg` |
+
+Predicted entry at 30 ° − 17 ° = **−13 °**; observed exactly that. So the P13
+guidance changes: 5-6 m is the right default only for content the user must see
+*without being told to look*. Closer placement is fine for a task they are
+already looking down at (pitching a tent), **provided the HUD says so** — a
+wearer at level gaze sees nothing and cannot know content is there. Silence is
+the failure mode.
+
+(Caveat recorded in SCENE-MAP: `Headlock` ships disabled, so the HUD does not
+follow pitch in those captures. Do not read them as evidence about HUD layout.)
+
+### Does `useFixtureCloud` become unnecessary? No — and it stays
+
+Asked directly, answered directly: **still needed.** No live 12 s run produced a
+single site, so markers, labels and the distance guard cannot be verified on a
+desk without a stored cloud. It is also the deterministic path for LEAF.
+
+**What changed is the reason it exists** — and the reason is what a future
+reader would otherwise get wrong. Not "the preview camera cannot move" (it
+moves 19 m); but "12 seconds of walking does not cover enough ground area to
+satisfy the site selector". If a live desk demo is ever wanted, the lever is a
+longer survey plus a deliberate area-covering walk, not a platform workaround.
+
+### Corrections landed in `Docs/SCENE-MAP.md`
+
+Both sections rewritten with the measured/concluded split stated on the page,
+old text struck through rather than deleted so the error stays legible:
+
+1. "The Preview panel cannot feed a survey" -> "The Preview panel CAN feed a
+   survey — corrected 2026-08-21", with a claim-vs-measurement table, the
+   walking yield table, the `InjectPreviewGesture` keyboard recipe, the debug-key
+   overlap warning, and the corrected reason `useFixtureCloud` is kept.
+2. The frustum note gains "The frustum limit is ANGULAR, not a minimum
+   distance", with the three pitch measurements and the revised P13 guidance.
+
+### Housekeeping
+
+`Engine/CameraTrackProbe.ts` is a **[TEMP] throwaway** on the
+`RSG Smoke Test [TEMP]` object, `runOnStart` **off** in the committed scene.
+Delete it with the rest of that object. Scene restored: hologram disabled,
+`HologramRoot` back to identity, camera reset, roots guard green. Not committed
+— the numbers are in, awaiting review.

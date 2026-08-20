@@ -383,6 +383,46 @@ limit.
 > `CaptureRuntimeViewTool`.** The ortho capture is for reading text and checking
 > content; only the preview panel tells you whether the wearer can see it.
 
+### The frustum limit is ANGULAR, not a minimum distance — corrected 2026-08-21
+
+The last batch recorded that "floor content nearer than ~5.7 m is outside the
+device frustum, so P13 must anchor holograms 5-6 m out". **The 5.7 m number is
+real but the conclusion drawn from it was too strong**, and it is the same
+mistake shape as the camera claim above: a measurement taken at ONE head pose
+(gaze level) was written down as a property of the content.
+
+What ±16-18 ° constrains is the angle between the gaze direction and the
+content — so *looking down* moves the window, and 5.7 m is only the threshold
+**for a wearer staring at the horizon**.
+
+Measured with `S1_Footprint` at 3 m, eye 1.73 m above the floor (a 30 °
+depression angle), pitching the tracked camera and capturing the preview panel:
+
+| Gaze pitch | Floor content at 3 m | Screenshot |
+|---|---|---|
+| 0 ° (level) | **not visible** | `Docs/screens/frustum-3m-level-gaze.jpg` |
+| −15 ° | just clipping in at the bottom edge | `Docs/screens/frustum-3m-look-down-15.jpg` |
+| −30 ° | comfortably in frame | `Docs/screens/frustum-3m-look-down-30.jpg` |
+
+Predicted threshold, and it matches: content sits 30 ° down, the half-FOV is
+~17 °, so it enters the view at about **−13 °** of pitch.
+
+**Design consequence.** Ground content at conversational distance is fine *if*
+the user is looking at it — which is exactly what someone pitching a tent is
+doing. Two things follow, and they matter more than a fixed anchor distance:
+
+- Anchoring holograms 5-6 m out is the right default only for content the user
+  should see **without being asked to look down**.
+- Anything placed closer needs the HUD to *say so* — a "look down" cue — because
+  a wearer at level gaze sees nothing and has no way to know content exists.
+  Silence is the failure mode, not the placement.
+
+> `HUDRoot`'s `Headlock` component ships **disabled**, so the HUD does not
+> follow a pitch change: in the −30 ° capture the head-locked chrome has left
+> the view entirely while the world-locked footprint is centred. On device with
+> Headlock enabled the HUD would follow the head. Do not read those captures as
+> evidence about HUD placement.
+
 ## Where the fixed ~7 s per call goes
 
 Measured 2026-08-20. Every remote call pays a floor unrelated to payload size,
@@ -433,10 +473,65 @@ The rule the settings exist to guarantee: **something visibly changes at least
 once a second.** Eleven seconds of an unchanging frame reads as a crash whatever
 the frame says. The 3 Hz ticker is the floor even when a status line is holding.
 
-## The Preview panel cannot feed a survey
+## The Preview panel CAN feed a survey — corrected 2026-08-21
 
-Measured 2026-08-20, not assumed. World Query **does** work in the Preview's
-Interactive simulation scenes and it returns genuine surfaces:
+> **This section was wrong, and the way it was wrong is the lesson.** The
+> original text below concluded "the simulated device camera is pinned at the
+> origin". What was actually measured was **one MCP tool** (`MovePreviewCamera`)
+> and a set of *rotation* commands. What was written down was a claim about
+> **the platform**. Measuring a tool and concluding about the platform is the
+> mistake class; it cost the project a fixture pipeline it may not have needed.
+>
+> Re-measured with `Engine/CameraTrackProbe.ts` reading the TRACKED camera's
+> own `getWorldPosition()` from inside the Lens:
+>
+> | Claim (old) | Measurement (new) |
+> |---|---|
+> | "the simulated device camera is pinned at the origin" | **False.** Holding `W` moved it 6.00 m, then 19.44 m, continuously and monotonically. |
+> | "`MovePreviewCamera` moves the editor viewport, not the tracked camera" | **False.** `getPose` returned the tracked camera's exact pose; `reset` teleported the TRACKED camera to (0,0,0). They are the same camera. |
+> | "the Lens-side camera stayed at (0,0,0) through every pan" | It stayed at (0,0,0) because *reset* put it there, and because `orbit`/`rotate` change rotation only. Rotation-only commands were read as evidence about translation. |
+>
+> **Keyboard drive is available to the agent, not just to a human.** The
+> `specs-preview-interaction` skill is hands-only (Pinch/Poke/Drag — no key
+> action), which is what made "a human must press the keys" look true. A
+> *different* tool, **`InjectPreviewGesture`**, sends keys:
+> `{type:"key", key:"W", state:"start"}` presses and holds, `state:"end"`
+> releases. Injected keys reach both the preview camera AND the Lens's own
+> `KeyPressEvent` — which means **`W` and `D` also fire LessonEngine's debug
+> keys and `S` fires SurveyController's restart.** Budget for that overlap when
+> scripting a walk.
+
+### What a walking survey actually collects
+
+Measured 2026-08-21 in `Sunlit Outdoor`, 12 s boot survey, camera starting at
+the origin each time:
+
+| Run | Distance walked | points | usable | ground cells | sites |
+|---|---|---|---|---|---|
+| Head never moves (the old baseline) | 0 m | **3** | 0 | 0 | 0 |
+| Holding `W`, straight line | 12.7 m | **30** | 30 | 24 | 0 |
+| `W` + strafe attempt | 8.9 m | **17** | 17 | 11 | 0 |
+
+Walking multiplies the yield about **10x**, and the count scales with distance
+(~2.4 points per metre), not with path shape. The hit RATE also improves: ~8 %
+of rays connect standing still, ~39 % while walking, because a moving origin
+keeps presenting new surface to the ~±9 ° cone that actually resolves.
+
+**But `sites` is still 0 in every live run.** The selector needs roughly 60
+covered ground cells for a tent footprint; the best walk produced 24. A
+straight-line walk sweeps a *line*, and a footprint needs *area*.
+
+> **So `useFixtureCloud` is still required to demo markers on a desk, and it
+> stays.** It is also the deterministic path for LEAF. What has changed is the
+> reason: not "the camera cannot move" (it can), but "12 seconds of walking does
+> not cover enough area to satisfy the site selector". If a live desk demo of
+> the markers is ever wanted, the lever is a longer survey plus a deliberate
+> area-covering walk — not a platform limitation.
+
+### The original text, kept for the record
+
+World Query **does** work in the Preview's Interactive simulation scenes and it
+returns genuine surfaces:
 
 | Interactive scene | What World Query returns |
 |---|---|
@@ -452,14 +547,15 @@ never moves:
   16/17/18 only — a cone of about ±9°. Everything else returned `null`.
 - The throttle is real: 944 rays cast over 12 s produced 81 hits (~9%, ≈7 Hz),
   matching the documented ~5 Hz resolve rate.
-- **The simulated device camera is pinned at the origin.** `MovePreviewCamera`
-  moves the editor viewport, not the tracked `Camera Object`; the Lens-side
-  camera stayed at (0,0,0) through every pan and the hits never moved.
+- ~~**The simulated device camera is pinned at the origin.**~~ **WRONG — see the
+  correction above.** The camera translates under `W`/`A`/`S`/`D`/`Q`/`E`, and
+  `MovePreviewCamera` drives that same tracked camera. What was true is only
+  that *rotation-only* commands leave the position alone.
 
-Net: **3 distinct points in Sunlit Outdoor, 6 in Colorful Home, however long the
-survey runs.** A tent footprint needs ~60 covered cells. No preview environment
-can supply that, so verifying the markers, labels and the distance guard on a
-desk requires a stored cloud.
+Net, corrected: **3 distinct points if the head never moves; 30 in a 12 s walk.**
+A tent footprint needs ~60 covered cells, and a straight walk delivers 24 — so a
+stored cloud is still what verifies markers, labels and the distance guard on a
+desk, for a coverage reason rather than a tracking one.
 
 ### Stored terrain: `Assets/Survey/fixtures/`
 
