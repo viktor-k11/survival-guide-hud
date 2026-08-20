@@ -441,3 +441,171 @@ Exact Gemini error text:
 - **To delete the diagnostic later:** remove `Assets/Scripts/Engine/RsgSmokeTest.ts`
   and the `RSG Smoke Test [TEMP]` SceneObject. Keep `RsgTokens.ts`,
   `RsgTokenLocal.ts` and the `.example` template — those are the real token path.
+
+---
+
+## 2026-08-20 — Fix Gemini 404, harden RSG layer
+
+**Prompt (verbatim):**
+
+> Fix the Gemini 404 and harden the RSG layer. Amend the previous commit as you
+> suggested — nothing is pushed, so history should end up truthful.
+>
+> 1. Do NOT guess a single model name. First try to enumerate what the gateway
+>    actually exposes (a models.list style call, or whatever the RSG Gemini
+>    wrapper supports). If enumeration is not available, probe this ordered
+>    candidate list with the same minimal "reply: alive" prompt, one call each,
+>    and report the HTTP status per candidate:
+>    gemini-2.5-flash, gemini-2.0-flash-001, gemini-2.5-flash-lite,
+>    gemini-1.5-flash-002, gemini-2.5-pro
+>    Report the full table. Stop probing once one succeeds.
+>
+> 2. Pin the winning model name in ONE exported constant in Scripts/Engine/ so
+>    there is exactly one place to change it later. No model names scattered
+>    across call sites.
+>
+> 3. Then run a SECOND Gemini test that matches what this project actually needs,
+>    because a plain text reply is not enough:
+>    - temperature 0
+>    - structured output / JSON response schema
+>    - schema: { "title": string, "steps": [ { "instruction": string } ] }
+>    - prompt: "campfire in 3 steps"
+>    Confirm the response is strictly valid JSON matching the schema with no
+>    markdown fence and no prose. Report the raw response verbatim and the
+>    latency. If the model ignores the schema or wraps the JSON in a fence, say
+>    so explicitly — that changes our approach for the lesson planner.
+>    Save this raw response as the first fixture in Assets/AI/fixtures/ per
+>    hard rule 5.
+>
+> 4. Token lifetime: you said the tokens you generated have ~1h TTL. Verify that.
+>    Check whether the official Asset Library "Remote Service Gateway Token
+>    Generator" issues a longer-lived token than the smart-gate endpoint you
+>    used. Then write a short "RSG token refresh" section into CLAD-PROMPT-LOG.md
+>    (or a TOKENS.md if you prefer): how to regenerate, where the file lives, how
+>    to recognise an expired token from the error. I need to be able to fix this
+>    in 60 seconds on demo day without reading code.
+>
+> 5. Also note in the log: TTS latency was 7.5s for one word. Flag it as a known
+>    risk for the narration path — we will need prefetching and caching later.
+>    Do not implement that now.
+>
+> Keep RsgSmokeTest.ts temporary and deletable. Per rule 4, append to
+> CLAD-PROMPT-LOG.md, then amend/commit with an accurate subject.
+
+**Summary:** Gemini is working. `gemini-2.5-flash` returns 200, structured
+output with a response schema is strictly clean, and the first fixture is
+saved. Pinned the model in one constant. Also **corrected a false claim I made
+last session about token TTL** — see below.
+
+**1. Enumeration: not available.** The RSG wrapper hardcodes `endpoint = "models"`
+and forwards `type` as the verb, so a `models.list` call is only possible if the
+gateway accepts a `list` verb. It does not — `{model: "", type: "list"}` returns
+`Proxy error: Parameter value for model cannot be empty` after 7409 ms. The
+`Gemini_Sync.remoteServiceModule` resource carries only an `ApiSpecId`; the spec
+itself is server-side, so the surface cannot be read locally either. Candidate
+sweeping is the only enumeration available. Fell through to the probe list:
+
+| # | Candidate | HTTP | Latency |
+|---|---|---|---|
+| 0 | *(enumeration `type:"list"`)* | proxy error — not supported | 7409 ms |
+| 1 | `gemini-2.5-flash` | **200 — winner** | 11360 ms |
+| 2 | `gemini-2.0-flash-001` | not probed (stopped at first success) | — |
+| 3 | `gemini-2.5-flash-lite` | not probed | — |
+| 4 | `gemini-1.5-flash-002` | not probed | — |
+| 5 | `gemini-2.5-pro` | not probed | — |
+
+Stopped at the first success as instructed, so candidates 2–5 have no measured
+status. For the record, the previously failing `gemini-2.0-flash` returned 404
+`Publisher model ... was not found or your project does not have access to it` —
+a project/region availability problem on the gateway's Vertex backend, not a
+token or transport problem (TTS was passing at the same time).
+
+**2. Model pinned** in `Assets/Scripts/Engine/RsgModels.ts` as the only place a
+model id appears: `GEMINI_MODEL = "gemini-2.5-flash"` plus
+`OPENAI_TTS_MODEL = "gpt-4o-mini-tts"`. `RsgSmokeTest.ts` imports the constant
+rather than restating names. The file's header comment documents that a 404 with
+"Publisher model … not found" means this constant needs changing, not the token.
+
+**3. Structured output: clean, no caveats.** `gemini-2.5-flash`, `temperature: 0`,
+`responseMimeType: "application/json"`, `responseSchema` = `{title: STRING,
+steps: ARRAY<{instruction: STRING}>}`, prompt "campfire in 3 steps". **7608 ms.**
+
+Verified explicitly, all four checks green:
+
+- markdown fence present: **false**
+- payload starts with `{`: **true**
+- `JSON.parse`: **OK**
+- schema match: `title=true steps=true stepCount=3 allStepsHaveInstruction=true`,
+  unexpected top-level keys: **none**
+
+The model did **not** ignore the schema and did **not** wrap the output in a
+fence, so the lesson planner can consume `parts[0].text` with a bare
+`JSON.parse` — no fence-stripping or prose-trimming layer needed. Raw response
+verbatim:
+
+```json
+{"candidates":[{"content":{"role":"model","parts":[{"text":"{\n  \"title\": \"How to Build a Campfire\",\n  \"steps\": [\n    {\n      \"instruction\": \"Gather your materials: tinder (small, easily ignitable material), kindling (small sticks), and fuel wood (larger logs).\"\n    },\n    {\n      \"instruction\": \"Arrange the tinder in the center, surrounded by kindling in a teepee or log cabin structure, then lean larger fuel wood against the kindling.\"\n    },\n    {\n      \"instruction\": \"Carefully light the tinder at the base of the structure, allowing the flame to spread to the kindling and then to the larger fuel wood.\"\n    }\n  ]\n}"}]},"finishReason":"STOP","avgLogprobs":-0.19133725262328283}],"modelVersion":"gemini-2.5-flash","createTime":"2026-08-20T11:27:02.176468Z","responseId":"huSGatTiCufy88APubfGkQ4"}
+```
+
+Saved verbatim as the first fixture per hard rule 5:
+`Assets/AI/fixtures/gemini-lesson-campfire-3-steps.raw.json` (835 bytes, full
+envelope not just the payload, so fixture-driven tests can exercise the same
+`candidates[0].content.parts[0].text` extraction path as live calls).
+
+**4. Token TTL — I was wrong last session. Correction.** I previously wrote
+"~1h TTL"; that was repeated from the RSG skill documentation and never
+verified. Measured behaviour of
+`POST .../smart-gate/v2/token/{TYPE}` on this account:
+
+- Response body is `{"token": "<uuid>", "timestamp": "..."}` — **no `expires_in`,
+  no `exp`, no TTL field**. Response headers carry no expiry either.
+- The token is an opaque **36-char UUID, not a JWT** — nothing to decode.
+- The endpoint is **idempotent**: two back-to-back GOOGLE calls returned
+  byte-identical tokens, and both matched the token generated ~15 min earlier
+  in this session. Same for OPENAI.
+- `timestamp` came back as `2026-08-15T11:56:44Z` — **five days before the
+  request**. The endpoint re-serves a stored credential; it does not mint.
+
+So **observed lifetime is ≥ 5 days, not ~1 hour**, and the Asset Library
+"Remote Service Gateway Token Generator" is not a different or longer-lived
+token product — it is a UI over this same endpoint, returning the same stored
+value. I could not read the plugin source to confirm that directly (it is not
+present on disk under the app bundle, the LS config dir, or unpacked inside
+`RemoteServiceGateway.lspkg`), so that last point is inference from the
+idempotency evidence rather than source-verified.
+
+Two consequences worth remembering: **clicking Generate again does not fix an
+expired token** (same value comes back — you have to force a server-side mint by
+re-authenticating), and because the credential is long-lived and account-scoped,
+**leaking it is worse than leaking an hourly one** — which retroactively
+strengthens the decision to keep it git-ignored rather than in `Scene.scene`.
+
+Full runbook written to **`TOKENS.md`** (chosen over a log section so it is
+findable under pressure): where the file lives, how to regenerate, and an
+error-text → cause → fix table. The key triage rule in it: **a 404 is never a
+token problem**; only 401/403/`Unauthenticated` is.
+
+**5. RISK — TTS latency.** OpenAI TTS took **7543 ms to synthesize the single
+word "online"**. Gemini structured generation is comparable at 7608 ms. For the
+narration path this is a real problem: a lesson step that waits for both a
+Gemini call and a TTS call serially would leave the user staring at a static HUD
+for ~15 s. Not addressed now, deliberately. When it is addressed the likely
+shape is: prefetch step *n+1*'s narration while step *n* plays, cache synthesized
+audio per step keyed by text, and pre-warm the fixed phrases (nav confirmations,
+SOS prompts) at boot from fixtures so they never hit the network. Flagged here so
+the lesson state machine is designed with async narration from the start rather
+than retrofitted.
+
+**Notable decisions / open issues:**
+
+- `RsgSmokeTest.ts` stays temporary and deletable, now with `RUN_PROBE` and
+  `RUN_TTS` flags so the sweep and the 7.5 s TTS call can be turned off without
+  editing logic. TTS is off by default (already green). Deleting the file plus
+  the `RSG Smoke Test [TEMP]` SceneObject is still the whole teardown;
+  `RsgModels.ts`, `RsgTokens.ts` and `RsgTokenLocal.ts` are the permanent parts.
+- Candidates 2–5 remain unmeasured by design. If `gemini-2.5-flash` is ever
+  withdrawn, flip `RUN_PROBE = true` and the sweep continues from where it
+  stopped.
+- History: the previous commit's subject claimed "Gemini and TTS alive" while
+  Gemini was 404ing. Amended it to an accurate subject before adding this work,
+  since nothing had been pushed.
