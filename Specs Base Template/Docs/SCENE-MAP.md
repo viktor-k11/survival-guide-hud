@@ -131,6 +131,7 @@ placed against real terrain, not the head.
 | `Systems` | **Enabled** container for runtime controllers. Has to be enabled: `HUDRoot` and `WorldRoot` ship disabled, so something already running must turn them on. |
 | `Systems/RsgBootstrap` | `Engine/RsgBootstrap.ts` — installs the RSG tokens in `onAwake`. **Permanent.** Must stay enabled and must run before anything that calls Gemini/OpenAI. |
 | `Systems/VoiceInput` | `Engine/VoiceInput.ts` — hold-to-talk capture. Pinch, or hold the debug key. Emits `voiceStateChanged` / `voiceInterim` / `userRequest`. |
+| `Systems/LessonEngine` | `Engine/LessonEngine.ts` — the state machine. Subscribes to `userRequest`, routes it, owns mode/step/checklist/timer/safety. Deterministic: no Gemini, no TTS, no widget references. Debug keys C/W/N/B/K/D/R. |
 | `Systems/StatusBarPresenter` | `Widgets/StatusBarPresenter.ts` — drives `StatusBar`. Subscribes to the bus, enables existing children, writes text. No logic. |
 | `RSG Smoke Test [TEMP]` | Throwaway diagnostics. Carries **two** ScriptComponents: `RsgSmokeTest.ts` (now **disabled** — it passed, and it cost ~18s of API calls per boot) and `LessonProbe.ts` (the lesson-planner proving run). Delete the object and both scripts when done — see `TOKENS.md`. |
 
@@ -170,6 +171,38 @@ A handler for this event switches among those four; it does **not** create
 anything. If a future step seems to need a fifth companion, the object for it
 must be added to this tree at design time first (hard rule 1) and documented
 here — never instantiated in response to the event.
+
+## The narration seam
+
+**The engine must never block on audio.** This is an architectural constraint,
+not an optimisation, and it is why the seam is shaped this way from the start.
+
+Measured cold latencies: **~11-15 s** for a lesson plan from Gemini, **~7.5 s**
+for one word of TTS. Done naively — ask, wait for the plan, wait for speech,
+then speak — the user stares at a static HUD for the better part of twenty
+seconds. Retrofitting the fix later would mean rewriting the state machine,
+because "wait for audio" tends to get baked into the step transition.
+
+So `LessonEngine` emits **two** events on every step entry and waits for
+neither:
+
+| Event | Payload | Meaning |
+|---|---|---|
+| `narrationRequested` | `{stepIndex, text}` | Speak this now. |
+| `narrationPrefetch` | `{stepIndex + 1, text}` | Warm the next step's audio while this one plays. |
+
+`narrationPrefetch` is **not** emitted on the last step — there is nothing to
+warm. A future narration service is expected to keep a small cache keyed by
+step text, so that by the time the user says "next" the audio is already in
+hand and the transition is instant.
+
+`repeat` re-emits `narrationRequested` for the current step **only** — no
+`stepChanged`, no companion rebuild, no prefetch. Repeating is an audio
+operation, not a state transition.
+
+Nothing implements either event yet. The engine is complete without them: it
+advances on user input regardless of whether audio ever plays, which is exactly
+the property that keeps a slow or failed TTS from freezing the lesson.
 
 ## Scene hygiene guard
 

@@ -1141,3 +1141,239 @@ more than one validator path is actually exercised.
   object so the scene-root count did not change and the guard stayed quiet.
 - The QA prompt is written and generated into the prompts mirror, but **nothing
   calls it yet** — in-lesson Q&A routing is engine work and out of scope here.
+
+---
+
+## 2026-08-20 — /lens-api — LessonEngine v2 (modes, QA routing, sequential checklist)
+
+**Prompt (verbatim):**
+
+> /lens-api
+>
+> Build LessonEngine in Scripts/Engine/. TypeScript, fully deterministic, zero
+> Gemini calls, zero TTS calls, zero direct references to widget visuals — it
+> communicates only through the EventBus (hard rule 3).
+>
+> First, a change to the lesson prompt and schema: lower the maximum step count
+> from 8 to 6. Latency scales with output tokens and 8 steps cost 12 s. Update
+> lesson-system-prompt.txt, the responseSchema constant, the validator, and
+> regenerate the prompt mirror. Keep the minimum at 4.
+>
+> State:
+> - mode: IDLE | SURVEY | LESSON | SOS | COMPLETE
+> - current step index, checklist progress, timer state, safety-pending flag
+> - the active lesson plan
+>
+> Voice routing, in this exact order (hard rule 6):
+> - match the transcript against local navigation keywords first, with NO AI
+>   call: next / back / repeat / done / confirm / stop / check / sos, plus
+>   natural variants ("go on", "previous", "say that again", "I'm done",
+>   "start over"). Case and punctuation insensitive.
+> - MATCHED anywhere → navigation, handled locally.
+> - UNMATCHED during LESSON → emit a qaRequested event carrying {lesson title,
+>   current step instruction, question}. The engine does NOT make the call — it
+>   emits and moves on. Wiring that to Gemini is a later task.
+> - UNMATCHED during IDLE → emit lessonRequested{text}. Same rule: emit, do not
+>   call.
+>
+> Behaviour:
+> - "done" checks the TOPMOST unchecked checklist item, sequentially. When the
+>   last item is checked, the step auto-completes.
+> - "repeat" re-emits a narration request for the current step only. No widget
+>   rebuild, no state change.
+> - "stop" or "new" resets to IDLE from any mode.
+> - A step with safety:true blocks next() until confirm() is spoken. While
+>   blocked, emit safetyPending carrying the step's warning text so the status
+>   bar can render it, and emit a rejection event on blocked next() attempts so
+>   the UI can buzz.
+> - "back" on step 1 stays on step 1 and does not crash.
+> - Reaching the end emits lessonCompleted, enters COMPLETE, and auto-returns to
+>   IDLE after a configurable delay (@input, default 4 s).
+> - propPlaced increments a per-step counter; when it reaches the step's
+>   required count the step auto-completes.
+>
+> Narration seam — design this now, do not implement TTS:
+> The engine must never block on audio. On stepChanged it emits
+> narrationRequested{stepIndex, text} and, separately, narrationPrefetch{
+> stepIndex+1, text} so a future narration service can fetch the next step's
+> audio while the current one plays. Cold latency is measured at ~11 s for the
+> plan plus ~7.5 s for speech; the architecture has to hide that, and retrofitting
+> it later would mean rewriting the state machine. Document the seam in
+> SCENE-MAP.md.
+>
+> Events, all via EventBus: modeChanged, lessonStarted, stepChanged,
+> companionChanged, hologramStage(n), timerTick, checklistUpdated,
+> safetyPending, safetyRejected, propPlaced, lessonCompleted, lessonRequested,
+> qaRequested, narrationRequested, narrationPrefetch.
+>
+> Debug affordances for preview iteration:
+> - a key that loads the campfire fixture straight into the engine, no Gemini
+> - a key that loads the water fixture (no hologram — it exercises the
+>   companion:null path)
+> - keys for next / back / confirm / done, going through the same code paths as
+>   voice, not a parallel branch
+> All keys configurable as @input.
+>
+> Report: walk me through the campfire fixture in preview using the debug keys
+> and paste the event log for a full run — start, three nexts, one safety block,
+> one confirm, to completion. I want to see the event sequence, not a summary.
+>
+> Per rule 4, append to CLAD-PROMPT-LOG.md, then commit:
+> feat: LessonEngine v2 — modes, QA routing, sequential checklist
+
+**Summary:** `LessonEngine.ts` built and exercised in preview across three
+runs (campfire walkthrough, water/`companion:null` + checklist + back-at-step-1,
+routing self-test in both modes). Step cap lowered 4-8 → 4-6 across prompt,
+schema, mirror. **The stated premise behind that change did not hold** — see
+below.
+
+**Step cap 8 → 6.** Changed rule 1 in `lesson-system-prompt.txt`, `MAX_STEPS`
+in `LessonSchema.ts`, and regenerated the mirror. Also added `minItems`/
+`maxItems` to the `steps` array in the response schema so the model is
+*constrained*, not merely asked; the validator still checks independently, so a
+gateway that ignores them is caught. The validator needed no edit — it already
+read the constants.
+
+**The latency premise did not survive measurement.** Re-running all three
+requests after the change:
+
+| Request | Before (steps / latency) | After (steps / latency) |
+|---|---|---|
+| campfire | 6 / 10675 ms | 4 / **14766 ms** |
+| tent | 8 / 12056 ms | 4 / **12551 ms** |
+| water | 5 / 11540 ms | 5 / 12519 ms |
+
+Fewer steps did **not** produce lower latency — campfire got 38% slower while
+halving its output. On this evidence lesson latency is dominated by something
+other than output length (model thinking time / cold path through the gateway),
+and the 10-15 s band looks like a floor we cannot prompt our way out of. Single
+samples are noisy and this is not a controlled benchmark, so I am not claiming
+the reverse either — but the change should not be relied on as a latency fix.
+It is still worth keeping for a different reason: 4-6 steps is a better fit for
+six checklist rows and a short narration budget.
+
+Side effect worth knowing: **both few-shot examples are 4 steps, and lowering
+the ceiling collapsed the model to the floor** — campfire went 6 → 4 steps,
+tent 8 → 4. The examples anchor length far more strongly than rule 1 does. If
+5-6 step lessons are wanted, one of the few-shots should be 6 steps.
+
+**Fixtures.** campfire and tent regenerated (both now 4 steps, both valid under
+the new cap — the tent fixture had been 8 steps and would have failed the new
+validator, a landmine removed). The water re-run came back **invalid**: the
+model emitted a `checklist` companion with **no `items`**, caught as
+`BAD_COMPANION_FIELDS at steps[1].companion.items`. That is the validator doing
+its job against a real model failure, so rather than discard it I kept it as
+`lesson-help-me-purify-water-INVALID-empty-checklist.raw.json` and left the
+known-good 5-step water fixture in place for the engine to load.
+
+**Voice routing (hard rule 6) — one deliberate refinement.** Literal
+"match anywhere" is unsafe for bare single words: *"how do I check the wind
+direction?"* contains `check` and would have been swallowed as a checklist
+command instead of reaching Gemini as a question. Implemented as:
+
+- normalise (lowercase, punctuation → spaces, collapse runs), then whole-word
+  matching so "backpack" never matches "back";
+- **multi-word** phrases ("go on", "say that again", "start over") match
+  anywhere — they are specific enough;
+- **bare single words** ("next", "check", "done") match only in a short
+  utterance, `shortUtteranceMaxWords` @input, default 4;
+- **SOS always matches at any length** — an emergency word must never be
+  routed to Gemini as a question.
+
+Verified by a non-destructive routing self-test (debug key `R`) that runs canned
+transcripts through `classify()`, the same function `handleTranscript()` uses,
+so the test cannot drift from live routing. In IDLE, `"help me build a campfire"`
+→ `lessonRequested`; in LESSON the same string → `qaRequested`; and
+`"how do I check the wind direction?"` → `qaRequested`, not `navigation/check`.
+
+**propPlaced — the mechanism exists but is inert, on purpose.** "the step's
+required count" has no home: `LessonStep` has no such field and neither the
+prompt nor the schema mentions one. Adding it to only one of the pair is exactly
+the drift the `LessonSchema.ts` banner warns against. So `props_required?:
+number` was added to the **TS interface only**, defaulting to 0 (= not
+prop-gated), with a comment saying the planner does not emit it yet. The counter
+and auto-complete work; nothing triggers them until prompt + schema + validator
+are changed together in a follow-up.
+
+**Other decisions:**
+
+- **Timer expiry does not auto-advance.** A countdown is a pacing aid; silently
+  skipping a step the user is mid-way through is worse than letting it sit at
+  zero. `timerTick` fires on whole-second boundaries only — per-frame would
+  drown the bus.
+- **`confirm()` clears the block but does not advance.** The user then says
+  "next". Auto-advancing on confirm would make the confirmation itself the
+  action, which is the opposite of a safety gate.
+- **`done()` on a step with no checklist** is treated as "this step is
+  finished" and advances.
+- **`back()` at step 1** re-emits `narrationRequested` rather than doing
+  nothing at all, so the user gets feedback instead of silence.
+- `LessonProbe.runOnStart` turned **off** — it was making three Gemini calls on
+  every preview refresh. Re-enable it in the Inspector to regenerate fixtures.
+- New scene object `Systems/LessonEngine`; scene-root guard unaffected.
+
+**Full campfire walkthrough — event log, verbatim from the Logger.** Keys
+pressed: `C` (load), `N`, `N`, `N`, `N` (blocked), `K` (confirm), `N`.
+
+```
+[ENGINE] debug key: load campfire fixture
+[ENGINE] loadFromFixture(campfire): valid, 4 steps
+[ENGINE] emit modeChanged {"from":"IDLE","to":"LESSON"}
+[ENGINE] emit lessonStarted {"title":"Build a Campfire","stepCount":4}
+[ENGINE] emit stepChanged {"stepIndex":0,"total":4,"instruction":"Clear a circle of bare earth and ring it with stones.","reason":"load"}
+[ENGINE] emit narrationRequested {"stepIndex":0,"text":"Clear a circle of bare earth and ring it with stones."}
+[ENGINE] emit narrationPrefetch {"stepIndex":1,"text":"Gather all three fuel grades before you strike a spark."}
+[ENGINE] emit companionChanged {"stepIndex":0,"type":"zone","companion":{"type":"zone","shape":"circle","size_m":1.2,"stage":null}}
+[ENGINE] debug key: next
+[ENGINE] emit stepChanged {"stepIndex":1,"total":4,"instruction":"Gather all three fuel grades before you strike a spark.","reason":"next"}
+[ENGINE] emit narrationRequested {"stepIndex":1,"text":"Gather all three fuel grades before you strike a spark."}
+[ENGINE] emit narrationPrefetch {"stepIndex":2,"text":"Stack the kindling log-cabin style around the tinder core."}
+[ENGINE] emit companionChanged {"stepIndex":1,"type":"checklist","companion":{"type":"checklist","items":["Dry tinder","Thin kindling","Thick fuel wood"],"stage":null}}
+[ENGINE] emit checklistUpdated {"stepIndex":1,"items":["Dry tinder","Thin kindling","Thick fuel wood"],"checked":[false,false,false],"justChecked":-1}
+[ENGINE] debug key: next
+[ENGINE] emit stepChanged {"stepIndex":2,"total":4,"instruction":"Stack the kindling log-cabin style around the tinder core.","reason":"next"}
+[ENGINE] emit narrationRequested {"stepIndex":2,"text":"Stack the kindling log-cabin style around the tinder core."}
+[ENGINE] emit narrationPrefetch {"stepIndex":3,"text":"Light the tinder from the upwind side, then step back."}
+[ENGINE] emit companionChanged {"stepIndex":2,"type":"hologram_stage","companion":{"type":"hologram_stage","stage":3}}
+[ENGINE] emit hologramStage {"stepIndex":2,"stage":3}
+[ENGINE] debug key: next
+[ENGINE] emit stepChanged {"stepIndex":3,"total":4,"instruction":"Light the tinder from the upwind side, then step back.","reason":"next"}
+[ENGINE] emit narrationRequested {"stepIndex":3,"text":"Light the tinder from the upwind side, then step back."}
+[ENGINE] emit companionChanged {"stepIndex":3,"type":"compass","companion":{"type":"compass","label":"Check wind","stage":null}}
+[ENGINE] emit safetyPending {"stepIndex":3,"pending":true,"warning":"Never light a fire in strong wind or under low branches."}
+[ENGINE] debug key: next
+[ENGINE] emit safetyRejected {"stepIndex":3,"warning":"Never light a fire in strong wind or under low branches."}
+[ENGINE] debug key: confirm
+[ENGINE] emit safetyPending {"stepIndex":3,"pending":false,"warning":null}
+[ENGINE] debug key: next
+[ENGINE] emit lessonCompleted {"title":"Build a Campfire","steps":4}
+[ENGINE] emit modeChanged {"from":"LESSON","to":"COMPLETE"}
+[ENGINE] emit modeChanged {"from":"COMPLETE","to":"IDLE"}
+```
+
+Note `narrationPrefetch` is absent on step 3 — last step, nothing to warm. The
+final `modeChanged` to IDLE is the 4 s auto-return firing on its own.
+
+**Second run — water fixture, covering what campfire cannot** (`companion:null`,
+sequential checklist, back-at-step-1). Keys: `W`, `B`, `N`, `D`, `D`, `D`.
+
+```
+[ENGINE] loadFromFixture(purify water): valid, 5 steps
+[ENGINE] emit companionChanged {"stepIndex":0,"type":null,"companion":null}
+[ENGINE] debug key: back
+[ENGINE] back() at first step — staying put
+[ENGINE] emit narrationRequested {"stepIndex":0,"text":"Collect water from the cleanest available source into a container."}
+[ENGINE] debug key: done
+[ENGINE] emit checklistUpdated {... "checked":[true,false,false],"justChecked":0}
+[ENGINE] debug key: done
+[ENGINE] emit checklistUpdated {... "checked":[true,true,false],"justChecked":1}
+[ENGINE] debug key: done
+[ENGINE] emit checklistUpdated {... "checked":[true,true,true],"justChecked":2}
+[ENGINE] checklist complete — auto-advancing
+[ENGINE] emit stepChanged {"stepIndex":2,...,"reason":"next"}
+[ENGINE] emit companionChanged {"stepIndex":2,"type":null,"companion":null}
+```
+
+`companion:null` emits `companionChanged` with `type:null` rather than being
+skipped, so a presenter gets an explicit "hide everything" signal instead of
+having to infer it from silence.

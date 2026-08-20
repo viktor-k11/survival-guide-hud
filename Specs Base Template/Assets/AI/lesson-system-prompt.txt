@@ -10,7 +10,7 @@ Widget companions available per step:
 - "hologram_stage": advance the staged hologram. {stage: int} — use ONLY for
   tent or campfire lessons (stages tent:1-5, fire:1-4).
 Rules:
-1. 4-8 steps. instruction = short imperative, narratable in under 8 seconds.
+1. 4-6 steps. instruction = short imperative, narratable in under 8 seconds.
 2. Physically actionable, safe order.
 3. Fire/blade/hazard steps: "safety": true plus a one-line warning (the app
    requires voice confirmation before continuing).

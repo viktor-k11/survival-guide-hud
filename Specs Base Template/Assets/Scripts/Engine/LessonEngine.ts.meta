@@ -1,0 +1,88 @@
+- !<AssetImportMetadata/b651ad0e-6991-4f84-85de-4c559d7cd746>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 97042c2a-2c7a-4d2b-b09d-5cae37212b4b
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 97042c2a-2c7a-4d2b-b09d-5cae37212b4b
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 72d5993d-9de7-4705-b9d9-f91d021e7ffc
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/72d5993d-9de7-4705-b9d9-f91d021e7ffc>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 7154fc42-0f7d-40fc-94cd-82a911b6f85c
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    campfireFixture: false
+    completeReturnDelaySec: false
+    enableDebugKeys: false
+    enableLogging: false
+    keyBack: false
+    keyConfirm: false
+    keyDone: false
+    keyLoadCampfire: false
+    keyLoadWater: false
+    keyNext: false
+    keyRoutingSelfTest: false
+    shortUtteranceMaxWords: false
+    waterFixture: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - completeReturnDelaySec: !<float> 4.000000
+      shortUtteranceMaxWords: !<float> 4.000000
+      enableDebugKeys: true
+      keyLoadCampfire: C
+      keyLoadWater: W
+      keyNext: !<string> N
+      keyBack: B
+      keyConfirm: K
+      keyDone: D
+      keyRoutingSelfTest: R
+      campfireFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      waterFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Behaviour</span>"}'
+    - '// @input float completeReturnDelaySec = 4 {"hint":"Seconds to sit in COMPLETE before returning to IDLE."}'
+    - "// @input float shortUtteranceMaxWords = 4 {\"hint\":\"A bare command word ('next', 'check') only counts as navigation in an utterance this short. Longer ones are treated as questions.\"}"
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug — preview iteration</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Single letters A-Z. These call the SAME methods as voice, not a parallel branch. Click the Preview panel first so it has focus.</span>"}'
+    - '// @input bool enableDebugKeys = true {"hint":"Turn every debug key off before shipping."}'
+    - '// @input string keyLoadCampfire = "C"'
+    - '// @input string keyLoadWater = "W"'
+    - '// @input string keyNext = "N"'
+    - '// @input string keyBack = "B"'
+    - '// @input string keyConfirm = "K"'
+    - '// @input string keyDone = "D"'
+    - '// @input string keyRoutingSelfTest = "R" {"hint":"Runs a table of canned transcripts through the SAME classifier handleTranscript uses, and logs the routing decision for each. Non-destructive: classifies only, executes nothing."}'
+    - '// @input Asset.JsonAsset campfireFixture {"hint":"Assets/AI/fixtures/lesson-help-me-build-a-campfire.raw.json"}'
+    - '// @input Asset.JsonAsset waterFixture {"hint":"Assets/AI/fixtures/lesson-help-me-purify-water.raw.json — no hologram, exercises companion:null"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @input bool enableLogging = true {"hint":"Log every emitted event. Loud but this is the only way to read a run."}'

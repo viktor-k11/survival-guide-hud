@@ -213,6 +213,21 @@
     - !<own> c92b1867-0064-4541-b7cb-4dc20a53d387
   Components:
     []
+- !<SceneObject/0436cd9b-016c-43c4-af64-ecb2be445575>
+  PrefabRemaps:
+    []
+  Name: LessonEngine
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 6f1ce7e0-42ae-4354-939d-20de3ca2d381
 - !<SceneObject/0451d993-a1f7-464e-9b69-32c0d9af8ed7>
   PrefabRemaps:
     []
@@ -2053,6 +2068,7 @@
     - !<own> f782360e-c60d-4ad4-88c8-2a4d14b009f4
     - !<own> da19f5a7-00c5-4053-a647-598c34afefd3
     - !<own> c77b043f-d23e-45e7-bafd-5be84cdefb44
+    - !<own> 0436cd9b-016c-43c4-af64-ecb2be445575
   Components:
     []
 - !<Text/5608a90a-af26-49e0-8d63-6fdf1eecb7d3>
@@ -2736,6 +2752,44 @@
     []
   Components:
     - !<own> 0c4ca461-bf51-4d9e-9999-8e22004607a7
+- !<ScriptComponent/6f1ce7e0-42ae-4354-939d-20de3ca2d381>
+  PrefabRemaps:
+    []
+  Name: LessonEngine
+  Enabled: true
+  ScriptAsset: !<reference> 97042c2a-2c7a-4d2b-b09d-5cae37212b4b
+  ScriptInputsDefault:
+    completeReturnDelaySec: true
+    shortUtteranceMaxWords: true
+    enableDebugKeys: true
+    keyLoadCampfire: true
+    keyLoadWater: true
+    keyNext: true
+    keyBack: true
+    keyConfirm: true
+    keyDone: true
+    keyRoutingSelfTest: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      completeReturnDelaySec: !<float> 4.000000
+      shortUtteranceMaxWords: !<float> 4.000000
+      enableDebugKeys: true
+      keyLoadCampfire: C
+      keyLoadWater: W
+      keyNext: !<string> N
+      keyBack: B
+      keyConfirm: K
+      keyDone: D
+      keyRoutingSelfTest: R
+      campfireFixture: !<reference.JsonAsset> c4a103ab-0778-483a-8ca1-a4876e22c22e
+      waterFixture: !<reference.JsonAsset> d8f6ac4e-ec49-424e-820c-3113ba6f56f6
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/7037a633-4899-4f2e-bc97-2e3f35395687>
   PrefabRemaps:
     []
@@ -4884,14 +4938,14 @@
   Enabled: true
   ScriptAsset: !<reference> 97959d7c-1aed-4bdb-b547-9f9fe3338e2b
   ScriptInputsDefault:
-    runOnStart: true
+    {}
   ScriptTypesDefault:
     {}
   ScriptInputs:
     "":
       promptsAsset: !<reference.JsonAsset> 805a6898-a639-474f-974b-2e1e1ff9fbdf
       brokenFixture: !<reference.JsonAsset> 404fc54d-e175-4494-9b18-27cd8b0ec81d
-      runOnStart: true
+      runOnStart: false
   ScriptTypes:
     "":
       {}

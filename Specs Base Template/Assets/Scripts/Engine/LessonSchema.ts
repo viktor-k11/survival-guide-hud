@@ -32,7 +32,12 @@ export const COMPANION_TYPES = ["zone", "timer", "checklist", "compass", "hologr
 export const CHECKLIST_MAX_ITEMS = 6;
 
 export const MIN_STEPS = 4;
-export const MAX_STEPS = 8;
+/**
+ * Lowered 8 -> 6 on 2026-08-20. Latency scales with output tokens: an 8-step
+ * plan measured ~12.1s versus ~10.7s for 6. Keep this in step with rule 1 of
+ * lesson-system-prompt.txt.
+ */
+export const MAX_STEPS = 6;
 
 /** Hologram stage ranges, keyed by lesson kind. Mirrors Docs/SCENE-MAP.md. */
 export const HOLOGRAM_STAGE_RANGE: { [kind: string]: { min: number; max: number } } = {
@@ -46,6 +51,10 @@ export const LESSON_RESPONSE_SCHEMA = {
     title: { type: "STRING" },
     steps: {
       type: "ARRAY",
+      // Constrain the model rather than only asking it in the prompt. The
+      // validator still checks: if the gateway ignores these, we catch it.
+      minItems: MIN_STEPS,
+      maxItems: MAX_STEPS,
       items: {
         type: "OBJECT",
         properties: {
@@ -91,6 +100,18 @@ export interface LessonStep {
   companion: LessonCompanion | null;
   safety: boolean;
   warning: string | null;
+  /**
+   * How many training props must be placed before this step auto-completes.
+   * Absent/0 means the step is not prop-gated.
+   *
+   * NOT in LESSON_RESPONSE_SCHEMA and NOT in the prompt, on purpose: the
+   * planner does not emit it yet, and adding it to only one half would be
+   * exactly the prompt/schema drift the banner above warns about. LessonEngine
+   * reads it so the mechanism exists and is testable; wiring the planner to
+   * produce it is a follow-up that must touch prompt + schema + validator
+   * together.
+   */
+  props_required?: number;
 }
 
 export interface LessonPlan {

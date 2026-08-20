@@ -48,6 +48,21 @@ export const Events = {
    * here. Nothing downstream should ever touch the ASR module directly.
    */
   userRequest: "userRequest",
+
+  // --- Lesson engine (LessonEngine.ts) -----------------------------------
+  /** A blocked next() on a safety-gated step. Payload: { stepIndex, warning }. UI should buzz. */
+  safetyRejected: "safetyRejected",
+  /** An unmatched transcript in IDLE. Payload: { text }. Someone else calls Gemini. */
+  lessonRequested: "lessonRequested",
+  /** An unmatched transcript during a LESSON. Payload: { title, stepInstruction, question }. */
+  qaRequested: "qaRequested",
+  /**
+   * Speak this step now. Payload: { stepIndex, text }.
+   * The engine NEVER waits for audio — see the narration seam in Docs/SCENE-MAP.md.
+   */
+  narrationRequested: "narrationRequested",
+  /** Warm the NEXT step's audio while this one plays. Payload: { stepIndex, text }. */
+  narrationPrefetch: "narrationPrefetch",
 } as const;
 
 export type EventName = (typeof Events)[keyof typeof Events];
