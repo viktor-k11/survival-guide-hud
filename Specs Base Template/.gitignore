@@ -24,3 +24,11 @@ Workspaces/**
 .codex/config.toml
 .claude/settings.local.json
 # END Lens Studio managed Agents-Docs block
+
+# --- Project-local, never committed (public repo) ---
+# RSG tokens. Kept OUT of Assets/Scene.scene on purpose: @input string fields
+# on RemoteServiceGatewayCredentials serialize into the .scene file verbatim.
+Assets/Scripts/Engine/RsgTokenLocal.ts
+Assets/Scripts/Engine/RsgTokenLocal.ts.meta
+# Lens Studio MCP scene dump: regenerated on demand, mirrors @input values.
+.virtual-scene.json
