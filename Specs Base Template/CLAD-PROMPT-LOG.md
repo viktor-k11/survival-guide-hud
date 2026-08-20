@@ -609,3 +609,156 @@ than retrofitted.
 - History: the previous commit's subject claimed "Gemini and TTS alive" while
   Gemini was 404ing. Amended it to an accurate subject before adding this work,
   since nothing had been pushed.
+
+---
+
+## 2026-08-20 — /scene-construction — design-time scene skeleton v2
+
+**Prompt (verbatim):**
+
+> /scene-construction
+>
+> Build the design-time scene skeleton per hard rule 1. This task creates SCENE
+> OBJECTS ONLY — no logic, no state machines, no subscriptions, no feature code.
+> Every object below must exist in the hierarchy and be DISABLED. Runtime code
+> will later only enable, populate and position them. Nothing here may be
+> instantiated at runtime, ever.
+>
+> Hierarchy to create:
+>
+> HUDRoot  (head-locked with lazy-follow behaviour; the follow component itself
+>           may be added now, disabled)
+>   StatusBar        — top. Children: MicIcon, HintText ("PINCH & HOLD — ASK FOR
+>                      HELP"), ExampleTicker, LessonTitle, WarningStrip
+>   GuidePanel       — RIGHT side anchor. Children: BackingPlate (translucent
+>                      emissive glow — NOT a dark plate, hard rule 2),
+>                      IconSlot, StepCounter ("NN/NN"), InstructionText (bottom)
+>   Checklist        — container + 6 pre-made ChecklistItem children (each with
+>                      a label and a check indicator), all disabled
+>   GaugeTimer       — radial gauge: Track, Fill, Label
+>
+> WorldRoot  (world-anchored)
+>   SurveyGrid       — ground-projected grid visual placeholder
+>   SiteMarker_Tent_A, SiteMarker_Tent_B, SiteMarker_Fire
+>                    — each: Icon, RatingLabel ("FLATNESS 94%"), PulseRing
+>   ZoneWidget       — ground outline; must support both circle and rect forms
+>   CompassRose
+>   HologramRoot
+>     HologramTent   — stage groups: S1_Footprint, S2_Poles, S3_Canopy,
+>                      S4_Stakes, S5_Complete
+>     HologramFire   — stage groups: S1_ClearedSpot, S2_Tinder, S3_LogCabin,
+>                      S4_Flame
+>   PropsContainer   — empty container for training props
+>
+> Rules for this task:
+> - Placeholder primitives only (boxes, planes, quads, simple text). Real
+>   visuals come later. But every placeholder must be VISIBLE and obviously
+>   toggleable when I tick its enabled checkbox in the Objects panel.
+> - Placeholder materials must be bright saturated emissive/unlit. No dark
+>   fills, no black backgrounds, no shadow planes — hard rule 2.
+> - Names exactly as written above. Later prompts will reference these paths,
+>   so drift is expensive.
+>
+> Also create:
+> - VisualConfig — a script component holding ONLY @input theme parameters:
+>   primaryPhosphor (green), accentAmber, warningColor, glowIntensity,
+>   panelOpacity, font reference. No logic. It must be visibly editable in the
+>   Inspector and changing a value must be meaningful later.
+> - Scripts/Engine/EventBus.ts — a minimal typed pub/sub: subscribe, unsubscribe,
+>   emit. Declare the event name constants we already know we need (modeChanged,
+>   lessonStarted, stepChanged, companionChanged, hologramStage, timerTick,
+>   checklistUpdated, safetyPending, propPlaced, lessonCompleted, surveyProgress,
+>   surveyComplete, distanceWarning). No engine logic beyond the bus itself.
+> - Docs/SCENE-MAP.md — the full object tree as text, with one line per object
+>   saying what it is for and which events will drive it. This is the reference
+>   every later prompt and my partner will read. Keep it accurate.
+>
+> Leave the RSG Smoke Test [TEMP] object where it is, outside HUDRoot/WorldRoot.
+>
+> When done, print the resulting hierarchy as a text tree in your reply so I can
+> compare it against the Objects panel, and tell me explicitly which objects are
+> enabled versus disabled.
+>
+> Per rule 4, append to CLAD-PROMPT-LOG.md, then commit:
+> feat: design-time scene skeleton v2 (survey, holograms, right panel)
+
+**Summary:** Built the full skeleton — **70 scene objects across HUDRoot (35)
+and WorldRoot (35), all disabled**, plus `VisualConfig` (enabled),
+`EventBus.ts`, and `Docs/SCENE-MAP.md`. Names match the spec exactly; verified
+by walking the live tree rather than by eye. No logic, no subscriptions, no
+runtime instantiation anywhere.
+
+**Approach.** Followed the scene-construction workflow: `VirtualScene read` →
+enumerate presets → bulk `apply`. Three applies (assets, HUD subtree, world
+subtree) rather than ~70 individual preset calls. Verified visually in the
+preview **before** disabling anything — a skeleton that is disabled and wrong
+looks identical to one that is disabled and right, so the visual check had to
+happen while everything was still on.
+
+**Placeholder look.** All placeholder materials are `UnlitMaterialPreset` with
+**`blendMode: Add`**. This is the literal implementation of hard rule 2: on an
+additive display black *is* transparent, so an additive material can never
+render as a dark fill. The "translucent panel" `BackingPlate` is a dim additive
+green (`PH_PanelGlow`), i.e. it brightens what is behind it and never darkens
+it. Typeface is **VT323** (`VT323FontPreset`) — a retro terminal face that
+suits the phosphor HUD brief and is OFL-licensed, so hard rule 7 is satisfied
+without imitating any franchise.
+
+**Two calibration bugs found and fixed during verification:**
+
+1. **Plane / disc / torus presets are XZ-native — they lie flat.** The first
+   render showed `BackingPlate` and `WarningStrip` missing entirely. Their
+   bounds came back `extents.y = 0`: the planes were horizontal and therefore
+   edge-on to the camera, which looks exactly like a broken material. Anything
+   meant to face the user needs `rotation = [90,0,0]`; anything meant to lie on
+   the ground needs `rotation = [0,0,0]` (so the ground pieces I had "helpfully"
+   rotated -90 were the ones standing up). Scale a plane as `[w, 1, h]`.
+   Recorded prominently in `SCENE-MAP.md` — this will bite every later prompt
+   that adds a quad.
+2. **World-space `Text` renders ~8× smaller than `size` suggests.** At `size 32`
+   a 27-character string measured ~8 world units wide. Fixed by scaling text
+   objects 4–10× rather than inflating `size`, measured from the render rather
+   than guessed.
+
+Also had to dim the `SurveyGrid`: a 400×400 additive cyan plane washed out the
+entire world subtree. It now uses a dedicated `PH_GridDim` material — worth
+remembering that additive + large area = blowout.
+
+**Enabled vs disabled.** `HUDRoot`, `WorldRoot` and all 68 descendants are
+disabled; the `Headlock` component on `HUDRoot` is disabled too (component-level,
+the object stays in the tree). `VisualConfig` is left **enabled** — it draws
+nothing and needs to be selectable to be editable in the Inspector, and it is
+not part of the "hierarchy to create" list that the disable rule covers.
+`RSG Smoke Test [TEMP]` was left exactly where it was.
+
+**Notable decisions / open issues:**
+
+- **`ZoneWidget` got two children, `ZoneCircle` and `ZoneRect`**, since it must
+  "support both circle and rect forms" and hard rule 1 forbids building either
+  at runtime. `ZoneRect` needed four edge objects (`Edge_N/_S/_E/_W`) to read as
+  an outline rather than a filled quad — those four names are invented, not from
+  the spec, and are documented in `SCENE-MAP.md`.
+- **Six checklist rows is now a hard cap**, not a default. Under hard rule 1 a
+  lesson with seven steps cannot grow a seventh row; the lesson planner will
+  have to clamp or paginate. Flagging early because it constrains the planner's
+  output schema, which is not yet written.
+- `PropsContainer` is the one object with no placeholder visual — it is an empty
+  container by spec. Its children will also have to be pre-made.
+- `companionChanged` is declared in `EventBus` but has no scene object bound to
+  it; there is no companion/persona surface in the requested hierarchy.
+- `PH_Magenta.mat` is created but unused — reserved for props so the palette is
+  complete.
+- Everything is placeholder primitives, so the skeleton currently looks like
+  boxes and rings. That is the intended state; real visuals are a later task.
+- **Discovered issue — MCP tooling polluted the scene.** Using the runtime
+  scene-inspection MCP tool caused Lens Studio to auto-install
+  `Packages/AiPreviewAgentInspect.lspkg` **and inject an `AiPreviewAgent Handler`
+  object into `Assets/Scene.scene`** — which would have shipped in the Lens and
+  confused anyone reading the hierarchy. Same class of side effect as the RSG
+  examples prefab from the previous session. Removed the scene object and
+  git-ignored the package; it re-appears on demand when the tool is used again,
+  so the ignore rule is the durable fix. Worth watching for after any future
+  session that inspects the running preview.
+- Final verification walked the live tree via the Editor API rather than
+  trusting the applies: 7 root objects, 70 objects across the two trees,
+  **zero still enabled**, `Headlock` component `enabled=false`.

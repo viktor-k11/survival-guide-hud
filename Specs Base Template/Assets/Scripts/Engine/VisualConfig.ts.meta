@@ -1,0 +1,68 @@
+- !<AssetImportMetadata/a8554900-ecce-467c-a86e-a2efed69ed84>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 26685a43-6721-4616-9394-b9df6df140d5
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 26685a43-6721-4616-9394-b9df6df140d5
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 759b9971-7064-491c-8be2-47e0750f81b2
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/759b9971-7064-491c-8be2-47e0750f81b2>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 2444e9cd-aab7-4db0-afd3-0b30c0735f19
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    accentAmber: false
+    font: false
+    glowIntensity: false
+    panelOpacity: false
+    primaryPhosphor: false
+    warningColor: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - primaryPhosphor: !<Vec4> {x: 0.350000, y: 1.000000, z: 0.550000, w: 1.000000}
+      accentAmber: !<Vec4> {x: 1.000000, y: 0.700000, z: 0.150000, w: 1.000000}
+      warningColor: !<Vec4> {x: 1.000000, y: 0.300000, z: 0.220000, w: 1.000000}
+      glowIntensity: !<float> 1.000000
+      panelOpacity: 0.300000
+      font: !<reference.Font> 00000000-0000-0000-0000-000000000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Palette</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Bright saturated only. Dark values disappear on an additive display.</span>"}'
+    - '// @input vec4 primaryPhosphor = {0.35,1,0.55,1} {"hint":"Primary phosphor green: panel text, guide chrome, default widget stroke.", "widget":"color"}'
+    - '// @input vec4 accentAmber = {1,0.7,0.15,1} {"hint":"Amber accent: step counters, active highlights, hologram staging.", "widget":"color"}'
+    - '// @input vec4 warningColor = {1,0.3,0.22,1} {"hint":"Warning: safety-gated steps, distance warnings, the status-bar warning strip.", "widget":"color"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Intensity</span>"}'
+    - '// @input float glowIntensity = 1 {"hint":"Multiplier applied to emissive strength. 1.0 = as authored.", "widget":"slider", "min":0, "max":3, "step":0.05}'
+    - '// @input float panelOpacity = 0.3 {"hint":"Backing-plate strength. On an additive display this brightens the glow; it never darkens what is behind it.", "widget":"slider", "min":0, "max":1, "step":0.01}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Typography</span>"}'
+    - '// @input Asset.Font font {"hint":"HUD typeface. VT323 by default - OFL-licensed, no third-party IP (hard rule 7)."}'
