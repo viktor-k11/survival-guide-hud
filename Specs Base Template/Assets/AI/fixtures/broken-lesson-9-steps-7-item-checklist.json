@@ -1,0 +1,59 @@
+{
+  "title": "Build a Campfire",
+  "steps": [
+    {
+      "instruction": "Clear a circle of bare earth and ring it with stones.",
+      "companion": {"type": "zone", "shape": "circle", "size_m": 1.2, "label": "Fire pit", "duration_sec": null, "items": null, "stage": null},
+      "safety": false,
+      "warning": null
+    },
+    {
+      "instruction": "Gather every fuel grade before you strike a spark.",
+      "companion": {"type": "checklist", "shape": null, "size_m": null, "label": "Fuel grades", "duration_sec": null, "items": ["Dry tinder", "Birch bark", "Thin kindling", "Split kindling", "Thick fuel wood", "Spare dry wood", "Firesteel"], "stage": null},
+      "safety": false,
+      "warning": null
+    },
+    {
+      "instruction": "Scrape a shallow depression in the centre of the pit.",
+      "companion": null,
+      "safety": false,
+      "warning": null
+    },
+    {
+      "instruction": "Place the tinder bundle in the depression.",
+      "companion": {"type": "hologram_stage", "shape": null, "size_m": null, "label": null, "duration_sec": null, "items": null, "stage": 2},
+      "safety": false,
+      "warning": null
+    },
+    {
+      "instruction": "Stack the kindling log-cabin style around the tinder core.",
+      "companion": {"type": "hologram_stage", "shape": null, "size_m": null, "label": null, "duration_sec": null, "items": null, "stage": 3},
+      "safety": false,
+      "warning": null
+    },
+    {
+      "instruction": "Leave a gap on the upwind side for airflow.",
+      "companion": {"type": "compass", "shape": null, "size_m": null, "label": "Check wind", "duration_sec": null, "items": null, "stage": null},
+      "safety": false,
+      "warning": null
+    },
+    {
+      "instruction": "Light the tinder from the upwind side, then step back.",
+      "companion": {"type": "hologram_stage", "shape": null, "size_m": null, "label": null, "duration_sec": null, "items": null, "stage": 7},
+      "safety": true,
+      "warning": "Never light a fire in strong wind or under low branches."
+    },
+    {
+      "instruction": "Feed thicker wood once the kindling is well alight.",
+      "companion": {"type": "timer", "shape": null, "size_m": null, "label": "Burn-in", "duration_sec": 600, "items": null, "stage": null},
+      "safety": false,
+      "warning": null
+    },
+    {
+      "instruction": "Drown the fire and stir the ashes before you leave.",
+      "companion": {"type": "hazard_ring", "shape": null, "size_m": null, "label": "Cold to touch", "duration_sec": null, "items": null, "stage": null},
+      "safety": true,
+      "warning": null
+    }
+  ]
+}

@@ -943,3 +943,201 @@ text="..."` line.
   clean session open/close supports that. The older RSG skill claims ASR is
   device-only; on this evidence the specs-asr skill is the accurate one, but
   since no audio was ever transcribed neither claim is fully settled here.
+
+---
+
+## 2026-08-20 — AI layer: lesson planner prompts, schema, validator, fixtures
+
+**Prompt (verbatim):** *(abridged only in whitespace; content reproduced in full)*
+
+> Create the AI layer: two system prompts plus the schema that enforces them.
+> No engine, no state machine, no widgets — that is the next task.
+>
+> === Assets/AI/lesson-system-prompt.txt ===
+> [full lesson planner prompt: companions zone/timer/checklist/compass/
+> hologram_stage; rules 1-6; schema line
+> { "title": str, "steps": [ { "instruction": str, "companion":
+> null | {"type": str, ...}, "safety": bool } ] } ]
+>
+> Write TWO few-shot examples as complete valid JSON following the schema
+> exactly:
+> - campfire, 4 steps: zone (circle 1.2 "Fire pit"), checklist
+>   (tinder/kindling/fuel), hologram_stage 3 with the log-cabin stacking step,
+>   compass ("Check wind") plus safety:true on the lighting step.
+> - tent, 4 steps: zone (rect 2.5 "Tent footprint"), compass ("Wind direction"),
+>   hologram_stage 2-4 through assembly, timer (300 "Setup pace") for staking.
+>
+> === Assets/AI/qa-system-prompt.txt ===
+> [calm survival guide, 1-2 spoken sentences, no lists/markdown, refuse if
+> dangerous to answer remotely]
+>
+> === Wiring ===
+> 1. Define the lesson response schema as a TypeScript constant in
+>    Scripts/Engine/ and pass it as responseSchema on every lesson call. The
+>    prompt text and the schema constant must agree — if they drift, the model
+>    obeys the schema and we get silent mismatches. Note in a comment that they
+>    are a pair.
+> 2. Lesson calls: temperature 0, structured output, model from RsgModels.ts.
+> 3. A validator that runs on every response: valid JSON, required fields
+>    present, 4-8 steps, companion types known, checklist <= 6 items,
+>    hologram_stage within range for the lesson type. On violation, produce a
+>    structured error result the engine can render as a friendly error state —
+>    never throw into the void — and log the raw response in full.
+> 4. Save EVERY raw Gemini response into Assets/AI/fixtures/ per hard rule 5,
+>    with a filename that says what was asked.
+> 5. Prove it: run three real lesson requests — "help me build a campfire",
+>    "help me pitch a tent", "help me purify water" — and report for each the
+>    step count, the companions chosen, whether any step is safety-gated,
+>    whether the validator passed, and the latency. Paste the water one in full;
+>    it is the one with no hologram and I want to see what it does instead.
+> 6. Then run one deliberately broken case: feed the validator a hand-edited
+>    fixture with 9 steps and a 7-item checklist. Confirm it is rejected with a
+>    useful message rather than crashing.
+>
+> Per rule 4, append to CLAD-PROMPT-LOG.md, then commit:
+> feat: Gemini lesson planner v2 + in-lesson QA prompts, fixtures
+
+**Summary:** Both prompts written with the two few-shot examples, schema
+constant + validator built as a documented triangle, and all three live lesson
+requests **passed the validator**. The broken fixture was rejected with five
+distinct, useful issues and no crash. Two deviations from the spec were
+required and are called out below.
+
+**Deviation 1 — added a `warning` field.** Rule 3 requires `"safety": true`
+**plus a one-line warning**, but the schema you specified has only
+`instruction`, `companion`, `safety`. Since wiring item 1 says the model obeys
+the schema when the two disagree, leaving it out would have pushed the warning
+text into `instruction` and left `StatusBar/WarningStrip` (which `SCENE-MAP.md`
+says is driven by `safetyPending`) with nothing to render. Added
+`"warning": str|null` to **both** the prompt and `LESSON_RESPONSE_SCHEMA`, and
+the validator now fails a step that is `safety: true` with no warning text.
+
+**Deviation 2 — the tent example uses one hologram stage, not 2-4.** The tent
+example was specified as 4 steps carrying four distinct companions (zone,
+compass, hologram_stage, timer), so only one step can be a `hologram_stage`;
+"hologram_stage 2-4 through assembly" cannot fit. Used stage 3 (poles +
+canopy) on the assembly step. Worth noting the live model did better than the
+example: given 8 steps it spread stages 1→2→3→4 across the lesson exactly as
+intended.
+
+**Deviation 3 — `.txt` prompts cannot be read by a Lens.** Lens Studio imports
+a `.txt` as a `BinAsset`, which exposes **no read method at all** — only
+`JsonAsset.getString()` works. So the files you asked for cannot be the files
+the Lens loads. Resolution: the `.txt` files stay the single source of truth
+(they are what a human edits), and `Tools/build-prompts.py` generates
+`Assets/AI/prompts.generated.json`, which the Lens actually loads.
+`build-prompts.py --check` fails on a stale mirror and is wired into the
+pre-commit hook — otherwise editing a prompt would silently ship the old text.
+
+**The prompt/schema/validator triangle.** `LessonSchema.ts` carries a banner
+comment naming `lesson-system-prompt.txt` as its pair. Two things the
+Vertex/Gemini schema subset genuinely cannot express, which is precisely why
+the validator exists:
+
+1. **No unions.** The prompt describes `companion` as a tagged union, but the
+   subset has no `oneOf`. It is modelled as one flattened object with every
+   field nullable, and the prompt instructs the model to null what does not
+   apply. Which fields are mandatory per `type` is validator-side.
+2. **No counts or cross-field rules.** "4-8 steps", "checklist ≤ 6 items",
+   "hologram stage within range for the lesson kind" are all invisible to the
+   schema.
+
+`LessonValidator.validateLesson()` **never throws** — every failure returns
+`{ok, plan, issues[], summary}` with a machine-readable `code`, a `path` like
+`steps[6].companion.stage`, and a one-line human message. Transport failures
+funnel into the same shape, so the engine has exactly one error surface.
+
+**5. Three live requests — all validator PASS, model `gemini-2.5-flash`,
+temperature 0.**
+
+| Request | Steps | Companions | Safety-gated | Validator | Latency |
+|---|---|---|---|---|---|
+| help me build a campfire | 6 | zone, checklist, hologram_stage, compass, hologram_stage, none | **2** | PASS | 10675 ms |
+| help me pitch a tent | 8 | zone, compass, hologram_stage ×3, timer, hologram_stage, checklist | 0 | PASS | 12056 ms |
+| help me purify water | 5 | none, checklist, none, timer, none | **1** | PASS | 11540 ms |
+
+The water lesson is the interesting one and it behaved correctly: **no
+`hologram_stage` anywhere**, because no hologram exists for it. It reached for
+`checklist` (pre-filter materials) and `timer` (60 s rolling boil) instead, and
+left three steps with `companion: null` rather than inventing a widget. Full
+raw payload:
+
+```json
+{
+  "title": "Purify Water",
+  "steps": [
+    { "instruction": "Collect water from the cleanest available source into a container.",
+      "companion": null, "safety": false, "warning": null },
+    { "instruction": "Use a clean cloth or shirt to filter out large debris and sediment.",
+      "companion": {"type": "checklist", "duration_sec": null, "items": ["Clean cloth", "Bandana", "Coffee filter"], "label": "Pre-filter materials", "shape": null, "size_m": null, "stage": null},
+      "safety": false, "warning": null },
+    { "instruction": "Transfer the pre-filtered water into a metal pot or heat-safe container.",
+      "companion": null, "safety": false, "warning": null },
+    { "instruction": "Bring the water to a rolling boil for at least one minute to kill pathogens.",
+      "companion": {"type": "timer", "duration_sec": 60, "items": null, "label": "Boiling time", "shape": null, "size_m": null, "stage": null},
+      "safety": true, "warning": "Boiling water is extremely hot; handle with care to avoid severe burns." }
+    ,
+    { "instruction": "Allow the purified water to cool completely before drinking or storing in a clean container.",
+      "companion": null, "safety": false, "warning": null }
+  ]
+}
+```
+
+Note the model volunteers `safety: true` with a real warning on the boil step
+without being told water was hazardous — rule 3 generalises beyond fire/blade.
+
+**Latency is the headline risk: 10.7-12.1 s per lesson.** Combined with the
+7.5 s TTS figure from the earlier session, a cold "ask → first narrated step"
+is heading for ~18-20 s. Same conclusion as before, now with a second data
+point: the lesson state machine must be designed to stream/prefetch from the
+start, not retrofitted.
+
+**4. Fixtures saved** (hard rule 5) — full response envelopes, not just
+payloads, so fixture-driven tests exercise the same extraction path as live
+calls:
+`Assets/AI/fixtures/lesson-help-me-build-a-campfire.raw.json`,
+`lesson-help-me-pitch-a-tent.raw.json`,
+`lesson-help-me-purify-water.raw.json`.
+
+**6. Broken case — rejected cleanly, 5 issues, no crash.** The hand-edited
+fixture `broken-lesson-9-steps-7-item-checklist.json` is loaded as a `JsonAsset`
+and fed through the **same** `validateLesson()` entry point as live responses —
+no test-only path:
+
+```
+broken fixture validator=FAIL (expected)
+summary: 5 problems with this lesson. First: Lesson has 9 steps; expected 4-8.
+  issue[0] BAD_STEP_COUNT        at steps                        : Lesson has 9 steps; expected 4-8.
+  issue[1] CHECKLIST_TOO_LONG    at steps[1].companion.items     : Checklist on step 2 has 7 items; the display fits 6.
+  issue[2] HOLOGRAM_OUT_OF_RANGE at steps[6].companion.stage     : Step 7 asks for fire hologram stage 7; valid range is 1-4.
+  issue[3] MISSING_FIELD         at steps[8].warning             : Step 9 is safety-gated but carries no warning text.
+  issue[4] UNKNOWN_COMPANION     at steps[8].companion.type      : Step 9 uses unknown companion 'hazard_ring'.
+plan returned: null (correct)
+```
+
+I put three extra violations in the fixture beyond the two you asked for
+(out-of-range stage, unknown companion type, safety step with no warning) so
+more than one validator path is actually exercised.
+
+**Notable decisions / discovered issues:**
+
+- **Found and fixed a live footgun: permanent plumbing was living inside a
+  `[TEMP]` object.** I disabled the `RsgSmokeTest` component (it had passed,
+  and its enum probe cost ~18 s of pointless API calls per boot) — and all
+  three lesson requests immediately failed with
+  `Proxy error: Parameter value for api-token cannot be empty`. The token
+  install was called only from that throwaway diagnostic. My own earlier note
+  said "keep `RsgTokens.ts`, it is the permanent plumbing", but the *call site*
+  was still in the disposable script. Extracted to
+  `Systems/RsgBootstrap` (`RsgBootstrap.ts`, runs in `onAwake`), which is
+  permanent and independent of the diagnostics. Deleting the smoke test later
+  would have caused the identical failure on a worse day.
+- `LessonPlanner.ts` is a plain module, not a component: no scene dependency,
+  takes the system prompt as a parameter. Deliberately contains no decisions
+  about what to do with a lesson — that is the state machine's job and it does
+  not exist yet, per the task scope.
+- `RsgSmokeTest` component is now **disabled** but left in place; `LessonProbe`
+  was attached as a second ScriptComponent on the same `RSG Smoke Test [TEMP]`
+  object so the scene-root count did not change and the guard stayed quiet.
+- The QA prompt is written and generated into the prompts mirror, but **nothing
+  calls it yet** — in-lesson Q&A routing is engine work and out of scope here.

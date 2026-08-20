@@ -1,0 +1,52 @@
+- !<AssetImportMetadata/c9b19eca-1c70-4049-bb0a-b02cfd0d4dd8>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 97959d7c-1aed-4bdb-b547-9f9fe3338e2b
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 97959d7c-1aed-4bdb-b547-9f9fe3338e2b
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 9b510d76-8d3a-49ab-9162-899952111868
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/9b510d76-8d3a-49ab-9162-899952111868>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: a24a0389-bb47-494c-8588-23e61c369f41
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    brokenFixture: false
+    promptsAsset: false
+    runOnStart: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - promptsAsset: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      brokenFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      runOnStart: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input Asset.JsonAsset promptsAsset {"hint":"Assets/AI/prompts.generated.json — built from the .txt sources by Tools/build-prompts.py"}'
+    - '// @input Asset.JsonAsset brokenFixture {"hint":"Assets/AI/fixtures/broken-lesson-9-steps-7-item-checklist.json — the deliberately invalid case"}'
+    - '// @input bool runOnStart = true {"hint":"Turn off once the planner is wired into the real engine."}'

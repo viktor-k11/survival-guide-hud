@@ -1,0 +1,46 @@
+- !<AssetImportMetadata/ba67539d-ec80-446e-8b1d-95c3ce1334cd>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> afa18357-e448-45a0-a0c9-4c12383f63b0
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> afa18357-e448-45a0-a0c9-4c12383f63b0
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 69e8dd6b-81b8-4374-bcc0-7d0b93226f94
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/69e8dd6b-81b8-4374-bcc0-7d0b93226f94>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: db1ce0cb-dd0b-44a3-a731-88944afa49d4
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    enableLogging: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input bool enableLogging = true {"hint":"Print the masked token fingerprints at boot. Never prints a whole token."}'

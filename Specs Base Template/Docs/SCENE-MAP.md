@@ -129,9 +129,15 @@ placed against real terrain, not the head.
 |---|---|
 | `VisualConfig` | `VisualConfig.ts` — theme `@input`s only: `primaryPhosphor`, `accentAmber`, `warningColor`, `glowIntensity`, `panelOpacity`, `font`. No logic, no subscriptions. Enabled so it is editable in the Inspector. |
 | `Systems` | **Enabled** container for runtime controllers. Has to be enabled: `HUDRoot` and `WorldRoot` ship disabled, so something already running must turn them on. |
+| `Systems/RsgBootstrap` | `Engine/RsgBootstrap.ts` — installs the RSG tokens in `onAwake`. **Permanent.** Must stay enabled and must run before anything that calls Gemini/OpenAI. |
 | `Systems/VoiceInput` | `Engine/VoiceInput.ts` — hold-to-talk capture. Pinch, or hold the debug key. Emits `voiceStateChanged` / `voiceInterim` / `userRequest`. |
 | `Systems/StatusBarPresenter` | `Widgets/StatusBarPresenter.ts` — drives `StatusBar`. Subscribes to the bus, enables existing children, writes text. No logic. |
-| `RSG Smoke Test [TEMP]` | Throwaway RSG diagnostic. Delete this object and `RsgSmokeTest.ts` once RSG work is done — see `TOKENS.md`. |
+| `RSG Smoke Test [TEMP]` | Throwaway diagnostics. Carries **two** ScriptComponents: `RsgSmokeTest.ts` (now **disabled** — it passed, and it cost ~18s of API calls per boot) and `LessonProbe.ts` (the lesson-planner proving run). Delete the object and both scripts when done — see `TOKENS.md`. |
+
+> **Do not put permanent plumbing inside a `[TEMP]` object.** Token installation
+> used to live in `RsgSmokeTest.ts`; disabling that component silently broke
+> every Gemini call with `Proxy error: Parameter value for api-token cannot be
+> empty`. That is why `Systems/RsgBootstrap` exists.
 
 > `StatusBarPresenter` currently enables `HUDRoot` on start, because something
 > has to and no mode router exists yet. **That ownership moves to the mode

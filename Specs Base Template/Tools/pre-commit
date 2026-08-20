@@ -12,19 +12,30 @@
 set -e
 
 REPO_ROOT=$(git rev-parse --show-toplevel)
-CHECKER="$REPO_ROOT/Specs Base Template/Tools/check-scene-roots.py"
+TOOLS="$REPO_ROOT/Specs Base Template/Tools"
+CHECKER="$TOOLS/check-scene-roots.py"
+PROMPTS="$TOOLS/build-prompts.py"
 
-[ -f "$CHECKER" ] || exit 0
+STAGED=$(git diff --cached --name-only)
+
+blocked() {
+    echo ""
+    echo "[pre-commit] BLOCKED. $1"
+    echo "[pre-commit] Override with: git commit --no-verify"
+    exit 1
+}
 
 # Only bother when the scene is actually part of this commit.
-if git diff --cached --name-only | grep -q "Assets/Scene.scene"; then
+if [ -f "$CHECKER" ] && echo "$STAGED" | grep -q "Assets/Scene.scene"; then
     echo "[pre-commit] checking scene roots..."
-    if ! python3 "$CHECKER"; then
-        echo ""
-        echo "[pre-commit] BLOCKED. Fix the scene or update the allowlist."
-        echo "[pre-commit] Override with: git commit --no-verify"
-        exit 1
-    fi
+    python3 "$CHECKER" || blocked "Fix the scene or update the allowlist."
+fi
+
+# The Lens loads prompts.generated.json, not the .txt sources — a stale mirror
+# means shipping the OLD prompt with no error anywhere.
+if [ -f "$PROMPTS" ] && echo "$STAGED" | grep -q "Assets/AI/.*prompt"; then
+    echo "[pre-commit] checking generated prompts are current..."
+    python3 "$PROMPTS" --check || blocked "Run: python3 'Specs Base Template/Tools/build-prompts.py'"
 fi
 
 exit 0

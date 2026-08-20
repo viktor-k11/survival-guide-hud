@@ -2052,6 +2052,7 @@
   Children:
     - !<own> f782360e-c60d-4ad4-88c8-2a4d14b009f4
     - !<own> da19f5a7-00c5-4053-a647-598c34afefd3
+    - !<own> c77b043f-d23e-45e7-bafd-5be84cdefb44
   Components:
     []
 - !<Text/5608a90a-af26-49e0-8d63-6fdf1eecb7d3>
@@ -3151,6 +3152,7 @@
   Components:
     - !<own> fdeee8e9-3f3b-450c-bb7d-398b938b231b
     - !<own> 2b664962-d6ab-4b42-952b-6f039ea835b3
+    - !<own> d0ceb458-4828-4327-aff5-5c2a9e3560bf
 - !<SceneObject/7e18ef85-197a-4c4d-9822-ab7ccbb40274>
   PrefabRemaps:
     []
@@ -3661,6 +3663,22 @@
     - !<own> b859e31c-4c76-46bd-bd6a-042228e52728
   Components:
     []
+- !<ScriptComponent/8d5a2b75-f4e7-4218-9f99-273bf528bdf4>
+  PrefabRemaps:
+    []
+  Name: RsgBootstrap
+  Enabled: true
+  ScriptAsset: !<reference> afa18357-e448-45a0-a0c9-4c12383f63b0
+  ScriptInputsDefault:
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/8dbb9206-4921-434f-abcf-bb364a2347c1>
   PrefabRemaps:
     []
@@ -4532,6 +4550,21 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<SceneObject/c77b043f-d23e-45e7-bafd-5be84cdefb44>
+  PrefabRemaps:
+    []
+  Name: RsgBootstrap
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 8d5a2b75-f4e7-4218-9f99-273bf528bdf4
 - !<RenderMeshVisual/c7cdf254-9f7a-443c-9a49-25fbc07a7c6c>
   PrefabRemaps:
     []
@@ -4844,6 +4877,24 @@
     - !<own> bb9036be-541f-49e7-9554-c297d354da21
   Components:
     []
+- !<ScriptComponent/d0ceb458-4828-4327-aff5-5c2a9e3560bf>
+  PrefabRemaps:
+    []
+  Name: LessonProbe
+  Enabled: true
+  ScriptAsset: !<reference> 97959d7c-1aed-4bdb-b547-9f9fe3338e2b
+  ScriptInputsDefault:
+    runOnStart: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      promptsAsset: !<reference.JsonAsset> 805a6898-a639-474f-974b-2e1e1ff9fbdf
+      brokenFixture: !<reference.JsonAsset> 404fc54d-e175-4494-9b18-27cd8b0ec81d
+      runOnStart: true
+  ScriptTypes:
+    "":
+      {}
 - !<ScriptComponent/d3e2fbc5-8795-4913-9af6-c8626f8e6d9c>
   PrefabRemaps:
     []
@@ -5843,7 +5894,7 @@
   PrefabRemaps:
     []
   Name: RsgSmokeTest
-  Enabled: true
+  Enabled: false
   ScriptAsset: !<reference> 1fe84466-1ba1-4679-910d-009f0b8f5e59
   ScriptInputsDefault:
     {}
