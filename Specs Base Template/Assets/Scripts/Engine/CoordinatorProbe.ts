@@ -45,11 +45,26 @@ export class CoordinatorProbe extends BaseScriptComponent {
   private probeRequest: string = "help me purify water";
 
   @input
+  @hint("Scenario 'qa': the lesson to load first.")
+  private qaLessonRequest: string = "help me pitch a tent";
+
+  @input
+  @hint("Scenario 'qa': the question asked mid-lesson. It must NOT match a navigation keyword, or the engine answers it locally with no AI call (hard rule 6).")
+  private qaQuestion: string = "what if the ground is wet";
+
+  @input
+  @widget(new SliderWidget(5, 40, 1))
+  @hint("Scenario 'qa': seconds to wait for the lesson before asking. Must clear the lesson call plus its first narration.")
+  private qaAskAfterSec: number = 16;
+
+  @input
   @widget(
     new ComboBoxWidget([
       new ComboBoxItem("failures — the four failure paths", 0),
       new ComboBoxItem("happy — one real request, end to end", 1),
       new ComboBoxItem("marker — a site tap drives a real request", 2),
+      new ComboBoxItem("qa — load a lesson, then ask a question mid-lesson", 3),
+      new ComboBoxItem("keyboard — open the AR keyboard, then submit through the seam", 4),
     ])
   )
   @hint("Which scripted run to perform. 'failures' costs two Gemini calls; 'happy' and 'marker' cost one each.")
@@ -114,6 +129,43 @@ export class CoordinatorProbe extends BaseScriptComponent {
           score: 0.562,
           source: "debug",
         });
+      });
+      return;
+    }
+
+    if (this.scenario === 4) {
+      this.at(1.0, () => {
+        this.log("=== KEYBOARD: requesting the AR keyboard ===");
+        this.log("NOTE: the keyboard does not draw under SPECS 27 preview simulation — that is a platform limitation.");
+        eventBus.emit(Events.keyboardRequested, { source: "probe" });
+      });
+      this.at(7.0, () => {
+        this.log("=== KEYBOARD: submitting through the same seam the return key uses ===");
+        eventBus.emit(Events.userRequest, { text: "how do I signal for rescue", latencyMs: 0 });
+      });
+      return;
+    }
+
+    if (this.scenario === 3) {
+      eventBus.subscribe(Events.qaAnswered, (p: { answer: string; latencyMs: number; ok: boolean }) => {
+        this.log('  ANSWER (' + (p && p.ok ? p.latencyMs + "ms" : "FAILED") + '): "' + (p ? p.answer : "") + '"');
+      });
+      eventBus.subscribe(Events.narrationStateChanged, (p: { speaking: boolean; text: string; source: string }) => {
+        if (!p) return;
+        this.log("  AUDIO " + (p.speaking ? 'speaking (' + p.source + ') "' + p.text + '"' : "stopped"));
+      });
+
+      this.at(0.5, () => {
+        this.log("=== QA: loading a lesson first ===");
+        this.coordinator.request(this.qaLessonRequest, null, "debug");
+      });
+      this.at(this.qaAskAfterSec, () => {
+        this.log('=== QA: asking mid-lesson "' + this.qaQuestion + '" ===');
+        this.log("engine mode: " + this.engine.currentMode() + " (must be LESSON, or this routes as a new lesson request)");
+        // Straight through handleTranscript, exactly as a spoken question would
+        // arrive: navigation keywords are matched first, and only what does not
+        // match becomes qaRequested.
+        this.engine.handleTranscript(this.qaQuestion);
       });
       return;
     }

@@ -93,6 +93,18 @@ export const Events = {
   narrationRequested: "narrationRequested",
   /** Warm the NEXT step's audio while this one plays. Payload: { stepIndex, text }. */
   narrationPrefetch: "narrationPrefetch",
+  /**
+   * Speak this text WITHOUT interrupting anything. Payload: { text, source }.
+   * Q&A answers use this: a step's narration outranks an answer to a question
+   * about it, so the answer queues and follows.
+   */
+  speakRequested: "speakRequested",
+  /** Narration playback started or stopped. Payload: { speaking, text, source }. */
+  narrationStateChanged: "narrationStateChanged",
+  /** A Q&A answer came back. Payload: { question, answer, latencyMs }. */
+  qaAnswered: "qaAnswered",
+  /** Something asked for the AR keyboard. Payload: { source }. */
+  keyboardRequested: "keyboardRequested",
 } as const;
 
 export type EventName = (typeof Events)[keyof typeof Events];

@@ -107,6 +107,7 @@ Local origin sits 60 cm in front of the user.
 | `HUDRoot/GaugeTimer/Track` | Static full ring — the 100% reference | `timerTick` |
 | `HUDRoot/GaugeTimer/Fill` | Progress ring, scaled/swept against `Track` | `timerTick` |
 | `HUDRoot/GaugeTimer/Label` | `"MM:SS"` remaining | `timerTick` |
+| `HUDRoot/StatusBar/KeyboardToggle` | `"TYPE"` — tap to open the AR keyboard. The demo's fallback when voice misbehaves | `modeChanged` (shown by StatusBarPresenter) |
 | `HUDRoot/AssemblingLesson` | **Placeholder VFX** shown only while a lesson is compiling. Swap the contents, keep the path | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Ring` | Spinning amber torus | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Core` | Counter-pulsing green disc | `requestStateChanged` |
@@ -166,6 +167,9 @@ placed against real terrain, not the head.
 | `Systems/ChecklistPresenter` | `Widgets/ChecklistPresenter.ts` — six rows, sequential highlight, shows only as many as the step needs. |
 | `Systems/GaugeTimerPresenter` | `Widgets/GaugeTimerPresenter.ts` — countdown ring + MM:SS on `timerTick`. |
 | `Systems/CompanionRouter` | `Widgets/CompanionRouter.ts` — the single `companionChanged` handler; switches Zone/Timer/Checklist/Compass and hides all four on `type: null`. |
+| `Systems/NarrationService` | `Engine/NarrationService.ts` — **the only thing that produces speech.** Consumes `narrationRequested` / `narrationPrefetch` / `speakRequested`, caches tracks by text, pre-warms fixed phrases. Carries the `AudioComponent`. |
+| `Systems/QaService` | `Engine/QaService.ts` — answers `qaRequested` from the `qa` prompt at temperature 0.4, publishes `qaAnswered` and queues the answer for speech. |
+| `Systems/KeyboardInput` | `Engine/KeyboardInput.ts` — the AR keyboard, emitting the SAME `userRequest` event `VoiceInput` emits. Debug keys I (open) / U (submit canned text). |
 | `Systems/LessonCoordinator` | `Engine/LessonCoordinator.ts` — **the only thing that calls Gemini for a lesson.** Owns `lessonRequested`/`siteSelected` -> planner -> validator -> `engine.loadLesson()`, plus every failure path. |
 | `Systems/AssemblingLessonPresenter` | `Widgets/AssemblingLessonPresenter.ts` — enables and animates `HUDRoot/AssemblingLesson` while `requestStateChanged.state === "COMPILING"`. |
 | `Systems/SurveyController` | `Engine/SurveyController.ts` — the boot survey. Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys S (restart) / G (finish now). |
@@ -208,7 +212,8 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `hologramStage` · `timerTick` · `checklistUpdated` · `safetyPending` ·
 `propPlaced` · `lessonCompleted` · `surveyStarted` · `surveyProgress` ·
 `surveyComplete` · `siteSelected` · `distanceWarning` · `stopRequested` ·
-`requestStateChanged` · `lessonAnchorChanged`
+`requestStateChanged` · `lessonAnchorChanged` · `speakRequested` ·
+`narrationStateChanged` · `qaAnswered` · `keyboardRequested`
 
 Request-chain payload shapes live in `Engine/RequestTypes.ts`, alongside
 `SurveyTypes.ts`, for the same reason: presenters render this state and must not
@@ -282,9 +287,30 @@ hand and the transition is instant.
 `stepChanged`, no companion rebuild, no prefetch. Repeating is an audio
 operation, not a state transition.
 
-Nothing implements either event yet. The engine is complete without them: it
-advances on user input regardless of whether audio ever plays, which is exactly
-the property that keeps a slow or failed TTS from freezing the lesson.
+`Systems/NarrationService` implements both. The engine is still complete
+without it: it advances on user input regardless of whether audio ever plays,
+which is exactly the property that keeps a slow or failed TTS from freezing the
+lesson. A synthesis that fails, times out, or lands after the user has moved on
+produces **silence and a log line** — never a stalled step, never the wrong
+sentence read over the right step.
+
+**The cache is keyed by TEXT, not step index.** "back" and "repeat" ask for
+words the user has already heard, so they are free. Keyed by index they would
+also be free, right up until a second lesson reused index 2 for different words
+and the guide confidently said the wrong sentence.
+
+**Fixed phrases have two routes in**, in priority order: `bakedPhrases` +
+`bakedTracks` (recorded audio wired in the Inspector — free forever, works
+offline, the shipping path) and `prewarmPhrases` (synthesized once at boot, the
+path that works today with no recording session).
+
+> **Warm-ups run STRICTLY ONE AT A TIME, chained on completion.** The first
+> version fired one every `prewarmGapSec` on a timer; since each call takes
+> 6-18 s that put six requests in flight at once, and the measured result was
+> DNS resolution failures, `Network is unreachable`, three of six phrases
+> failing, and a 15 s outlier on an unrelated Gemini call running alongside.
+> **Concurrent RSG calls degrade each other.** Nothing waits on a warm-up, so it
+> has no business competing with anything.
 
 ## THE DISPLAY FRUSTUM IS MUCH SMALLER THAN THE HUD WAS AUTHORED FOR
 
@@ -319,6 +345,38 @@ limit.
 > **Verify HUD layout with `PreviewPanelTool screenshot`, never with
 > `CaptureRuntimeViewTool`.** The ortho capture is for reading text and checking
 > content; only the preview panel tells you whether the wearer can see it.
+
+## Where the fixed ~7 s per call goes
+
+Measured 2026-08-20. Every remote call pays a floor unrelated to payload size,
+so the question was whether that floor is the network, the gateway, or the
+model — and whether a throwaway warm-up call at boot would absorb it.
+
+| Phase | Measurement | Result |
+|---|---|---|
+| A. Raw HTTPS to a host **outside** the gateway, x3 | 559 ms, 115 ms, 112 ms (repeat run: 650, 1076, 287) | First request pays ~0.5 s of TLS/connection setup; after that ~115 ms. |
+| B. Minimal Gemini call (5-token cap), x4 | 6070, 15036\*, 3009, 5868 ms | Huge variance, and **the first call is not the slowest**. |
+| C. One-word TTS, x3 | 7103, 7013, 6550 ms | Tight, consistent, and again **no first-call penalty**. |
+
+\* the 15 s outlier coincided with six concurrent TTS warm-ups — see below.
+
+**Conclusion: the floor is NOT connection setup.** Raw HTTPS to an unrelated
+host completes in ~115 ms once the socket is warm and ~0.5 s cold, so at most
+half a second of the ~7 s is network. The remaining ~6.5 s is gateway proxy plus
+model start, and it is charged **per call, not per session**.
+
+**Verdict on warming: not worth it, and it is not kept.** Across both providers
+the first call is not consistently slower than the third or fourth; the TTS
+series varies by 550 ms across three identical calls with the first in the
+middle of the range. There is no per-session cost for a warm-up to absorb.
+
+> **A warm-up call is worse than neutral — it is actively harmful.** The one
+> thing that DID reliably inflate latency was concurrency: six overlapping TTS
+> warm-ups produced `DNS resolution failed`, `Network is unreachable`, three of
+> six phrases failing, and a 15 s outlier on an unrelated Gemini call running at
+> the same time. Requests to the gateway degrade each other. Anything
+> speculative must be strictly sequential and must never overlap a request the
+> user is waiting on.
 
 ## The COMPILING state
 

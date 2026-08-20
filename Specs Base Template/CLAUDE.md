@@ -51,3 +51,21 @@ aloud by Gemini with step context. Retro-futuristic phosphor HUD aesthetic.
    phosphor HUD" — never reference or imitate specific franchise assets.
    All generated assets (meshes, SFX, music) come from CLAD generation
    skills or license-clean sources noted in the log.
+
+## Communication
+
+**SCREENSHOTS GO TO `Docs/screens/`.** Whenever a task asks for visual
+verification, save the capture to a file and name it in the report. A screenshot
+that exists only in the agent's context is invisible to the person who asked for
+it — it cannot be reviewed, compared against the next run, or shown to anyone
+else. JPEG is fine; these are review artefacts, not masters.
+
+Two corollaries learned the hard way:
+
+- **Verify HUD layout with `PreviewPanelTool screenshot`, not
+  `CaptureRuntimeViewTool`.** The runtime capture frames whatever it is pointed
+  at and ignores the device frustum, so it will happily show a HUD the wearer
+  cannot see. Use the ortho capture to read text, the preview panel to prove
+  visibility.
+- **Say which capture is which** in the report, and keep the filenames stable
+  across sessions so successive runs can be compared.

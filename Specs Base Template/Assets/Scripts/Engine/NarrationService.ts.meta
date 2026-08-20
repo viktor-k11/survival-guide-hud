@@ -1,0 +1,96 @@
+- !<AssetImportMetadata/8b9186a0-97d1-4492-a2b6-03cbfeb8c8b6>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 1f3f33f9-0bcd-437b-80b6-efac08532866
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 1f3f33f9-0bcd-437b-80b6-efac08532866
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> de4cc60d-ba15-4aea-9a0c-306b4086707b
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/de4cc60d-ba15-4aea-9a0c-306b4086707b>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 26faf8e8-ca7f-43c0-b665-24d0d55bc513
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    audio: false
+    bakedPhrases: false
+    bakedTracks: false
+    enableLogging: false
+    enablePrewarm: false
+    maxCacheEntries: false
+    prewarmGapSec: false
+    prewarmPhrases: false
+    prewarmStartDelaySec: false
+    synthesisTimeoutSec: false
+    voice: false
+    volume: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - audio: !<reference.AudioComponent> 00000000-0000-0000-0000-000000000000
+      voice: coral
+      volume: !<float> 1.000000
+      maxCacheEntries: !<float> 24.000000
+      synthesisTimeoutSec: !<float> 20.000000
+      bakedPhrases: !<string[]>
+        []
+      bakedTracks: !<reference.AudioTrackAsset[]>
+        []
+      enablePrewarm: true
+      prewarmStartDelaySec: !<float> 3.000000
+      prewarmGapSec: !<float> 1.000000
+      prewarmPhrases: !<string[]>
+        - Next step.
+        - Going back.
+        - Got it.
+        - Careful.
+        - Surveying knowledge.
+        - Lesson complete. Well done.
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Voice</span>"}'
+    - '// @input Component.AudioComponent audio {"hint":"AudioComponent that plays the narration. Needs an AudioTrackAsset slot; the service swaps the track per utterance."}'
+    - '// @input string voice = "coral" {"hint":"OpenAI voice name: coral / alloy / echo / shimmer / nova / onyx."}'
+    - '// @input float volume = 1 {"widget":"slider", "min":0.1, "max":2, "step":0.05}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Cache</span>"}'
+    - '// @input float maxCacheEntries = 24 {"hint":"Maximum synthesized tracks held. Oldest goes first. Baked tracks are never evicted."}'
+    - '// @input float synthesisTimeoutSec = 20 {"hint":"Give up on a synthesis after this long. The step is already on screen; late audio is worse than none.", "widget":"slider", "min":5, "max":60, "step":1}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Pre-baked audio — the zero-cost path</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Wire recorded clips here and the matching phrase never touches the network. bakedPhrases[i] is spoken by bakedTracks[i]; both lists must line up.</span>"}'
+    - "// @input string[] bakedPhrases = {}"
+    - "// @input Asset.AudioTrackAsset[] bakedTracks = {}"
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Boot pre-warm — the works-today path</span>"}'
+    - '// @input bool enablePrewarm = true {"hint":"Synthesize the fixed phrases once at boot so they are instant when first used."}'
+    - "// @input float prewarmStartDelaySec = 3 {\"hint\":\"Wait this long after boot before warming, so warm-up never queues ahead of the user's first request.\"}"
+    - '// @input float prewarmGapSec = 1 {"hint":"Gap AFTER each warm-up call finishes before the next one starts. Strictly one at a time — see the note on prewarmNext().", "widget":"slider", "min":0, "max":10, "step":0.5}'
+    - '// @input string[] prewarmPhrases = {"Next step.","Going back.","Got it.","Careful.","Surveying knowledge.","Lesson complete. Well done."} {"hint":"The fixed phrases. Keep these in step with the copy the rest of the HUD uses.", "widget":"text_area"}'
+    - // @input bool enableLogging = true

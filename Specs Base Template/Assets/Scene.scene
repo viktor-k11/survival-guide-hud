@@ -746,6 +746,22 @@
     []
   Components:
     []
+- !<SceneObject/0d498f83-c7f4-43b6-9b38-62ba94df7a09>
+  PrefabRemaps:
+    []
+  Name: NarrationService
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 2418d3b3-d607-4aa9-8a29-914410c62af4
+    - !<own> f334e114-b71c-4a31-9d40-dbe57b822d2b
 - !<SceneObject/0e778a10-bd57-4a2a-b20a-b6f4326e8058>
   PrefabRemaps:
     []
@@ -1014,6 +1030,23 @@
     - !<own> 33c3b818-8a2f-4298-8659-2ea691615666
   Components:
     []
+- !<AudioComponent/2418d3b3-d607-4aa9-8a29-914410c62af4>
+  PrefabRemaps:
+    []
+  Name: Audio
+  Enabled: true
+  AudioTrack: !<reference> 00000000-0000-0000-0000-000000000000
+  EnableAutoplayLoop: false
+  Volume: 1.000000
+  EnableMixToSnap: false
+  RecordVolume: 1.000000
+  EnableSpatialAudio: false
+  EnableDistanceEffect: false
+  CurveType: Logarithm
+  MinDistance: 0.000000
+  MaxDistance: 100.000000
+  EnableDirectivityEffect: false
+  EnablePositionEffect: false
 - !<SceneObject/241be3d8-6f45-47d7-8b71-53778e375dc2>
   PrefabRemaps:
     []
@@ -1742,6 +1775,29 @@
     - !<own> f648ff05-c401-4297-9de7-7aaffc1d778e
   Components:
     []
+- !<ScriptComponent/3b4da21f-3fe4-49b4-ad98-703cbef76796>
+  PrefabRemaps:
+    []
+  Name: QaService
+  Enabled: true
+  ScriptAsset: !<reference> 8422abf6-abff-4885-b43c-1dc79531e613
+  ScriptInputsDefault:
+    maxAnswerTokens: true
+    failureMessage: true
+    speakFailures: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      promptsAsset: !<reference.JsonAsset> 805a6898-a639-474f-974b-2e1e1ff9fbdf
+      maxAnswerTokens: !<float> 60.000000
+      failureMessage: I could not answer that one.
+      speakFailures: false
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/3b4f5057-b516-4d3b-9c8d-14c81af2f505>
   PrefabRemaps:
     []
@@ -2160,6 +2216,23 @@
     - !<own> 8fe2a532-9bf3-4cde-b598-04ce5470718d
   Components:
     []
+- !<SceneObject/47d9690f-00d8-45d1-acf2-59aad38e0ce1>
+  PrefabRemaps:
+    []
+  Name: KeyboardToggle
+  Enabled: false
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 28.000000, y: -18.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 4.000000, y: 4.000000, z: 4.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 4a59ecdc-709c-496f-9d5f-5f742663d22c
+    - !<own> a770b004-c210-47c4-af80-b9e513d3e720
+    - !<own> eef575a2-3442-415f-ba7c-9d4fa7b7bfe3
 - !<SceneObject/49a1b55b-f6ad-43e2-b30e-0fa466d5b780>
   PrefabRemaps:
     []
@@ -2177,6 +2250,90 @@
     - !<own> 8dbb9206-4921-434f-abcf-bb364a2347c1
   Components:
     []
+- !<Text/4a59ecdc-709c-496f-9d5f-5f742663d22c>
+  PrefabRemaps:
+    []
+  Name: Text
+  Enabled: true
+  RenderOrder: 0
+  StretchMode: Stretch
+  VerticalAlignment: Center
+  HorizontalAlignment: Center
+  MeshShadowMode: None
+  ShadowColor: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+  ShadowDensity: 1.000000
+  Text: TYPE
+  Editable: false
+  ShowEditingPreview: true
+  TouchHandler: !<reference> 00000000-0000-0000-0000-000000000000
+  EnableRichText: false
+  SizeToFit: false
+  FontSize: 48.000000
+  FontSource: !<reference> 00000000-0000-0000-0000-000000000000
+  PreferredStyle: Regular
+  LayoutRect:
+    left: -7.500000
+    bottom: -2.250000
+    right: 7.500000
+    top: 2.250000
+  DebugRenderLayoutRect: false
+  OverflowVertical: Overflow
+  OverflowHorizontal: Overflow
+  Fill: !<TextFill>
+    Mode: Solid
+    Color: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+    Texture: !<reference> 00000000-0000-0000-0000-000000000000
+    ColorTint: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+    TileCount: 5.000000
+    TileZone: Rect
+    TextureStretch: FitWidth
+  BlendMode: PremultipliedAlpha
+  Outline: !<OutlineSettings>
+    Enabled: false
+    Fill: !<TextFill>
+      Mode: Solid
+      Color: {x: 0.000000, y: 0.000000, z: 0.000000, w: 1.000000}
+      Texture: !<reference> 00000000-0000-0000-0000-000000000000
+      ColorTint: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+      TileCount: 5.000000
+      TileZone: Rect
+      TextureStretch: FitWidth
+    Size: 0.250000
+  Dropshadow: !<DropshadowSettings>
+    Enabled: false
+    Fill: !<TextFill>
+      Mode: Solid
+      Color: {x: 0.000000, y: 0.000000, z: 0.000000, w: 1.000000}
+      Texture: !<reference> 00000000-0000-0000-0000-000000000000
+      ColorTint: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+      TileCount: 5.000000
+      TileZone: Rect
+      TextureStretch: FitWidth
+    OffsetX: 0.250000
+    OffsetY: 0.250000
+  Background: !<BackgroundSettings>
+    Enabled: false
+    Fill: !<TextFill>
+      Mode: Solid
+      Color: {x: 0.000000, y: 0.000000, z: 0.000000, w: 1.000000}
+      Texture: !<reference> 00000000-0000-0000-0000-000000000000
+      ColorTint: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+      TileCount: 5.000000
+      TileZone: Rect
+      TextureStretch: FitWidth
+    Margins:
+      left: 0.000000
+      bottom: 0.000000
+      right: 0.000000
+      top: 0.000000
+    CornerRadius: 0.000000
+  AdvancedLayout: !<TextAdvancedLayout>
+    ExtentsTarget: !<reference> 00000000-0000-0000-0000-000000000000
+    LetterSpacing: 0.000000
+    LineSpacing: 1.000000
+    CapitalizationOverride: None
+  DepthTest: false
+  TwoSided: false
 - !<SceneObject/4c195c04-c397-454e-bd08-3485f37d84fe>
   PrefabRemaps:
     []
@@ -2298,6 +2455,9 @@
     - !<own> 660b5888-03e7-4e92-9fcf-03f265655c09
     - !<own> 14af6541-2706-45ef-8442-7279ae4300f7
     - !<own> e1a83603-e87c-47a1-85ec-d9b6ef726220
+    - !<own> 0d498f83-c7f4-43b6-9b38-62ba94df7a09
+    - !<own> c6291407-b648-4424-bdee-14f3251fae76
+    - !<own> 6a5914e6-a54b-4f1f-8931-332e3f6079f0
   Components:
     []
 - !<Text/5608a90a-af26-49e0-8d63-6fdf1eecb7d3>
@@ -2946,6 +3106,21 @@
     []
   Components:
     - !<own> 192c5044-6202-4261-b4e2-464b07b7cfb1
+- !<SceneObject/6a5914e6-a54b-4f1f-8931-332e3f6079f0>
+  PrefabRemaps:
+    []
+  Name: KeyboardInput
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> b8b75adb-59b2-40da-b6ef-e202b4ad2ecf
 - !<SceneObject/6a7a67db-5675-49bb-8f31-ba0588e3cffc>
   PrefabRemaps:
     []
@@ -3083,6 +3258,9 @@
   ScriptInputsDefault:
     runOnStart: true
     probeRequest: true
+    qaLessonRequest: true
+    qaQuestion: true
+    qaAskAfterSec: true
     scenario: true
   ScriptTypesDefault:
     {}
@@ -3093,6 +3271,9 @@
       brokenFixture: !<reference.JsonAsset> 404fc54d-e175-4494-9b18-27cd8b0ec81d
       runOnStart: false
       probeRequest: help me purify water
+      qaLessonRequest: help me pitch a tent
+      qaQuestion: what if the ground is wet
+      qaAskAfterSec: !<float> 16.000000
       scenario: !<float> 0.000000
   ScriptTypes:
     "":
@@ -3572,6 +3753,7 @@
     - !<own> 5853cc54-ce16-49b8-a57a-e5644a1f0bf0
     - !<own> 3845dae6-f65f-42d4-be84-9a48dcce2e4e
     - !<own> 70732fee-4fca-4a77-a6d2-42a8475b36d3
+    - !<own> 47d9690f-00d8-45d1-acf2-59aad38e0ce1
   Components:
     []
 - !<SceneObject/7caadad1-652f-4093-973d-aef63612c5a1>
@@ -3628,6 +3810,7 @@
     - !<own> 2b664962-d6ab-4b42-952b-6f039ea835b3
     - !<own> d0ceb458-4828-4327-aff5-5c2a9e3560bf
     - !<own> 6dc1ea70-350f-40d9-ad51-ec670e9eb4ad
+    - !<own> 9255f1a5-4750-408e-ae08-4a2bfc96d64b
 - !<SceneObject/7e18ef85-197a-4c4d-9822-ab7ccbb40274>
   PrefabRemaps:
     []
@@ -4284,6 +4467,30 @@
     - !<own> 8cb3dd13-6ebf-41e6-9a23-94a69dd96f87
   Components:
     []
+- !<ScriptComponent/9255f1a5-4750-408e-ae08-4a2bfc96d64b>
+  PrefabRemaps:
+    []
+  Name: LatencyProbe
+  Enabled: true
+  ScriptAsset: !<reference> 1fa9d0f0-fe94-446f-89fe-e51dfaf99a48
+  ScriptInputsDefault:
+    runOnStart: true
+    netUrl: true
+    netSamples: true
+    geminiSamples: true
+    ttsSamples: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      runOnStart: false
+      netUrl: "https://www.google.com/generate_204"
+      netSamples: !<float> 3.000000
+      geminiSamples: !<float> 4.000000
+      ttsSamples: !<float> 3.000000
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/928816a5-9ee5-4a10-af04-572f25334a9e>
   PrefabRemaps:
     []
@@ -4641,6 +4848,24 @@
     - !<own> b22d97e6-4c06-4135-af29-d26adb2b9d86
   Components:
     []
+- !<ColliderComponent/a770b004-c210-47c4-af80-b9e513d3e720>
+  PrefabRemaps:
+    []
+  Name: Physics Collider
+  Enabled: true
+  Shape: !<Sphere>
+    FitVisual: false
+    Radius: 9.000000
+  Matter: !<reference> 00000000-0000-0000-0000-000000000000
+  Filter: !<reference> 00000000-0000-0000-0000-000000000000
+  OverlapFilter: !<reference> 00000000-0000-0000-0000-000000000000
+  WorldSettings: !<reference> 00000000-0000-0000-0000-000000000000
+  EnableSmoothing: false
+  PositionTension: 30.000000
+  RotationTension: 30.000000
+  ForceCompound: false
+  Intangible: false
+  ShowCollider: false
 - !<RenderMeshVisual/a7b29ac8-692c-430b-bbc8-aa1c1126c1c6>
   PrefabRemaps:
     []
@@ -4975,6 +5200,34 @@
     - !<own> 44097eaf-01da-45fb-8973-3bd8172618de
   Components:
     []
+- !<ScriptComponent/b8b75adb-59b2-40da-b6ef-e202b4ad2ecf>
+  PrefabRemaps:
+    []
+  Name: KeyboardInput
+  Enabled: true
+  ScriptAsset: !<reference> 33235e4d-e20a-4f42-9faf-c5103a956635
+  ScriptInputsDefault:
+    initialText: true
+    promptHint: true
+    enableDebugKeys: true
+    keyOpenKeyboard: true
+    keyDebugSubmit: true
+    debugSubmitText: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      initialText: ""
+      promptHint: "Type a request, e.g. help me purify water"
+      enableDebugKeys: true
+      keyOpenKeyboard: I
+      keyDebugSubmit: U
+      debugSubmitText: how do I signal for rescue
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/b93dfa60-41bd-4999-ac0f-4b2f1df2bdaf>
   PrefabRemaps:
     []
@@ -5250,6 +5503,21 @@
   BlendNormals: false
   BlendShapes:
     {}
+- !<SceneObject/c6291407-b648-4424-bdee-14f3251fae76>
+  PrefabRemaps:
+    []
+  Name: QaService
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 3b4da21f-3fe4-49b4-ad98-703cbef76796
 - !<SceneObject/c77b043f-d23e-45e7-bafd-5be84cdefb44>
   PrefabRemaps:
     []
@@ -5690,6 +5958,9 @@
     workingTickHz: true
     workingFrames: true
     busyHoldSec: true
+    qaHoldSec: true
+    qaWrapChars: true
+    keyboardToggleLabel: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -5701,6 +5972,7 @@
       tickerText: !<reference.Text> 42a08ba9-ea70-4afb-925c-0c66ad668223
       lessonTitle: !<reference.Text> 59de084a-d49d-41c9-ac14-3ff5fc9597cb
       warningStrip: !<reference.SceneObject> 70732fee-4fca-4a77-a6d2-42a8475b36d3
+      keyboardToggle: !<reference.SceneObject> 47d9690f-00d8-45d1-acf2-59aad38e0ce1
       quadMesh: !<reference.RenderMesh> 9c7cf554-730c-4975-a208-a19a01740f30
       iconMaterial: !<reference.Material> b70f04ba-96e8-415c-abfc-2f02f8869b09
       idleHint: PINCH & HOLD — ASK FOR HELP
@@ -5726,6 +5998,9 @@
         - ··
         - ···
       busyHoldSec: 2.500000
+      qaHoldSec: !<float> 9.000000
+      qaWrapChars: !<float> 46.000000
+      keyboardToggleLabel: TYPE
   ScriptTypes:
     "":
       {}
@@ -6433,6 +6708,44 @@
     - !<own> 8249b67e-fa42-455b-9d4d-5670ebd8873a
   Components:
     []
+- !<ScriptComponent/eef575a2-3442-415f-ba7c-9d4fa7b7bfe3>
+  PrefabRemaps:
+    []
+  Name: Interactable
+  Enabled: true
+  ScriptAsset: !<reference> 652e631a-22d0-4941-9f74-2943df59f34c
+  ScriptInputsDefault:
+    targetingMode: true
+    targetingVisual: true
+    ignoreInteractionPlane: true
+    keepHoverOnTrigger: true
+    enableInstantDrag: true
+    isScrollable: true
+    allowMultipleInteractors: true
+    enablePokeDirectionality: true
+    acceptableXDirections: true
+    acceptableYDirections: true
+    acceptableZDirections: true
+    useFilteredPinch: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      targetingMode: !<float> 3.000000
+      targetingVisual: !<float> 1.000000
+      ignoreInteractionPlane: false
+      keepHoverOnTrigger: false
+      enableInstantDrag: false
+      isScrollable: false
+      allowMultipleInteractors: true
+      enablePokeDirectionality: false
+      acceptableXDirections: !<float> 0.000000
+      acceptableYDirections: !<float> 0.000000
+      acceptableZDirections: !<float> 1.000000
+      useFilteredPinch: false
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/f0394c5d-4c44-4c65-a77c-e1c7e05ca905>
   PrefabRemaps:
     []
@@ -6464,6 +6777,51 @@
     - !<own> 1360c49f-4ec2-4bc9-b02c-deaf02e450df
   Components:
     []
+- !<ScriptComponent/f334e114-b71c-4a31-9d40-dbe57b822d2b>
+  PrefabRemaps:
+    []
+  Name: NarrationService
+  Enabled: true
+  ScriptAsset: !<reference> 1f3f33f9-0bcd-437b-80b6-efac08532866
+  ScriptInputsDefault:
+    voice: true
+    volume: true
+    maxCacheEntries: true
+    synthesisTimeoutSec: true
+    bakedPhrases: true
+    bakedTracks: true
+    enablePrewarm: true
+    prewarmStartDelaySec: true
+    prewarmGapSec: true
+    prewarmPhrases: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      audio: !<reference.AudioComponent> 2418d3b3-d607-4aa9-8a29-914410c62af4
+      voice: coral
+      volume: !<float> 1.000000
+      maxCacheEntries: !<float> 24.000000
+      synthesisTimeoutSec: !<float> 20.000000
+      bakedPhrases: !<string[]>
+        []
+      bakedTracks: !<reference.AudioTrackAsset[]>
+        []
+      enablePrewarm: true
+      prewarmStartDelaySec: !<float> 3.000000
+      prewarmGapSec: !<float> 1.000000
+      prewarmPhrases: !<string[]>
+        - Next step.
+        - Going back.
+        - Got it.
+        - Careful.
+        - Surveying knowledge.
+        - Lesson complete. Well done.
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/f36287fd-ed56-442d-ba20-78f9ef6f3502>
   PrefabRemaps:
     []

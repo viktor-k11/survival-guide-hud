@@ -1,0 +1,66 @@
+- !<AssetImportMetadata/c93a1cbc-1481-4fef-9dcb-612cd728294d>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 33235e4d-e20a-4f42-9faf-c5103a956635
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 33235e4d-e20a-4f42-9faf-c5103a956635
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> e5c3f3ba-7ed7-49fd-8d82-0997018d05fa
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/e5c3f3ba-7ed7-49fd-8d82-0997018d05fa>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 41f53f1a-2a49-4e60-9007-c3b5914ddfd1
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    debugSubmitText: false
+    enableDebugKeys: false
+    enableLogging: false
+    initialText: false
+    keyDebugSubmit: false
+    keyOpenKeyboard: false
+    promptHint: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - initialText: ""
+      promptHint: "Type a request, e.g. help me purify water"
+      enableDebugKeys: true
+      keyOpenKeyboard: I
+      keyDebugSubmit: U
+      debugSubmitText: how do I signal for rescue
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input string initialText {"hint":"Text shown in the keyboard preview strip before the user types."}'
+    - '// @input string promptHint = "Type a request, e.g. help me purify water" {"hint":"Placeholder-style hint printed to the log when the keyboard opens."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug — the keyboard does not draw in Preview</span>"}'
+    - // @input bool enableDebugKeys = true
+    - '// @input string keyOpenKeyboard = "I" {"hint":"Opens the AR keyboard. On device this is the real thing; in Preview it opens and draws nothing."}'
+    - '// @input string keyDebugSubmit = "U" {"hint":"Pushes debugSubmitText through the SAME submit path the return key uses. This is how the seam gets proven without a keyboard."}'
+    - '// @input string debugSubmitText = "how do I signal for rescue"'
+    - // @input bool enableLogging = true

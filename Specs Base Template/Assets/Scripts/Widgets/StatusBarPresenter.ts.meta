@@ -35,9 +35,13 @@
     hintText: false
     iconMaterial: false
     idleHint: false
+    keyboardToggle: false
+    keyboardToggleLabel: false
     lessonTitle: false
     listeningHint: false
     micIcon: false
+    qaHoldSec: false
+    qaWrapChars: false
     quadMesh: false
     statusBar: false
     theme: false
@@ -64,6 +68,7 @@
       tickerText: !<reference.Text> 00000000-0000-0000-0000-000000000000
       lessonTitle: !<reference.Text> 00000000-0000-0000-0000-000000000000
       warningStrip: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      keyboardToggle: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
       quadMesh: !<reference.RenderMesh> 00000000-0000-0000-0000-000000000000
       iconMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
       idleHint: PINCH & HOLD — ASK FOR HELP
@@ -89,6 +94,9 @@
         - ··
         - ···
       busyHoldSec: 2.500000
+      qaHoldSec: !<float> 9.000000
+      qaWrapChars: !<float> 46.000000
+      keyboardToggleLabel: TYPE
   ScriptTypes:
     -
       {}
@@ -103,6 +111,7 @@
     - '// @input Component.Text tickerText {"hint":"HUDRoot/StatusBar/ExampleTicker"}'
     - '// @input Component.Text lessonTitle {"hint":"HUDRoot/StatusBar/LessonTitle"}'
     - '// @input SceneObject warningStrip {"hint":"HUDRoot/StatusBar/WarningStrip"}'
+    - "// @input SceneObject keyboardToggle {\"hint\":\"HUDRoot/StatusBar/KeyboardToggle — tap to open the AR keyboard. The demo's safety net when voice misbehaves.\"}"
     - "// @input Asset.RenderMesh quadMesh {\"hint\":\"PH_Plane.mesh — MicIcon's placeholder is a disc, which maps an icon texture unreadably. A quad makes the glyph legible.\"}"
     - '// @input Asset.Material iconMaterial {"hint":"PH_Icon.mat — an unlit additive material with ENABLE_BASE_TEX baked on. The other PH_ materials gate baseTex behind that define, so assigning a texture to them silently does nothing."}'
     - '// @ui {"widget":"separator"}'
@@ -121,3 +130,8 @@
     - '// @input float workingTickHz = 3 {"hint":"How often the working ticker advances, Hz. This is the guarantee that SOMETHING moves every second.", "widget":"slider", "min":1, "max":8, "step":0.5}'
     - '// @input string[] workingFrames = {"·","··","···"} {"hint":"Frames of the working ticker, cycled at workingTickHz."}'
     - "// @input float busyHoldSec = 2.5 {\"hint\":\"How long the 'still working' notice stays up when a second request is ignored.\", \"widget\":\"slider\", \"min\":0.5, \"max\":6, \"step\":0.5}"
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">In-lesson Q&amp;A</span>"}'
+    - '// @input float qaHoldSec = 9 {"hint":"How long a spoken answer stays on screen. On a see-through display an answer with no text is easy to miss.", "widget":"slider", "min":2, "max":20, "step":1}'
+    - '// @input float qaWrapChars = 46 {"hint":"Characters per line for the answer. World-space Text has no width to wrap against."}'
+    - '// @input string keyboardToggleLabel = "TYPE" {"hint":"Copy shown on the keyboard affordance."}'

@@ -1942,3 +1942,163 @@ a known budget.
   the PNGs were 2 MB each and this repo does not need that.
 - The `AiPreviewAgent Handler` root was injected twice more and removed twice.
   Expected after any session that captures or queries the preview.
+
+---
+
+## Prompt — TTS narration, in-lesson Q&A, keyboard fallback
+
+> /specs-ai-remote-service and /specs-audio
+>
+> Also: the Docs/screens/ rule never made it into CLAUDE.md — add it now under
+> Communication. Saving screenshots to disk is required whenever a task asks for
+> visual verification; screenshots that live only in your context are invisible
+> to me. JPEG is fine.
+>
+> 1. TTS narration on stepChanged. The engine already emits narrationRequested
+>    and narrationPrefetch — implement the service that consumes them.
+>    (speak current step when ready; prefetch n+1; cache per step so back/repeat
+>    are instant; pre-warm fixed phrases at boot as assets; never block the state
+>    machine — a failed synthesis degrades to silent text)
+> 2. Investigate the fixed cost per call, timeboxed. [...] Then test one
+>    hypothesis: a throwaway warm-up call at boot. Report the numbers either way.
+> 3. Q&A path: wire qaRequested to the qa prompt at temperature 0.4, plain text,
+>    roughly 60 tokens, and speak the answer. It must not interrupt an active
+>    narration — queue it and speak after.
+> 4. /specs-keyboard — text entry as an alternative route into the same
+>    onUserRequest seam, toggled from the StatusBar.
+> 5. One product question I need data for, not opinion. Try five candidate
+>    phrases [...] I want to pick the demo phrase on evidence.
+>
+> Save preview screenshots of a narrated step and of the keyboard input to
+> Docs/screens/.
+>
+> Per rule 4, append to CLAD-PROMPT-LOG.md, then commit:
+> feat: TTS with prefetch, in-lesson voice QA, keyboard fallback
+
+**Status: parts 1-4 are written, compiled and wired; part 2 is answered with
+measurements. Parts 3, 4 and 5 are NOT runtime-verified and the two screenshots
+were not captured — the Lens Studio preview worker wedged partway through the
+session and stopped resetting or rendering. Details at the end.**
+
+### 0. The rule
+
+Added a `## Communication` section to CLAUDE.md: screenshots go to
+`Docs/screens/` whenever a task asks for visual verification, plus the two
+corollaries this project learned the hard way — verify HUD layout with
+`PreviewPanelTool screenshot` rather than `CaptureRuntimeViewTool`, and keep
+filenames stable so successive runs can be compared.
+
+### 1. Narration
+
+`Engine/NarrationService.ts` is the only thing in the project that produces
+speech. `OpenAI.speech()` returns an `AudioTrackAsset` directly, which is what
+makes caching cheap — the cache holds ready-to-play tracks, not bytes.
+
+**Keyed by text, not by step index.** "back" and "repeat" ask for words already
+heard, so they are free either way — right up until a second lesson reuses index
+2 for different words and the guide confidently says the wrong sentence. Text is
+the honest key, and it lets the pre-warmed fixed phrases share one map with the
+lesson steps.
+
+Fixed phrases have two routes in: `bakedPhrases` + `bakedTracks` (recorded audio
+wired in the Inspector — free forever, works offline, the shipping path) and
+`prewarmPhrases` (synthesized once at boot). The prompt asked for them "cached
+as assets so they never cost a live call"; the asset slots are the mechanism for
+exactly that, and until someone records the clips the boot warm-up fills the
+same cache at the cost of one call each.
+
+Verified from the run before the preview died: `synthesized 6517ms "Got it."`,
+`synthesized 11106ms "Next step."`, `synthesized 18586ms "Going back."` — and,
+usefully, three failures that degraded exactly as specified:
+`FAILED after 10107ms "Surveying knowledge." — degrading to silent text`, with
+the engine untouched.
+
+### 2. Where the fixed ~7 s goes — answered, and the hypothesis is rejected
+
+| Phase | Measurements | Reading |
+|---|---|---|
+| Raw HTTPS **outside** the gateway, x3 | 559 / 115 / 112 ms (second run 650 / 1076 / 287) | ~0.5 s cold TLS, ~115 ms warm |
+| Minimal Gemini (5-token cap), x4 | 6070 / 15036\* / 3009 / 5868 ms | wide variance, **first call is not the slowest** |
+| One-word TTS, x3 | 7103 / 7013 / 6550 ms | tight, **no first-call penalty** |
+
+\* that outlier overlapped six concurrent TTS warm-ups — see below.
+
+**The floor is not connection setup.** An unrelated HTTPS request completes in
+~115 ms warm and ~0.5 s cold, so at most half a second of the ~7 s is network.
+The rest — ~6.5 s — is gateway proxy plus model start, charged **per call, not
+per session**.
+
+**Verdict: a boot warm-up does not help, and it is not kept.** There is no
+per-session cost for it to absorb; across both providers the first call is not
+consistently slower than the fourth. Timeboxed as instructed — the question is
+answered, and I stopped.
+
+**The one thing that reliably made latency worse was concurrency**, and it was
+my own bug. The first `prewarmPhrases` implementation fired a warm-up every
+`prewarmGapSec` on a timer rather than chaining on completion; since each call
+takes 6-18 s that put six requests in flight simultaneously, and the measured
+result was `DNS resolution failed for gcp.api.snapchat.com`, `Network is
+unreachable`, three of six phrases failing outright, and the 15 s outlier on the
+unrelated Gemini call running alongside. Warm-ups are now strictly sequential,
+chained on completion. **Requests to the gateway degrade each other** — that is
+the durable finding here, and it is worth more than the warm-up question was.
+
+### 3. Q&A (written, not yet run)
+
+`Engine/QaService.ts` consumes `qaRequested` — which `LessonEngine` has emitted
+since voice routing landed, because hard rule 6 matches navigation keywords
+locally first and only unmatched transcripts become questions.
+`requestQaAnswer()` in `LessonPlanner.ts` calls Gemini at **temperature 0.4, no
+responseSchema, plain text, 60-token cap**, deliberately unlike the lesson call:
+a lesson is a structure the HUD drives, an answer is a spoken aside that nothing
+parses. Step context is sent as user content so the prompt asset stays constant.
+
+The answer goes out as `speakRequested`, never `narrationRequested` — that is
+what makes it queue behind an active narration instead of talking over it, since
+`NarrationService` owns the ordering. It is also published as `qaAnswered` so
+the StatusBar can show it: on a see-through display a spoken sentence with
+nothing on screen is easy to miss, and impossible to screenshot.
+
+### 4. Keyboard (written, not yet run)
+
+`Engine/KeyboardInput.ts` emits the **same** `userRequest` event `VoiceInput`
+emits, so a typed request is indistinguishable from a spoken one by the time it
+reaches the engine — no parallel path. The affordance is a design-time
+`HUDRoot/StatusBar/KeyboardToggle` ("TYPE") with a collider and SIK
+`Interactable`; `StatusBarPresenter` relays the tap as `keyboardRequested`.
+
+Note from the skill, confirmed before writing: **the AR keyboard does not draw
+under SPECS 27 preview simulation.** `debugSubmitText` exists for that reason —
+it pushes a canned string through the same `submit()` the return key calls, so
+the seam is provable on a desk while the keyboard itself is a device check.
+
+### 5. Candidate phrases — NOT RUN
+
+This is the one deliverable with no partial answer. It needs 5 live calls and
+the preview stopped running before I could start them.
+
+### What went wrong, and what is left
+
+Around 22:29 the Lens Studio preview stopped responding: `RunAndCollectLogsTool`
+refreshes return `status: timeout` with no Lens-reset signal,
+`CapturePanelScreenshotTool` times out, and no new log output appears. The
+editor API is fine — `scene-graphql` queries, `ExecuteEditorCode` and project
+saves all still work, which is how the scene wiring above was completed and
+saved. `LensStudio:Preview` exposes state constants (`PausedByUser`,
+`Suspended`, `RenderFailed`) but no reset method reachable from
+`ExecuteEditorCode`, so I could not recover it from here. Per AGENTS.md I stopped
+rather than working around it.
+
+**To finish, the preview needs a human Reset (or a Lens Studio restart).** Then,
+with no code changes required — every probe scenario is already written and
+wired:
+
+| Left to do | How |
+|---|---|
+| Q&A acceptance | `CoordinatorProbe.scenario = qa` — loads a tent lesson, then asks "what if the ground is wet" through `handleTranscript`, logging the answer, its latency and the audio state |
+| Keyboard | `CoordinatorProbe.scenario = keyboard` — requests the keyboard, then submits through the seam. Set the preview device off SPECS 27 to see the keyboard draw |
+| Five candidate phrases | `LessonProbe.requestsOverride` = the five phrases, `repeatEach = 1` |
+| Two screenshots | `Docs/screens/narrated-step-preview.jpg` and `keyboard-input-preview.jpg` |
+
+All probe defaults are back to off in the committed scene, so a Reset boots
+straight into the normal survey.

@@ -1,0 +1,58 @@
+- !<AssetImportMetadata/cf4c5ca9-a687-4059-8c5d-0ab2893c08f8>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 8422abf6-abff-4885-b43c-1dc79531e613
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 8422abf6-abff-4885-b43c-1dc79531e613
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> dd6d34bf-e676-4db4-bcaa-48521fca06e3
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/dd6d34bf-e676-4db4-bcaa-48521fca06e3>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 5c87135b-0bf5-4cdc-9093-505b9334d121
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    enableLogging: false
+    failureMessage: false
+    maxAnswerTokens: false
+    promptsAsset: false
+    speakFailures: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - promptsAsset: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      maxAnswerTokens: !<float> 60.000000
+      failureMessage: I could not answer that one.
+      speakFailures: false
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - "// @input Asset.JsonAsset promptsAsset {\"hint\":\"Assets/AI/prompts.generated.json — the 'qa' entry is used here.\"}"
+    - '// @input float maxAnswerTokens = 60 {"hint":"Hard cap on answer length. This is spoken aloud while the user is holding a tent pole; two sentences is the product.", "widget":"slider", "min":20, "max":200, "step":5}'
+    - '// @input string failureMessage = "I could not answer that one." {"hint":"Shown (and spoken) when the guide cannot answer. Kept short on purpose."}'
+    - '// @input bool speakFailures {"hint":"Speak failures as well as showing them. Off = the failure is text-only."}'
+    - // @input bool enableLogging = true

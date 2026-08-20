@@ -1,0 +1,58 @@
+- !<AssetImportMetadata/fb210c96-b3cf-4e26-887c-8de337ab3f60>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 1fa9d0f0-fe94-446f-89fe-e51dfaf99a48
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 1fa9d0f0-fe94-446f-89fe-e51dfaf99a48
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> b6902c5d-0a7b-4289-966f-07f69bd2c709
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/b6902c5d-0a7b-4289-966f-07f69bd2c709>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: be193076-ddfe-411b-8eed-8178e62d8db0
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    geminiSamples: false
+    netSamples: false
+    netUrl: false
+    runOnStart: false
+    ttsSamples: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - runOnStart: false
+      netUrl: "https://www.google.com/generate_204"
+      netSamples: !<float> 3.000000
+      geminiSamples: !<float> 4.000000
+      ttsSamples: !<float> 3.000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input bool runOnStart
+    - '// @input string netUrl = "https://www.google.com/generate_204" {"hint":"A tiny endpoint outside the RSG gateway. 204 No Content: the response body cannot dominate the timing."}'
+    - // @input float netSamples = 3
+    - // @input float geminiSamples = 4
+    - // @input float ttsSamples = 3

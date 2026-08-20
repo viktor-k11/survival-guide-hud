@@ -27,11 +27,13 @@
  * is a platform rather than two hardcoded lessons, so it is readable copy on a
  * slow, legible cycle rather than a fast scroll.
  */
+import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
 import { eventBus, Events } from "../Engine/EventBus";
 import { RequestStatePayload } from "../Engine/RequestTypes";
 import { VisualConfig } from "../Engine/VisualConfig";
 import {
   formatClock,
+  wrapText,
   adoptMaterial,
   isolateMaterial,
   pulse01,
@@ -57,6 +59,11 @@ export class StatusBarPresenter extends BaseScriptComponent {
   @input @hint("HUDRoot/StatusBar/ExampleTicker") private tickerText: Text;
   @input @hint("HUDRoot/StatusBar/LessonTitle") private lessonTitle: Text;
   @input @hint("HUDRoot/StatusBar/WarningStrip") private warningStrip: SceneObject;
+
+  @input
+  @allowUndefined
+  @hint("HUDRoot/StatusBar/KeyboardToggle — tap to open the AR keyboard. The demo's safety net when voice misbehaves.")
+  private keyboardToggle: SceneObject;
 
   @input
   @allowUndefined
@@ -129,6 +136,20 @@ export class StatusBarPresenter extends BaseScriptComponent {
   @hint("How long the 'still working' notice stays up when a second request is ignored.")
   private busyHoldSec: number = 2.5;
 
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">In-lesson Q&amp;A</span>')
+
+  @input
+  @widget(new SliderWidget(2, 20, 1))
+  @hint("How long a spoken answer stays on screen. On a see-through display an answer with no text is easy to miss.")
+  private qaHoldSec: number = 9;
+
+  @input
+  @hint("Characters per line for the answer. World-space Text has no width to wrap against.")
+  private qaWrapChars: number = 46;
+
+  @input @hint("Copy shown on the keyboard affordance.") private keyboardToggleLabel: string = "TYPE";
+
   private micVisual: RenderMeshVisual;
   private micMat: Material;
   private stripVisual: RenderMeshVisual;
@@ -142,6 +163,9 @@ export class StatusBarPresenter extends BaseScriptComponent {
   private compileElapsed: number = 0;
   private busyMessage: string = "";
   private busyRemaining: number = 0;
+  private qaAnswer: string = "";
+  private qaRemaining: number = 0;
+  private speaking: boolean = false;
   private tickerIndex: number = 0;
   private tickerElapsed: number = 0;
   private safetyWarning: string = "";
@@ -203,6 +227,19 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.applyWarning();
     });
     eventBus.subscribe(Events.requestStateChanged, (p: RequestStatePayload) => this.onRequestState(p));
+
+    eventBus.subscribe(Events.qaAnswered, (p: { answer: string }) => {
+      this.qaAnswer = p && p.answer ? wrapText(p.answer, this.qaWrapChars) : "";
+      this.qaRemaining = this.qaHoldSec;
+    });
+    // A step change retires the previous answer: it was about the old step.
+    eventBus.subscribe(Events.stepChanged, () => {
+      this.qaAnswer = "";
+      this.qaRemaining = 0;
+    });
+    eventBus.subscribe(Events.narrationStateChanged, (p: { speaking: boolean }) => {
+      this.speaking = !!(p && p.speaking);
+    });
     eventBus.subscribe(Events.distanceWarning, (p: { message: string }) => {
       this.rangeWarning = p && p.message ? p.message : "";
       this.applyWarning();
@@ -213,7 +250,29 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.applyWarning();
     });
 
+    this.wireKeyboardToggle();
     this.applyFace();
+  }
+
+  /**
+   * The keyboard affordance. Relaying a tap is not logic — this presenter does
+   * not decide what typing means, it only says that the user asked for it.
+   */
+  private wireKeyboardToggle(): void {
+    if (!this.keyboardToggle) return;
+    setEnabled(this.keyboardToggle, true);
+    const label = this.keyboardToggle.getComponent("Component.Text") as Text;
+    if (label) {
+      setText(label, this.keyboardToggleLabel);
+      setFont(label, this.theme ? this.theme.font : null);
+      if (this.theme) setTextColor(label, this.theme.dimColor, this.theme.glowIntensity * 2.0);
+    }
+    const interactable = this.keyboardToggle.getComponent(Interactable.getTypeName()) as Interactable;
+    if (interactable) {
+      interactable.onTriggerEnd.add(() => {
+        eventBus.emit(Events.keyboardRequested, { source: "statusBar" });
+      });
+    }
   }
 
   // ------------------------------------------------------------------ faces
@@ -281,6 +340,9 @@ export class StatusBarPresenter extends BaseScriptComponent {
       }
     } else if (this.mode === "IDLE") {
       this.showTicker();
+    } else if (this.qaRemaining > 0 && this.qaAnswer.length > 0) {
+      setText(this.tickerText, this.qaAnswer);
+      if (this.theme) setTextColor(this.tickerText, this.theme.accentAmber, this.theme.glowIntensity);
     } else {
       setText(this.tickerText, "");
     }
@@ -379,6 +441,14 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
     if (this.busyRemaining > 0) this.busyRemaining -= dt;
 
+    if (this.qaRemaining > 0) {
+      this.qaRemaining -= dt;
+      if (this.mode === "LESSON" && this.activeWarning().length === 0) {
+        setText(this.tickerText, this.qaRemaining > 0 ? this.qaAnswer : "");
+        if (this.theme) setTextColor(this.tickerText, this.theme.accentAmber, this.theme.glowIntensity);
+      }
+    }
+
     // COMPILING repaints every frame. That is the point: the typewriter, the
     // caret and the working ticker are all functions of this clock.
     if (this.requestState === "COMPILING") {
@@ -405,11 +475,14 @@ export class StatusBarPresenter extends BaseScriptComponent {
       }
     }
 
-    // Mic pulse: breathing in IDLE, faster and amber while listening.
+    // Mic pulse: breathing in IDLE, faster and amber while listening, and
+    // steady amber while the guide is talking — the one on-screen sign that
+    // audio is playing at all, which matters on a display with no speaker icon.
     if (this.micMat && this.theme) {
       const hz = this.voiceState === "listening" ? this.theme.pulseHz * 2.0 : this.theme.pulseHz;
-      const t = pulse01(getTime(), hz);
-      const base = this.voiceState === "listening" ? this.theme.accentAmber : this.theme.primaryPhosphor;
+      const t = this.speaking ? 1.0 : pulse01(getTime(), hz);
+      const base =
+        this.voiceState === "listening" || this.speaking ? this.theme.accentAmber : this.theme.primaryPhosphor;
       // Never fully dark: on an additive display 0 means "gone", and a mic that
       // vanishes reads as broken rather than idle.
       const level = (0.45 + 0.55 * t) * this.theme.glowIntensity;

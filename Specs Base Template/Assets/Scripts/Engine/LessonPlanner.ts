@@ -1,5 +1,6 @@
 /**
- * Builds and issues lesson-plan requests to Gemini, then validates the result.
+ * Builds and issues Gemini requests: lesson plans (validated) and in-lesson
+ * Q&A answers (plain text).
  *
  * A plain module, not a component — no scene dependency, no state. Callers pass
  * the system prompt in; the probe/engine owns where that text comes from.
@@ -110,4 +111,83 @@ function safeTitle(payload: string): string {
   } catch (e) {
     return "";
   }
+}
+
+// ------------------------------------------------------------------- Q&A
+
+export interface QaOutcome {
+  question: string;
+  /** Plain text, ready to speak. "" when the call failed. */
+  answer: string;
+  latencyMs: number;
+  ok: boolean;
+  error: string;
+}
+
+/**
+ * One in-lesson question, answered in a sentence or two.
+ *
+ * Deliberately unlike the lesson call: **temperature 0.4, no responseSchema,
+ * plain text, a hard token cap.** A lesson is a structure the HUD has to drive,
+ * so it is generated at temperature 0 against a schema. An answer is a spoken
+ * aside — a little warmth reads better than a deterministic one, nothing
+ * downstream parses it, and the cap is what keeps it a sentence rather than an
+ * essay nobody will stand still for.
+ *
+ * The step context is what makes the answer specific instead of generic; it is
+ * sent as user content rather than baked into the system prompt so the prompt
+ * asset stays a constant.
+ */
+export function requestQaAnswer(
+  question: string,
+  lessonTitle: string,
+  stepInstruction: string,
+  systemPrompt: string,
+  maxTokens: number
+): Promise<QaOutcome> {
+  const context =
+    "Lesson: " + (lessonTitle || "(none)") +
+    "\nCurrent step: " + (stepInstruction || "(none)") +
+    "\nQuestion: " + question;
+
+  const request: GeminiTypes.Models.GenerateContentRequest = {
+    model: GEMINI_MODEL,
+    type: "generateContent",
+    body: {
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ parts: [{ text: context }], role: "user" }],
+      generationConfig: {
+        temperature: 0.4,
+        maxOutputTokens: maxTokens,
+      },
+    },
+  };
+
+  const t0 = nowMs();
+
+  return Gemini.models(request)
+    .then((response) => {
+      const latencyMs = Math.round(nowMs() - t0);
+      let text = "";
+      try {
+        text = response.candidates[0].content.parts[0].text;
+      } catch (e) {
+        text = "";
+      }
+      text = (text || "").trim();
+      return {
+        question: question,
+        answer: text,
+        latencyMs: latencyMs,
+        ok: text.length > 0,
+        error: text.length > 0 ? "" : "empty answer",
+      };
+    })
+    .catch((error) => ({
+      question: question,
+      answer: "",
+      latencyMs: Math.round(nowMs() - t0),
+      ok: false,
+      error: String(error),
+    }));
 }
