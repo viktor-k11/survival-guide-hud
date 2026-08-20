@@ -1,0 +1,115 @@
+- !<AssetImportMetadata/c462e372-e94b-4916-b1e9-3e33e992c5d8>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> d1fdc203-c57d-4f4e-a434-63cbcd410f0e
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> d1fdc203-c57d-4f4e-a434-63cbcd410f0e
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> d48c7192-46e8-4be6-8274-5894d54e9685
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/d48c7192-46e8-4be6-8274-5894d54e9685>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 108a039f-2418-461a-9f7c-a76b78a25048
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    clearRadius: false
+    enableLogging: false
+    fireS1: false
+    fireS2: false
+    fireS3: false
+    fireS4: false
+    flameHeight: false
+    groundLift: false
+    logLength: false
+    logThickness: false
+    stakeOffset: false
+    tentDepth: false
+    tentHeight: false
+    tentS1: false
+    tentS2: false
+    tentS3: false
+    tentS4: false
+    tentS5: false
+    tentWidth: false
+    tinderHeight: false
+    tinderRadius: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - tentS1: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      tentS2: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      tentS3: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      tentS4: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      tentS5: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      fireS1: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      fireS2: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      fireS3: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      fireS4: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      tentWidth: !<float> 90.000000
+      tentDepth: !<float> 110.000000
+      tentHeight: !<float> 62.000000
+      stakeOffset: !<float> 16.000000
+      clearRadius: !<float> 40.000000
+      tinderRadius: !<float> 9.000000
+      tinderHeight: !<float> 14.000000
+      logLength: !<float> 44.000000
+      logThickness: !<float> 5.000000
+      flameHeight: !<float> 30.000000
+      groundLift: 0.600000
+      enableLogging: false
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Tent stage groups (WorldRoot/HologramRoot/HologramTent)</span>"}'
+    - '// @input SceneObject tentS1 {"hint":"HologramTent/S1_Footprint"}'
+    - '// @input SceneObject tentS2 {"hint":"HologramTent/S2_Poles"}'
+    - '// @input SceneObject tentS3 {"hint":"HologramTent/S3_Canopy"}'
+    - '// @input SceneObject tentS4 {"hint":"HologramTent/S4_Stakes"}'
+    - '// @input SceneObject tentS5 {"hint":"HologramTent/S5_Complete"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Fire stage groups (WorldRoot/HologramRoot/HologramFire)</span>"}'
+    - '// @input SceneObject fireS1 {"hint":"HologramFire/S1_ClearedSpot"}'
+    - '// @input SceneObject fireS2 {"hint":"HologramFire/S2_Tinder"}'
+    - '// @input SceneObject fireS3 {"hint":"HologramFire/S3_LogCabin"}'
+    - '// @input SceneObject fireS4 {"hint":"HologramFire/S4_Flame"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Tent dimensions (cm)</span>"}'
+    - '// @input float tentWidth = 90 {"hint":"Footprint width (X).", "widget":"slider", "min":40, "max":200, "step":1}'
+    - '// @input float tentDepth = 110 {"hint":"Footprint depth (Z). Door faces +Z.", "widget":"slider", "min":40, "max":240, "step":1}'
+    - '// @input float tentHeight = 62 {"hint":"Ridge height.", "widget":"slider", "min":30, "max":160, "step":1}'
+    - '// @input float stakeOffset = 16 {"hint":"How far outside the corners the stakes sit.", "widget":"slider", "min":4, "max":40, "step":1}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Fire-lay dimensions (cm)</span>"}'
+    - '// @input float clearRadius = 40 {"hint":"Cleared-spot radius.", "widget":"slider", "min":15, "max":100, "step":1}'
+    - '// @input float tinderRadius = 9 {"hint":"Tinder-bundle base radius.", "widget":"slider", "min":3, "max":25, "step":1}'
+    - '// @input float tinderHeight = 14 {"hint":"Tinder-bundle apex height.", "widget":"slider", "min":5, "max":40, "step":1}'
+    - '// @input float logLength = 44 {"hint":"Log length in the cabin stack.", "widget":"slider", "min":10, "max":80, "step":1}'
+    - '// @input float logThickness = 5 {"hint":"Log thickness.", "widget":"slider", "min":2, "max":12, "step":0.5}'
+    - '// @input float flameHeight = 30 {"hint":"Flame outline height above the stack.", "widget":"slider", "min":10, "max":60, "step":1}'
+    - '// @ui {"widget":"separator"}'
+    - '// @input float groundLift = 0.6 {"hint":"Lift of ground line work above y=0, to keep strokes off coplanar ground widgets.", "widget":"slider", "min":0, "max":3, "step":0.1}'
+    - // @input bool enableLogging

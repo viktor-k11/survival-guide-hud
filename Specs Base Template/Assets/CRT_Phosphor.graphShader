@@ -1,0 +1,607 @@
+SchemaVersion: 1
+Nodes:
+  ChildNodes:
+    Node0:
+      DependencyIndex: 0
+      LevelID: 1
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 1
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: [0.3, 0.92, 1.0, 1.0]
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: [0.0, 0.0, 0.0, 0.0]
+        ScriptName:
+          String: baseColor
+        SortIndex:
+          Variable: 0
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Base Color
+        Tooltip:
+          String: "THE single re-tint field. Everything else scales relative to it."
+      PositionX: -700
+      PositionY: -80
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Base Color
+    Node1:
+      DependencyIndex: 1
+      LevelID: 10
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 1.8
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: glowIntensity
+        SortIndex:
+          Variable: 1
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Glow Intensity
+        Tooltip:
+          String: "Emission multiplier. Additive display: brighter = more solid."
+      PositionX: -700
+      PositionY: 40
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Glow Intensity
+    Node2:
+      DependencyIndex: 2
+      LevelID: 11
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 220.0
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: scanlineCount
+        SortIndex:
+          Variable: 2
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Scanline Count
+        Tooltip:
+          String: "Scanlines across the screen height."
+      PositionX: -700
+      PositionY: 160
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Scanline Count
+    Node3:
+      DependencyIndex: 3
+      LevelID: 12
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 0.3
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: scanlineStrength
+        SortIndex:
+          Variable: 3
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Scanline Strength
+        Tooltip:
+          String: "0 = no scanlines, 1 = fully dark gaps."
+      PositionX: -700
+      PositionY: 280
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Scanline Strength
+    Node4:
+      DependencyIndex: 4
+      LevelID: 13
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 0.06
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: scanlineScroll
+        SortIndex:
+          Variable: 4
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Scanline Scroll
+        Tooltip:
+          String: "Screen heights per second the lines roll."
+      PositionX: -700
+      PositionY: 400
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Scanline Scroll
+    Node5:
+      DependencyIndex: 5
+      LevelID: 14
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 0.1
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: flickerAmount
+        SortIndex:
+          Variable: 5
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Flicker Amount
+        Tooltip:
+          String: "Phosphor flicker depth. Floored so the glow never dies."
+      PositionX: -700
+      PositionY: 520
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Flicker Amount
+    Node6:
+      DependencyIndex: 6
+      LevelID: 15
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 11.0
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: flickerRate
+        SortIndex:
+          Variable: 6
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Flicker Rate
+        Tooltip:
+          String: "Flicker Hz."
+      PositionX: -700
+      PositionY: 640
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Flicker Rate
+    Node7:
+      DependencyIndex: 7
+      LevelID: 16
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 1.0
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: wipeProgress
+        SortIndex:
+          Variable: 7
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Wipe Progress
+        Tooltip:
+          String: "Boot scanline wipe, 0 = hidden, 1 = fully revealed. Drive from a presenter."
+      PositionX: -700
+      PositionY: 760
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Wipe Progress
+    Node8:
+      DependencyIndex: 8
+      LevelID: 17
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 0.08
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: wipeSoftness
+        SortIndex:
+          Variable: 8
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Wipe Softness
+        Tooltip:
+          String: "Height of the wipe's soft leading edge (normalized)."
+      PositionX: -700
+      PositionY: 880
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Wipe Softness
+    Node9:
+      DependencyIndex: 9
+      LevelID: 18
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Channels:
+          ItemIndex: 5
+          ItemList: "xyzw : rgba : xyz : rgb : xy : x"
+        Default:
+          Variable: 0.0
+        EnableMax:
+          Variable: false
+        EnableMin:
+          Variable: false
+        Group:
+          String: "CRT Phosphor"
+        Max:
+          Variable: 1.0
+        Min:
+          Variable: 0.0
+        Output:
+          IOType: 1
+          Variable: 0.0
+        ScriptName:
+          String: wipeAxis
+        SortIndex:
+          Variable: 9
+        Step:
+          Variable: 0.009999999776482582
+        Title:
+          String: Wipe Axis
+        Tooltip:
+          String: "0 = local Y (holograms). 1 = local Z (XZ-native plane meshes)."
+      PositionX: -700
+      PositionY: 1000
+      TemplateID: nodes_inputs_parameters_float
+      Title1: Float Parameter
+      Title2: Wipe Axis
+    Node10:
+      DependencyIndex: 10
+      LevelID: 0
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Code:
+          ClassType1: TEXT
+          String: |-
+            input_color4 colorIn;
+            input_float glowIntensity;
+            input_float scanlineCount;
+            input_float scanlineStrength;
+            input_float scanlineScroll;
+            input_float flickerAmount;
+            input_float flickerRate;
+            input_float wipeProgress;
+            input_float wipeSoftness;
+            input_float wipeAxis;
+            output_vec4 result;
+
+            void main()
+            {
+            	float t = system.getTimeElapsed();
+
+            	// CRT scanlines belong to the DISPLAY, not the object: screen space, so the
+            	// hologram and the panel share one density and read as one device.
+            	float sy = system.getScreenUVCoord().y;
+            	float scan = 1.0 - scanlineStrength * (0.5 + 0.5 * sin((sy * scanlineCount - t * scanlineScroll) * 6.2831853));
+
+            	// Phosphor flicker: two incommensurate sines so it never loops audibly.
+            	// Floored: on an additive display a black frame reads as a crash.
+            	float flick = 1.0 - flickerAmount * (0.55 + 0.35 * sin(t * flickerRate * 6.2831853) + 0.10 * sin(t * flickerRate * 17.077));
+            	flick = max(flick, 0.25);
+
+            	// Boot scanline wipe: reveal bottom-to-top across the mesh's own local
+            	// bounds. wipeAxis 0 = local Y (holograms); 1 = local Z (the panel plate,
+            	// whose plane preset is XZ-native so its height axis is Z).
+            	vec3 lo = system.getAABBMinLocal();
+            	vec3 hi = system.getAABBMaxLocal();
+            	vec3 pos = system.getSurfacePositionObjectSpace();
+            	float span; float coord;
+            	if (wipeAxis > 0.5) { span = hi.z - lo.z; coord = pos.z - lo.z; }
+            	else { span = hi.y - lo.y; coord = pos.y - lo.y; }
+            	float yNorm = clamp(coord / max(span, 0.0001), 0.0, 1.0);
+            	float soft = max(wipeSoftness, 0.001);
+            	float reveal = 1.0 - smoothstep(wipeProgress, wipeProgress + soft, yNorm);
+            	float edgeGlow = (wipeProgress < 1.0) ? exp(-abs(yNorm - wipeProgress) / soft) * 1.5 : 0.0;
+
+            	vec3 rgb = colorIn.rgb * glowIntensity * scan * flick * reveal + colorIn.rgb * edgeGlow;
+            	result = vec4(rgb, colorIn.a * reveal);
+            }
+        CustomCodeNodeAsset:
+          ClassType1: REFUID
+          String: ""
+        Description:
+          ClassType1: TEXT
+          String: ""
+        Examples:
+          ItemIndex: 0
+          ItemList: "Custom : Input/Output/Global Types : Extra Functions : Procedural Execution : Lighting Loop : System Built-In Values/Functions"
+        ID:
+          Variable: 0
+        Locked:
+          Variable: false
+        Stage:
+          ItemIndex: 1
+          ItemList: "Vertex : Pixel"
+        Title:
+          String: CRT Phosphor
+        UseExternalFile:
+          Variable: false
+        colorIn:
+          ClassType1: COLOR
+          Connection0:
+            NodeLevelID: 1
+            PortID: Output
+          Variable: [1.0, 1.0, 1.0, 1.0]
+        glowIntensity:
+          Connection0:
+            NodeLevelID: 10
+            PortID: Output
+          Variable: 1.8
+        scanlineCount:
+          Connection0:
+            NodeLevelID: 11
+            PortID: Output
+          Variable: 220.0
+        scanlineStrength:
+          Connection0:
+            NodeLevelID: 12
+            PortID: Output
+          Variable: 0.3
+        scanlineScroll:
+          Connection0:
+            NodeLevelID: 13
+            PortID: Output
+          Variable: 0.06
+        flickerAmount:
+          Connection0:
+            NodeLevelID: 14
+            PortID: Output
+          Variable: 0.1
+        flickerRate:
+          Connection0:
+            NodeLevelID: 15
+            PortID: Output
+          Variable: 11.0
+        wipeProgress:
+          Connection0:
+            NodeLevelID: 16
+            PortID: Output
+          Variable: 1.0
+        wipeSoftness:
+          Connection0:
+            NodeLevelID: 17
+            PortID: Output
+          Variable: 0.08
+        wipeAxis:
+          Connection0:
+            NodeLevelID: 18
+            PortID: Output
+          Variable: 0.0
+        ngs_Height:
+          Variable: 400
+        ngs_Version:
+          String: 0.1.0
+        result:
+          IOType: 1
+          Variable: [0.0, 0.0, 0.0, 0.0]
+      PositionX: -60
+      PositionY: 91
+      TemplateID: node_util_custom
+      TemplateVersionMinor: 2
+      Title1: Custom Code
+    Node11:
+      CommentSizeX: 0
+      CommentSizeY: 0
+      DependencyIndex: 11
+      LevelID: 4
+      NodeCount: 0
+      NodeType: 1
+      Ports:
+        Depth:
+          Variable: 1.0
+        DepthMode:
+          ItemIndex: 0
+          ItemList: "Non-Linear - Normalized [0 to 1] : Linear - Normalized [-1 to 1] : View Space - Non-Normalized [-near to -far]"
+        DontFreezeSpec:
+          Variable: false
+        FinalColor:
+          ClassType1: COLOR
+          Connection0:
+            NodeLevelID: 0
+            PortID: result
+          Variable: [1.0, 1.0, 1.0, 1.0]
+        FinalColor1:
+          ClassType1: COLOR
+          Variable: [1.0, 1.0, 1.0, 1.0]
+        FinalColor2:
+          ClassType1: COLOR
+          Variable: [1.0, 1.0, 1.0, 1.0]
+        FinalColor3:
+          ClassType1: COLOR
+          Variable: [1.0, 1.0, 1.0, 1.0]
+        GSplatPointSize:
+          Variable: 0.0
+        GSplatRotation:
+          Variable: [0.0, 0.0, 0.0, 1.0]
+        GSplatScale:
+          Variable: [0.0, 0.0, 0.0]
+        Motion Vector Pass:
+          ItemIndex: 0
+          ItemList: "Write Velocity and Depth : Discard Velocity but Write Depth : Discard Velocity and Depth"
+        Negative:
+          Variable: false
+        PrevWorldPosition:
+          Variable: [0.0, 0.0, 0.0]
+        RayDirection:
+          Variable: [0.0, 1.0, 0.0]
+        RayOrigin:
+          Variable: [0.0, 0.0, 0.0]
+        ShowPrevPos:
+          Variable: false
+        Targets:
+          ItemIndex: 0
+          ItemList: "1 : 2 : 3 : 4"
+        Type:
+          ItemIndex: 0
+          ItemList: "3D : Post Effect : Hair : Gaussian Splatting"
+        WorldNormal:
+          Variable: [0.0, 1.0, 0.0]
+        WorldPosition:
+          Variable: [0.0, 0.0, 0.0]
+        WorldTangent:
+          Variable: [0.0, 0.0, 1.0]
+        WriteDepth:
+          Variable: false
+      PositionX: 220
+      PositionY: 90
+      TemplateID: nodes_main_graph
+      Title1: Shader
+      Title2: 3D
+  IsSubGraph0: true
+  IsSubGraph1: true
+  IsSubGraph2: true
+  IsSubGraph3: true
+  LevelID: 0
+  NodeType: 3
+  PositionX: 0
+  PositionY: 0
+  TemplateID: nodes_main_subgraph
+  Title1: ""
+SystemID: dev.snap.shaders

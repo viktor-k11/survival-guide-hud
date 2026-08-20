@@ -1,0 +1,132 @@
+- !<AssetImportMetadata/6c534943-c7c9-4434-97c6-96e5b948387f>
+  ImportedAssetIds:
+    .hidden/TentStake_Flat: !<reference> 372107b4-7f57-4efa-88ca-0aaf2f48a257
+    26ba073d67b9d0dd: !<reference> 720dfd27-e3ec-49d5-b96f-f98a7ea80af5
+    4a3f95f6e2bbceb8: !<reference> d6dd5f90-bb97-47b8-bd77-5bae69ffd9c6
+    5e106b36d2cd8df0: !<reference> e679a0b0-cfd3-4b1b-b8f7-1e6d75e661cc
+    88ab437fd121cc69: !<reference> 0a2b94de-cb05-402a-913b-8e10b49d609d
+    8c2c6f3cf8d060fd: !<reference> e578f592-b691-436a-8a02-aee10f08f107
+    Materials/TentStake_Flat: !<reference> 3e1dc1f9-1274-4cf5-b6d1-d689f36fa821
+    Materials/TentStake_Flat|TentStake_Flat|GraphPassInfo: !<reference> 17c46ad8-ca43-4ac1-a41a-768d2c7ae2b2
+    Meshes/geometry_0: !<reference> 568cbe75-d18e-4e0d-afd8-eb8be3b49ecf
+    Scene: !<reference> 9edd5efd-220a-4399-a7e1-bafb00d331aa
+  ImporterName: GltfImporter
+  PrimaryAsset: !<reference> 9edd5efd-220a-4399-a7e1-bafb00d331aa
+  PackageType: LegacyPackage
+  LegacyPackagePolicy: CanBeUnpackedTransparent
+  ExtraData:
+    {}
+  AssetDataMap:
+    Scene: !<own> 27a9153b-3cec-4163-8562-70de4857dcad
+  DependentFiles:
+    []
+  ImporterSettings: !<GltfImporterSettings>
+    UseLegacyImporter: false
+    WithMaterials: true
+    NamingConvention: ByCategorySanitizeV2
+    PersistentIdGenerationAlgorithm: DescriptorBasedV2
+    AnimationCurveOptimization: true
+    CustomAnimationSamplingRate: 30.000000
+    ImportVertexColor: true
+    ImportTangents: true
+    ImportMorphTargetAnimation: true
+    ConvertMetersToCentimeters: true
+    RegenerateTangents: false
+    OptimizeMesh: true
+  CompressionSettings: !<ComplexCompressionSettings>
+    Presets:
+      None Compression: !<FileCompressionSettings>
+        {}
+      Performance Compression: !<PerformanceCompressionSettings>
+        Level: Medium
+        Mipmap: false
+    ExtensionMappings:
+      mesh: None Compression
+      png: Performance Compression
+    Overrides:
+      {}
+- !<SceneObject/08bc6ce8-f770-444a-6cc2-e39aadc59dab>
+  PrefabRemaps:
+    []
+  Name: Scene
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> 8de39275-dda2-433b-75b9-1ec4a28239fb
+  Components:
+    []
+- !<SceneObject/0a2b94de-cb05-402a-6ec4-71ef4b629f62>
+  PrefabRemaps:
+    []
+  Name: Scenes
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> 08bc6ce8-f770-444a-6cc2-e39aadc59dab
+  Components:
+    []
+- !<RenderMeshVisual/175732a0-1a2e-47c5-5bbc-b20d2ea0ac2f>
+  PrefabRemaps:
+    []
+  Name: geometry_0
+  Enabled: true
+  RenderOrder: 0
+  StretchMode: Stretch
+  VerticalAlignment: Center
+  HorizontalAlignment: Center
+  MeshShadowMode: None
+  ShadowColor: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+  ShadowDensity: 1.000000
+  Materials:
+    - !<reference> abeb2edc-d00c-4c76-85b1-82ef8c61d7f6
+  Mesh: !<reference> 568cbe75-d18e-4e0d-afd8-eb8be3b49ecf
+  Skin: !<reference> 00000000-0000-0000-0000-000000000000
+  BlendShapesEnabled: true
+  BlendNormals: false
+  BlendShapes:
+    {}
+- !<ObjectPrefabAssetData/27a9153b-3cec-4163-8562-70de4857dcad>
+  Prototype: !<ObjectOwner/52d197a7-a25c-4634-b0a5-abb22e8477ea>
+    PackagePath: ""
+    objects:
+      - !<own> 720dfd27-e3ec-49d5-4690-06758157f50a
+- !<SceneObject/720dfd27-e3ec-49d5-4690-06758157f50a>
+  PrefabRemaps:
+    []
+  Name: TentStake
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 100.000000, y: 100.000000, z: 100.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> 0a2b94de-cb05-402a-6ec4-71ef4b629f62
+  Components:
+    []
+- !<SceneObject/8de39275-dda2-433b-75b9-1ec4a28239fb>
+  PrefabRemaps:
+    []
+  Name: geometry_0
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.100000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 175732a0-1a2e-47c5-5bbc-b20d2ea0ac2f

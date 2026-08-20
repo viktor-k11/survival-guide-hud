@@ -1,0 +1,132 @@
+- !<AssetImportMetadata/eaeb05d9-03da-4fde-8f64-104f8a6638c5>
+  ImportedAssetIds:
+    .hidden/FirewoodLog_Flat: !<reference> 461a8028-ce74-403c-a389-563876fc50a6
+    26ba073d67b9d0dd: !<reference> 372d71aa-9022-4df0-bc12-217284899033
+    3ad883c75fd98b92: !<reference> f70be95f-e38b-4864-897b-bf4393617e46
+    50dd9d22111afc1f: !<reference> 0ddef422-1278-469b-9871-4304783b8328
+    88ab437fd121cc69: !<reference> d8e46eaa-967b-40da-b8a6-df48882323a0
+    8c2c6f3cf8d060fd: !<reference> 663a41d8-8eed-4d9d-a152-6847dd250383
+    Materials/FirewoodLog_Flat: !<reference> 0ac80ede-962e-4b44-b439-6be288a6225d
+    Materials/FirewoodLog_Flat|FirewoodLog_Flat|GraphPassInfo: !<reference> 4511a06e-c1d8-4c6f-9073-f2499a4b1e2b
+    Meshes/geometry_0: !<reference> 967c5fc1-9175-4987-bf5b-a49ecc3cb453
+    Scene: !<reference> b78e4737-8495-4e3f-9e1a-683f3805edf4
+  ImporterName: GltfImporter
+  PrimaryAsset: !<reference> b78e4737-8495-4e3f-9e1a-683f3805edf4
+  PackageType: LegacyPackage
+  LegacyPackagePolicy: CanBeUnpackedTransparent
+  ExtraData:
+    {}
+  AssetDataMap:
+    Scene: !<own> 72efc515-cd89-4826-93b7-eefb718e6d48
+  DependentFiles:
+    []
+  ImporterSettings: !<GltfImporterSettings>
+    UseLegacyImporter: false
+    WithMaterials: true
+    NamingConvention: ByCategorySanitizeV2
+    PersistentIdGenerationAlgorithm: DescriptorBasedV2
+    AnimationCurveOptimization: true
+    CustomAnimationSamplingRate: 30.000000
+    ImportVertexColor: true
+    ImportTangents: true
+    ImportMorphTargetAnimation: true
+    ConvertMetersToCentimeters: true
+    RegenerateTangents: false
+    OptimizeMesh: true
+  CompressionSettings: !<ComplexCompressionSettings>
+    Presets:
+      None Compression: !<FileCompressionSettings>
+        {}
+      Performance Compression: !<PerformanceCompressionSettings>
+        Level: Medium
+        Mipmap: false
+    ExtensionMappings:
+      mesh: None Compression
+      png: Performance Compression
+    Overrides:
+      {}
+- !<SceneObject/372d71aa-9022-4df0-43ed-de8d7b766fcc>
+  PrefabRemaps:
+    []
+  Name: FirewoodLog
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 100.000000, y: 100.000000, z: 100.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> d8e46eaa-967b-40da-4759-20b777dcdc5f
+  Components:
+    []
+- !<SceneObject/685d942e-e62e-450e-7518-294e91c4e6d2>
+  PrefabRemaps:
+    []
+  Name: Scene
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> b7d54fe1-6e3b-4ae4-6be1-8cd34dad07c0
+  Components:
+    []
+- !<ObjectPrefabAssetData/72efc515-cd89-4826-93b7-eefb718e6d48>
+  Prototype: !<ObjectOwner/5fbc5d14-04ef-4619-9ac8-2d727be85d5c>
+    PackagePath: ""
+    objects:
+      - !<own> 372d71aa-9022-4df0-43ed-de8d7b766fcc
+- !<SceneObject/b7d54fe1-6e3b-4ae4-6be1-8cd34dad07c0>
+  PrefabRemaps:
+    []
+  Name: geometry_0
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> d17991ac-9822-4661-5faf-4a5b6ad391c0
+- !<RenderMeshVisual/d17991ac-9822-4661-5faf-4a5b6ad391c0>
+  PrefabRemaps:
+    []
+  Name: geometry_0
+  Enabled: true
+  RenderOrder: 0
+  StretchMode: Stretch
+  VerticalAlignment: Center
+  HorizontalAlignment: Center
+  MeshShadowMode: None
+  ShadowColor: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+  ShadowDensity: 1.000000
+  Materials:
+    - !<reference> 72ff9b7f-2546-4916-9a32-333dda045e5b
+  Mesh: !<reference> 967c5fc1-9175-4987-bf5b-a49ecc3cb453
+  Skin: !<reference> 00000000-0000-0000-0000-000000000000
+  BlendShapesEnabled: true
+  BlendNormals: false
+  BlendShapes:
+    {}
+- !<SceneObject/d8e46eaa-967b-40da-4759-20b777dcdc5f>
+  PrefabRemaps:
+    []
+  Name: Scenes
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> 685d942e-e62e-450e-7518-294e91c4e6d2
+  Components:
+    []

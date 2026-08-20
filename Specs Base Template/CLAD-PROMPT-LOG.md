@@ -2369,3 +2369,214 @@ for, so there is nothing to recover from.
   3834ms`) and degraded to silence with no effect on anything — the intended
   behaviour, and a reminder that the gateway is still occasionally lossy even
   with one call at a time.
+
+## Prompt — /mesh-builder-scripting — low-poly wireframe blueprint hologram geometry populating existing stage groups
+
+**Done:** `Widgets/HologramGeometry.ts` builds Lines-topology wireframe meshes
+into the nine EXISTING stage RenderMeshVisuals under `WorldRoot/HologramRoot`
+(`HologramTent/S1_Footprint..S5_Complete`, `HologramFire/S1_ClearedSpot..
+S4_Flame`), replacing the scaled PH_Box/PH_Plane/PH_Disc placeholders. Stages
+are cumulative (mutually-exclusive groups, so S3 carries S1+S2 line work).
+Driven from a new design-time `Systems/HologramGeometry` object; the nine stage
+transforms were reset to identity because geometry now encodes real cm (ground
+at y=0, tent door facing +Z). All dimensions (tent W/D/H, stake offset, clear
+radius, tinder, log stack, flame height, ground lift) are Inspector `@input`s.
+
+**Decisions / notes:**
+- Position-only vertex layout, no vertex colours: the PH_* materials are unlit
+  base-colour, so each stage keeps its AUTHORED material (cyan → amber → green
+  / warning) and recolouring stays an Inspector edit. No new material package
+  was imported.
+- Meshes are baked once in `OnStartEvent` even while the objects are disabled —
+  the first `hologramStage` enable shows a finished blueprint. Nothing consumes
+  `hologramStage` visually yet; that presenter is still open work.
+- Verified per stage with ortho runtime captures + device-view proof saved as
+  `Docs/screens/hologram-tent-s1..s5.jpg` and `hologram-fire-s1..s4.jpg`
+  (preview-panel captures, stable names). Scene restored to all-disabled
+  ship state after capture.
+
+---
+
+## Prompt — overnight batch: /build-mesh, /mesh-builder-scripting, /build-sfx, /shader-graph
+
+> /build-mesh, then /mesh-builder-scripting, then /build-sfx, then /shader-graph
+> — in that order, as ONE long batch. Read Docs/SCENE-MAP.md before you start;
+> the object paths in it are contracts.
+>
+> This is an unattended overnight run. If one of the four stages fails or
+> produces something unusable, LOG IT, leave the existing placeholder in place,
+> and CONTINUE to the next stage. Do not stop the batch and do not block on a
+> question. Blender is NOT installed on this machine — pick generation paths
+> that do not need it (no rigged, no voxel).
+>
+> Run the four generators SEQUENTIALLY, never overlapping. Same rule as the
+> gateway queue: concurrent remote calls on this project degrade each other.
+>
+> [Stage 1: three props as pre-made disabled children of PropsContainer, 6-log
+> budget. Stage 2: wireframe hologram geometry into the nine existing stage
+> groups, cumulative, draft phosphor material. Stage 3: six SFX cues, wire only
+> where a widget already owns an AudioComponent, never NarrationService.
+> Stage 4: phosphor CRT material family as NEW materials, assigned to hologram
+> + guide-panel backing ONLY, rollback = Inspector swap. Then: scene-roots
+> check, PreviewPanelTool screenshots of the 9 stages + props + panel,
+> SCENE-MAP update, this log, commit.]
+>
+> Mid-run corrections from the user, applied during the batch:
+> a) Props: FLAT-SHADED, UNTEXTURED, ONE MATERIAL SLOT per prop — no baked
+>    colour; geometry carries the read.
+> b) Holograms: one material slot per stage group, no baked colour — the whole
+>    hologram re-tintable from a single Inspector field.
+
+**All four stages completed. One backend re-decision (declared below), three
+scene defects caught and fixed by the checks, nothing left broken.**
+
+### Stage 1 — props (ran twice; the second run is the one that shipped)
+
+**First pass, SPECS text-to-3D** (default backend; Blender absent ruled out
+voxel): three jobs, 33-95 s each, all succeeded first try —
+`FirewoodLog` 1944 tris, `KindlingBundle` 1976, `TentStake` 2000, normalized
+to 45 / 25 / 20 cm, grounded, none flat/sliver. No Blender also means no
+render-verify: they'd have shipped `completeness: unverified`,
+`forward_axis: unknown`.
+
+**Then the correction landed: untextured, one material slot, no baked colour.**
+That rules out BOTH AI backends by their output contract — SPECS and FAST3D
+always bake colour into textures (each GLB carried a baked material + 2
+textures). Stripping textures would leave organic reconstruction mush exactly
+where the correction demands deliberate edges. **Backend switched to
+code-authored geometry, declared:** `backend_reason: untextured
+single-material requirement; AI backends always bake textures.`
+
+`Tools/make-prop-meshes.js` (deterministic, seeded — the make-survey-fixtures
+precedent) authors all three and overwrites the same GLB paths:
+
+| Prop | Read | Size (cm) | Tris |
+|---|---|---|---|
+| FirewoodLog | octagonal faceted bark, inset cut ends, one branch stub; long axis **X** = the stacking snap axis | 45.0 x 30.2 x 21.4 | 121 |
+| KindlingBundle | seven splayed hex sticks + cord band | 11.0 x 24.2 x 10.9 | 168 |
+| TentStake | wide hex head, square shaft, pyramid tip | 9.0 x 18.5 x 8.2 | 44 |
+
+Each: ONE primitive, ONE untextured material (`*_Flat`), per-face normals,
+min-Y = 0. Overwriting in place kept the prefab ids, so the scene children
+survived the regeneration.
+
+**Scene:** `WorldRoot/PropsContainer/Prop_Log_1..6`, `Prop_Kindling`,
+`Prop_Stake` — instantiated from the prefabs at DESIGN time, spread
+non-overlapping, every level of every chain disabled. The 6-log budget is the
+authored object count; P14 only enables, positions, snaps.
+
+**The GLB-reimport trap (cost one debugging loop):** replacing a GLB's bytes
+keeps the prefab id but kills the old subresource ids — and already-placed
+instances keep referencing the DEAD baked materials, which renders as the pink
+missing-material pattern. Every instance RMV was re-pointed at the new `*_Flat`
+material by id. Recorded in SCENE-MAP so the next regeneration expects it.
+
+### Stage 2 — hologram geometry (background fork, its own log entry above)
+
+`Widgets/HologramGeometry.ts` + `Systems/HologramGeometry`: Lines-topology
+MeshBuilder wireframes baked into the nine EXISTING stage RMVs, cumulative
+stages, all dimensions as @inputs. See the fork's entry for details.
+
+**Correction (b) applied on top of the fork's output:** the fork left the
+stages on four different PH materials, which fails "one Inspector field
+re-tints the whole hologram" — and pointing them all at `PH_Cyan` would have
+recoloured zones and the survey grid too (shared material). New
+`PH_HologramWire.mat` (PH_Cyan clone) went onto all nine stage RMVs as the
+single shared slot; stage 4 then swapped it for the CRT material on the same
+slots. `PH_HologramWire` stays in the project as the one-swap rollback.
+
+### Stage 3 — SFX (local synthesis, no remote calls)
+
+Six cues in `Assets/GeneratedSFX/`, generator committed at
+`tempAssetGen/gen_sfx_hud_cues.js`. Presets where they fit (uiBlip, uiError,
+powerUp+sparkle, uiSuccess); geiger click and survey ping hand-rolled — no
+preset covers a 30 ms radiation tick or a single sonar note (uiNotify is
+two-bell, and three markers landing close together would melody-clash).
+
+| Cue | For | Length |
+|---|---|---|
+| geiger-click | survey sampling, fires often — tiny and dry | 0.03 s |
+| confirm-blip | local keyword acks | 0.09 s |
+| error-buzz | failures / safety rejection | 0.45 s |
+| crt-power-on | boot | 2.5 s |
+| survey-ping | one per placed marker | 1.15 s |
+| completion-sting | lessonCompleted | 1.77 s |
+
+**Wiring: NONE — and that is per instruction, not an omission.** The only
+AudioComponents in the scene belong to `Systems/NarrationService` (the speech
+channel, explicitly off-limits, keeps exactly one AudioComponent) and
+`RSG Smoke Test [TEMP]` (not a widget, slated for deletion). All six assets
+are imported and named, waiting for whoever adds design-time AudioComponents
+to the widgets that will own them.
+
+### Stage 4 — phosphor CRT material family
+
+One shader, two materials — the same pattern the PH_ set already uses (all PH
+mats share the unlit pass):
+
+- **`CRT_Phosphor.graphShader`** — a compact code-node graph (started from the
+  bundled codeNode example, not the 3000-line stock Unlit). Screen-space
+  scanlines (they belong to the display, not the object, so hologram and panel
+  read as one device), phosphor flicker from two incommensurate sines
+  **floored at 0.25** (hard rule 2: a black frame on an additive display reads
+  as a crash), and a boot scanline wipe (`wipeProgress` 0→1, bottom-up, hot
+  leading edge) normalized against the mesh's own local AABB via
+  `getAABBMinLocal/MaxLocal` — no per-material bounds config. `wipeAxis`
+  selects local Y (holograms) or local Z (XZ-native plane meshes like the
+  plate). Ten parameters, all material properties.
+- **`CRT_HologramWire.mat`** — cyan, glow 1.8 → all nine hologram stage RMVs.
+  Its `baseColor` is the single hologram re-tint field.
+- **`CRT_PanelGlow.mat`** — dim green translucent, stronger scanlines,
+  `wipeAxis` 1 → `GuidePanel/BackingPlate` ONLY.
+
+Additive blend, no dark fills, every other widget untouched on its PH_
+material, icon slots untouched (ENABLE_BASE_TEX stays PH_Icon's job).
+Rollback for the panel = swap back to `PH_PanelGlow`; for the hologram = swap
+to `PH_HologramWire`. Ran a full lesson boot after assignment: zero shader or
+material errors in the log.
+
+### After-batch checks — what they caught
+
+1. **`check-scene-roots.py` failed twice, correctly.** The known offender
+   `AiPreviewAgent Handler` had been injected at root again (deleted, not
+   allowlisted), and the GLB-imported inner nodes (`Prop_*/Scenes/Scene/
+   geometry_0`) shipped enabled inside the disabled tree — all 24 disabled to
+   honour "every level ships disabled". Guard is green in the committed scene.
+2. **The props screenshot caught the dead-material bug** (pink pattern) that
+   the asset queries had NOT caught — the assets were fine, the instances were
+   stale. Fixed and re-captured.
+3. **The first hologram capture caught a placement truth:** floor-level
+   content at WorldRoot origin is INVISIBLE on device — the ±17° frustum
+   cannot see the floor closer than ~5.7 m (eye height 1.73 m). The capture
+   session parked HologramRoot at (0,-53,-620) to photograph it, then restored
+   identity. **P13's presenter must anchor holograms 5-6 m out** or the wearer
+   sees nothing; recorded here because it will otherwise be rediscovered the
+   hard way on stage.
+
+### Screenshots (all PreviewPanelTool device-view, Docs/screens/)
+
+`hologram-tent-s1..s5.jpg`, `hologram-fire-s1..s4.jpg` (re-captured over the
+fork's names — same files now show the CRT material), `props-container-preview.jpg`
+(all 8 props solid, silhouettes reading), `panel-crt-backing.jpg` (live
+"Purify Water" lesson on the CRT backing; the glow is deliberately subtle —
+the presenter owns its brightness via panelOpacity).
+
+### Manifest
+
+| Asset | Landed at | Used by |
+|---|---|---|
+| FirewoodLog.glb (+_Flat mat) | Assets/GeneratedMeshes/ | Prop_Log_1..6 (disabled) |
+| KindlingBundle.glb (+_Flat mat) | Assets/GeneratedMeshes/ | Prop_Kindling (disabled) |
+| TentStake.glb (+_Flat mat) | Assets/GeneratedMeshes/ | Prop_Stake (disabled) |
+| Tools/make-prop-meshes.js | Tools/ | regenerates all three, deterministic |
+| HologramGeometry.ts | Assets/Scripts/Widgets/ | Systems/HologramGeometry → 9 stage RMVs |
+| geiger-click / confirm-blip / error-buzz / crt-power-on / survey-ping / completion-sting .wav | Assets/GeneratedSFX/ | **nobody yet** — imported + named only |
+| tempAssetGen/gen_sfx_hud_cues.js | tempAssetGen/ | regenerates all six |
+| CRT_Phosphor.graphShader | Assets/ | the pass behind both CRT materials |
+| CRT_HologramWire.mat | Assets/ | all 9 hologram stage visuals |
+| CRT_PanelGlow.mat | Assets/ | GuidePanel/BackingPlate |
+| PH_HologramWire.mat | Assets/ | nobody (the hologram rollback material) |
+
+**Failed / skipped: nothing.** The three SPECS textured GLBs were superseded
+mid-batch by the untextured correction, not failed — the authored replacements
+overwrote them. Every stage produced its deliverable.

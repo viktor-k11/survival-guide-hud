@@ -69,6 +69,43 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 | `VT323.ttf` | kept in the project; swap it back via `VisualConfig.font` if you want the CRT look |
 | `Assets/Icons/*_sharp.png` | Material Symbols, Sharp. Named only in `VisualConfig` |
 
+### Generated assets (P12 batch — props, holograms, SFX, CRT shaders)
+
+| Asset | Use |
+|---|---|
+| `GeneratedMeshes/FirewoodLog.glb` | Training prop, 45 x 24 x 25 cm, long axis **X** (the stacking snap axis). Authored geometry: faceted octagonal bark, inset cut ends, one branch stub. **Untextured, ONE material slot (`FirewoodLog_Flat`), flat-shaded** — recolour by editing that one material. Regenerate with `node Tools/make-prop-meshes.js` (deterministic). |
+| `GeneratedMeshes/KindlingBundle.glb` | Training prop, 11 x 24 x 11 cm. Seven splayed sticks + cord band, one material slot (`KindlingBundle_Flat`). |
+| `GeneratedMeshes/TentStake.glb` | Training prop, 9 x 18.5 x 8 cm. Head / shaft / pyramid tip silhouette, one material slot (`TentStake_Flat`). |
+| `GeneratedSFX/geiger-click.wav` | Survey sampling tick, 30 ms mono, dry on purpose (fires many times per survey). **Not wired** — no widget owns an AudioComponent yet. |
+| `GeneratedSFX/confirm-blip.wav` | Local-keyword acknowledgement, 90 ms. Not wired. |
+| `GeneratedSFX/error-buzz.wav` | Request failure / safety rejection, 450 ms. Not wired. |
+| `GeneratedSFX/crt-power-on.wav` | Boot cue, 2.5 s stereo. Not wired. |
+| `GeneratedSFX/survey-ping.wav` | One per placed site marker, single sonar note, 1.15 s. Not wired. |
+| `GeneratedSFX/completion-sting.wav` | `lessonCompleted`, ascending bell arpeggio, 1.8 s. Not wired. |
+| `CRT_Phosphor.graphShader` | **The phosphor CRT shader family's single pass.** Code-node graph: screen-space scanlines, floored phosphor flicker, and a boot scanline wipe normalized against the mesh's own local AABB (`wipeProgress` 0→1, `wipeAxis` 0 = local Y for holograms, 1 = local Z for XZ-native plane meshes). Every knob is a material property. |
+| `CRT_HologramWire.mat` | CRT pass tuned for the hologram line work — cyan, glow 1.8, scanlines 0.30. Assigned to **all nine** hologram stage visuals, so `baseColor` here is the ONE field that re-tints the whole hologram. |
+| `CRT_PanelGlow.mat` | CRT pass tuned as the guide panel's translucent backing — dim green glow, stronger scanlines, `wipeAxis` 1. Assigned to `GuidePanel/BackingPlate` only. |
+| `PH_HologramWire.mat` | The **rollback** for the hologram: a PH_Cyan clone that exists so the hologram keeps a single shared material even off the CRT shader. Swap `CRT_HologramWire` → this in nine Inspector slots to retire the CRT look; never tint `PH_Cyan` itself (zones and survey share it). |
+
+> **Hologram stage geometry is baked by `Systems/HologramGeometry`**
+> (`Widgets/HologramGeometry.ts`): line-topology MeshBuilder wireframes written
+> into the EXISTING nine stage RenderMeshVisuals at OnStart (hard rule 1 —
+> populate, never instantiate). Stages are cumulative: S3 contains S1+S2+S3.
+> All dimensions are @inputs on that component.
+
+> **Props are pre-made disabled children of `WorldRoot/PropsContainer`:**
+> `Prop_Log_1..6`, `Prop_Kindling`, `Prop_Stake` — instantiated from the GLB
+> prefabs at DESIGN time. Every level of each prop's chain ships disabled
+> (including the GLB-import inner `Scenes/Scene/geometry_0` nodes), so an
+> enabler must walk the chain. P14 only enables, positions and snaps these.
+> The log-cabin budget is exactly six logs.
+
+> **GLB-reimport gotcha, cost a debugging loop:** replacing a GLB's content on
+> disk keeps the prefab id (instances survive) but the OLD subresource ids
+> (baked materials, textures) die — and instantiated instances keep referencing
+> them, which renders as the pink missing-material pattern. After regenerating
+> a GLB, re-point every instance's RMV at the new material by id.
+
 > **Geometry gotcha, cost us a rebuild:** `PlaneMeshPreset`, `DiscMeshPreset`
 > and `TorusMeshPreset` are all **XZ-native (they lie flat)**. To face the user
 > a plane/disc/torus needs `rotation = [90, 0, 0]` (or `[-90,0,0]`); to lie on
