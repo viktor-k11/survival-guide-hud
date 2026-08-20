@@ -30,12 +30,18 @@
   ScriptInputsHidden:
     finalizingHint: false
     hintText: false
-    hudRoot: false
+    iconMaterial: false
     idleHint: false
+    lessonTitle: false
     listeningHint: false
     micIcon: false
+    quadMesh: false
     statusBar: false
+    theme: false
+    tickerIntervalSec: false
+    tickerPrompts: false
     tickerText: false
+    warningStrip: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -45,28 +51,45 @@
   Attachments:
     []
   DefaultScriptInputs:
-    - hudRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
       statusBar: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
       micIcon: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
       hintText: !<reference.Text> 00000000-0000-0000-0000-000000000000
       tickerText: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      lessonTitle: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      warningStrip: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      quadMesh: !<reference.RenderMesh> 00000000-0000-0000-0000-000000000000
+      iconMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
       idleHint: PINCH & HOLD — ASK FOR HELP
       listeningHint: LISTENING… RELEASE WHEN DONE
       finalizingHint: THINKING…
+      tickerPrompts: !<string[]>
+        - '"help me build a campfire"'
+        - '"help me purify water"'
+        - '"how do I signal for rescue"'
+        - '"help me pitch a tent"'
+        - '"how do I treat a burn"'
+      tickerIntervalSec: 2.500000
   ScriptTypes:
     -
       {}
   InputLines:
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
-    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">All must already exist in the scene. This script never creates any of them.</span>"}'
-    - '// @input SceneObject hudRoot {"hint":"HUDRoot. Enabled on start so the StatusBar is visible. Ownership moves to the mode router when that lands."}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">All exist at design time. This script never creates any of them, and it no longer touches HUDRoot — ModeRouter owns that.</span>"}'
+    - // @input AssignableType_1 theme
     - '// @input SceneObject statusBar {"hint":"HUDRoot/StatusBar"}'
     - '// @input SceneObject micIcon {"hint":"HUDRoot/StatusBar/MicIcon"}'
     - '// @input Component.Text hintText {"hint":"HUDRoot/StatusBar/HintText"}'
-    - '// @input Component.Text tickerText {"hint":"HUDRoot/StatusBar/ExampleTicker — reused as the live transcript line"}'
+    - '// @input Component.Text tickerText {"hint":"HUDRoot/StatusBar/ExampleTicker"}'
+    - '// @input Component.Text lessonTitle {"hint":"HUDRoot/StatusBar/LessonTitle"}'
+    - '// @input SceneObject warningStrip {"hint":"HUDRoot/StatusBar/WarningStrip"}'
+    - "// @input Asset.RenderMesh quadMesh {\"hint\":\"PH_Plane.mesh — MicIcon's placeholder is a disc, which maps an icon texture unreadably. A quad makes the glyph legible.\"}"
+    - '// @input Asset.Material iconMaterial {"hint":"PH_Icon.mat — an unlit additive material with ENABLE_BASE_TEX baked on. The other PH_ materials gate baseTex behind that define, so assigning a texture to them silently does nothing."}'
     - '// @ui {"widget":"separator"}'
-    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Copy</span>"}'
-    - '// @input string idleHint = "PINCH & HOLD — ASK FOR HELP" {"hint":"Shown when idle."}'
-    - '// @input string listeningHint = "LISTENING… RELEASE WHEN DONE" {"hint":"Shown while the mic is capturing."}'
-    - '// @input string finalizingHint = "THINKING…" {"hint":"Shown between release and the final transcript arriving."}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Idle copy</span>"}'
+    - '// @input string idleHint = "PINCH & HOLD — ASK FOR HELP"'
+    - '// @input string listeningHint = "LISTENING… RELEASE WHEN DONE"'
+    - '// @input string finalizingHint = "THINKING…"'
+    - '// @input string[] tickerPrompts = {"\"help me build a campfire\"","\"help me purify water\"","\"how do I signal for rescue\"","\"help me pitch a tent\"","\"how do I treat a burn\""} {"hint":"Rotating idle examples. These teach the user the system takes any request, not two.", "widget":"text_area"}'
+    - '// @input float tickerIntervalSec = 2.5 {"hint":"Seconds each example stays up.", "widget":"slider", "min":1, "max":8, "step":0.5}'

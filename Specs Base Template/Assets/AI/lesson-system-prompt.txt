@@ -28,9 +28,22 @@ apply to that type must be present and set to null. The full field set is:
 "warning" is the one-line hazard text from rule 3. Set it on every step where
 "safety" is true, and set it to null everywhere else.
 
+Each companion type has fields it MUST carry. Omitting them makes the lesson
+invalid and it will be rejected:
+- "zone" must have "shape" and a positive "size_m".
+- "timer" must have a positive "duration_sec".
+- "checklist" must have a non-empty "items" array of 3-6 short strings. Never
+  emit a checklist without items — if you have nothing to list, use a
+  different companion or null.
+- "compass" must have a non-empty "label".
+- "hologram_stage" must have "stage" within the range for the lesson type.
+
 If the task is not a tent or a campfire, do NOT emit "hologram_stage" at all —
 there is no hologram for it. Use zone, timer, checklist and compass instead,
 or null when a step needs no widget.
+
+The two examples below are 6 steps and 4 steps. Use however many steps the task
+actually needs anywhere in the 4-6 range — do not copy an example's length.
 
 Example — user asks: "help me build a campfire"
 {
@@ -49,6 +62,12 @@ Example — user asks: "help me build a campfire"
       "warning": null
     },
     {
+      "instruction": "Lay a loose nest of tinder in the centre of the pit.",
+      "companion": {"type": "hologram_stage", "shape": null, "size_m": null, "label": null, "duration_sec": null, "items": null, "stage": 2},
+      "safety": false,
+      "warning": null
+    },
+    {
       "instruction": "Stack the kindling log-cabin style around the tinder core.",
       "companion": {"type": "hologram_stage", "shape": null, "size_m": null, "label": null, "duration_sec": null, "items": null, "stage": 3},
       "safety": false,
@@ -59,6 +78,12 @@ Example — user asks: "help me build a campfire"
       "companion": {"type": "compass", "shape": null, "size_m": null, "label": "Check wind", "duration_sec": null, "items": null, "stage": null},
       "safety": true,
       "warning": "Never light a fire in strong wind or under low branches."
+    },
+    {
+      "instruction": "Feed thicker wood once the flames hold steady.",
+      "companion": {"type": "hologram_stage", "shape": null, "size_m": null, "label": null, "duration_sec": null, "items": null, "stage": 4},
+      "safety": false,
+      "warning": null
     }
   ]
 }

@@ -1,0 +1,55 @@
+- !<AssetImportMetadata/d92cd884-bb94-4040-9fc6-dd241b3cbee2>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 7f17bd3d-b43d-45d0-bfc1-45563e9069db
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 7f17bd3d-b43d-45d0-bfc1-45563e9069db
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 9b2a8b97-2e2c-4e34-b7b1-2c97ebe35281
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/9b2a8b97-2e2c-4e34-b7b1-2c97ebe35281>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 71b3cdee-076a-44e5-a329-141b5bb20546
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    enableLogging: false
+    hudRoot: false
+    worldRoot: false
+    worldVisibleInLesson: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - hudRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      worldRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      worldVisibleInLesson: false
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input SceneObject hudRoot {"hint":"HUDRoot — the head-locked tree."}'
+    - '// @input SceneObject worldRoot {"hint":"WorldRoot — the world-anchored tree."}'
+    - '// @input bool worldVisibleInLesson {"hint":"Show WorldRoot during a lesson. Off until the survey/terrain features land, since its contents are still placeholders."}'
+    - // @input bool enableLogging = true

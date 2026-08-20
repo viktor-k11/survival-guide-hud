@@ -39,3 +39,6 @@ Packages/AiPreviewAgentInspect.lspkg.meta
 # Python bytecode from Tools/ scripts
 __pycache__/
 *.pyc
+
+# Font preview downloads left behind by the FontSelector MCP tool.
+.font_tmp/

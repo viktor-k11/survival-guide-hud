@@ -29,10 +29,24 @@
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
     accentAmber: false
+    dimColor: false
     font: false
     glowIntensity: false
+    iconBack: false
+    iconChecklist: false
+    iconCompass: false
+    iconFire: false
+    iconMic: false
+    iconNext: false
+    iconQuestion: false
+    iconSos: false
+    iconTent: false
+    iconTimer: false
+    iconWarning: false
+    iconWater: false
     panelOpacity: false
     primaryPhosphor: false
+    pulseHz: false
     warningColor: false
   ScriptTypesHidden:
     {}
@@ -46,9 +60,23 @@
     - primaryPhosphor: !<Vec4> {x: 0.350000, y: 1.000000, z: 0.550000, w: 1.000000}
       accentAmber: !<Vec4> {x: 1.000000, y: 0.700000, z: 0.150000, w: 1.000000}
       warningColor: !<Vec4> {x: 1.000000, y: 0.300000, z: 0.220000, w: 1.000000}
+      dimColor: !<Vec4> {x: 0.120000, y: 0.380000, z: 0.220000, w: 1.000000}
       glowIntensity: !<float> 1.000000
       panelOpacity: 0.300000
+      pulseHz: 1.200000
       font: !<reference.Font> 00000000-0000-0000-0000-000000000000
+      iconFire: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconTent: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconCompass: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconWater: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconChecklist: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconTimer: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconWarning: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconMic: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconNext: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconBack: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconSos: !<reference.Texture> 00000000-0000-0000-0000-000000000000
+      iconQuestion: !<reference.Texture> 00000000-0000-0000-0000-000000000000
   ScriptTypes:
     -
       {}
@@ -59,10 +87,27 @@
     - '// @input vec4 primaryPhosphor = {0.35,1,0.55,1} {"hint":"Primary phosphor green: panel text, guide chrome, default widget stroke.", "widget":"color"}'
     - '// @input vec4 accentAmber = {1,0.7,0.15,1} {"hint":"Amber accent: step counters, active highlights, hologram staging.", "widget":"color"}'
     - '// @input vec4 warningColor = {1,0.3,0.22,1} {"hint":"Warning: safety-gated steps, distance warnings, the status-bar warning strip.", "widget":"color"}'
+    - '// @input vec4 dimColor = {0.12,0.38,0.22,1} {"hint":"Dimmed state: unchecked checklist rows, inactive chrome. Still emissive, just quieter.", "widget":"color"}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Intensity</span>"}'
     - '// @input float glowIntensity = 1 {"hint":"Multiplier applied to emissive strength. 1.0 = as authored.", "widget":"slider", "min":0, "max":3, "step":0.05}'
     - '// @input float panelOpacity = 0.3 {"hint":"Backing-plate strength. On an additive display this brightens the glow; it never darkens what is behind it.", "widget":"slider", "min":0, "max":1, "step":0.01}'
+    - '// @input float pulseHz = 1.2 {"hint":"Mic pulse rate in Hz while idle / listening.", "widget":"slider", "min":0, "max":4, "step":0.1}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Typography</span>"}'
-    - '// @input Asset.Font font {"hint":"HUD typeface. VT323 by default - OFL-licensed, no third-party IP (hard rule 7)."}'
+    - '// @input Asset.Font font {"hint":"HUD typeface. JetBrains Mono by default: monospace keeps NN/NN and MM:SS from jittering, and it has a weight axis so strokes can be thickened for an additive display. VT323 is still in the project if you want the CRT look back."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Icon set — Material Symbols, Sharp</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Swap the family by re-importing with /icon-selector and re-pointing these fields. Presenters never name an icon asset, so this is the only place that changes.</span>"}'
+    - // @input Asset.Texture iconFire
+    - // @input Asset.Texture iconTent
+    - // @input Asset.Texture iconCompass
+    - // @input Asset.Texture iconWater
+    - // @input Asset.Texture iconChecklist
+    - // @input Asset.Texture iconTimer
+    - // @input Asset.Texture iconWarning
+    - // @input Asset.Texture iconMic
+    - // @input Asset.Texture iconNext
+    - // @input Asset.Texture iconBack
+    - // @input Asset.Texture iconSos
+    - // @input Asset.Texture iconQuestion

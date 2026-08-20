@@ -1,0 +1,61 @@
+- !<AssetImportMetadata/15b77231-bab4-4feb-936a-260e131fc319>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> f8cbf4d8-e508-4e4b-9733-ff101751d518
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> f8cbf4d8-e508-4e4b-9733-ff101751d518
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 6f98d37b-1c0c-48de-a2ca-666ba9128aba
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/6f98d37b-1c0c-48de-a2ca-666ba9128aba>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 8660ea30-d7e8-4e4d-a972-e003c4c1c81f
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    activePrefix: false
+    checkedPrefix: false
+    container: false
+    enableLogging: false
+    pendingPrefix: false
+    theme: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      container: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      checkedPrefix: "[x] "
+      activePrefix: "[>] "
+      pendingPrefix: "[ ] "
+      enableLogging: false
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject container {"hint":"HUDRoot/Checklist — children ChecklistItem_1..6 are read by index."}'
+    - '// @input string checkedPrefix = "[x] " {"hint":"Prefix for a checked row."}'
+    - '// @input string activePrefix = "[>] " {"hint":"Prefix for the row currently being actioned."}'
+    - '// @input string pendingPrefix = "[ ] " {"hint":"Prefix for a row not yet reached."}'
+    - // @input bool enableLogging

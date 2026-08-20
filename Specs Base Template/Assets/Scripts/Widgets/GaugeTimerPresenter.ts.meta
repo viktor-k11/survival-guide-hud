@@ -1,0 +1,64 @@
+- !<AssetImportMetadata/e18f359e-f50c-4600-a899-d4aba94c667b>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 2a17b451-b590-463a-bb91-d3b50acdac83
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 2a17b451-b590-463a-bb91-d3b50acdac83
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> f981a24d-4444-46be-98d0-6ee8998af53c
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/f981a24d-4444-46be-98d0-6ee8998af53c>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 8838fa7d-f8fb-417a-9d26-2a49b150568a
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    fill: false
+    fillFullScale: false
+    gauge: false
+    label: false
+    theme: false
+    track: false
+    urgentBelow: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      gauge: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      track: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      fill: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      label: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      fillFullScale: 0.800000
+      urgentBelow: 0.200000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject gauge {"hint":"HUDRoot/GaugeTimer"}'
+    - '// @input SceneObject track {"hint":"HUDRoot/GaugeTimer/Track — static reference ring"}'
+    - '// @input SceneObject fill {"hint":"HUDRoot/GaugeTimer/Fill — scales down as time runs out"}'
+    - '// @input Component.Text label {"hint":"HUDRoot/GaugeTimer/Label"}'
+    - '// @input float fillFullScale = 0.8 {"hint":"Fill ring size relative to the track when full.", "widget":"slider", "min":0.1, "max":1, "step":0.05}'
+    - '// @input float urgentBelow = 0.2 {"hint":"Below this fraction remaining, the ring turns to the warning colour.", "widget":"slider", "min":0, "max":0.5, "step":0.01}'

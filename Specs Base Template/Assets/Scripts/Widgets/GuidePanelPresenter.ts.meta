@@ -1,0 +1,70 @@
+- !<AssetImportMetadata/66532334-64d1-4329-832b-842afeac2f78>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 4fce9c55-6edc-4418-80b2-c51592926b7d
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 4fce9c55-6edc-4418-80b2-c51592926b7d
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> bfe27ff8-3c27-4972-8269-7cabc17f387a
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/bfe27ff8-3c27-4972-8269-7cabc17f387a>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 8a69287c-9ea7-4efa-baac-b3b3726f7b47
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    backingPlate: false
+    iconMaterial: false
+    iconSlot: false
+    instruction: false
+    instructionWrapChars: false
+    panel: false
+    quadMesh: false
+    stepCounter: false
+    theme: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      panel: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      backingPlate: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      iconSlot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      stepCounter: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      instruction: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      quadMesh: !<reference.RenderMesh> 00000000-0000-0000-0000-000000000000
+      iconMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      instructionWrapChars: !<float> 26.000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject panel {"hint":"HUDRoot/GuidePanel"}'
+    - '// @input SceneObject backingPlate {"hint":"HUDRoot/GuidePanel/BackingPlate"}'
+    - '// @input SceneObject iconSlot {"hint":"HUDRoot/GuidePanel/IconSlot"}'
+    - '// @input Component.Text stepCounter {"hint":"HUDRoot/GuidePanel/StepCounter"}'
+    - '// @input Component.Text instruction {"hint":"HUDRoot/GuidePanel/InstructionText"}'
+    - '// @input Asset.RenderMesh quadMesh {"hint":"PH_Plane.mesh — the IconSlot placeholder is a box; swapping to a quad makes the icon read as an icon."}'
+    - '// @input Asset.Material iconMaterial {"hint":"PH_Icon.mat — unlit additive with ENABLE_BASE_TEX baked on. Assigning baseTex to the other PH_ materials is a silent no-op."}'
+    - '// @input float instructionWrapChars = 26 {"hint":"Characters per line before the instruction wraps. World-space Text has no width to wrap against, so the presenter does it.", "widget":"slider", "min":12, "max":48, "step":1}'

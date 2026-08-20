@@ -1377,3 +1377,168 @@ sequential checklist, back-at-step-1). Keys: `W`, `B`, `N`, `D`, `D`, `D`.
 `companion:null` emits `companionChanged` with `type:null` rather than being
 skipped, so a presenter gets an explicit "hide everything" signal instead of
 having to infer it from silence.
+
+---
+
+## 2026-08-20 — /icon-selector /font-selector /specs-build-ui — HUD widgets v2
+
+**Prompt (verbatim):** *(abridged in whitespace only)*
+
+> First, fix the few-shot anchoring you identified: rewrite the campfire few-shot
+> in lesson-system-prompt.txt to 6 steps (keep the tent one at 4, so the examples
+> span the range rather than pinning one end). Keep min 4 / max 6. Regenerate the
+> prompt mirror. Re-run the three live requests and report the resulting step
+> counts — I want to see whether the model now spreads across 4-6 instead of
+> collapsing to the floor.
+>
+> Then the HUD widgets.
+>
+> /icon-selector — Material Symbols, sharp style: fire, tent, compass, water,
+> checklist, timer, warning, mic, arrow-forward, arrow-back, sos, question mark.
+> Wire the icon set through VisualConfig so swapping the family is one change.
+>
+> /font-selector — confirm VT323 is the right call for an additive display at
+> small sizes, or propose better. Legibility of digits and short imperatives at
+> arm's length is the criterion, not period flavour. Wire via VisualConfig.
+>
+> /specs-build-ui — implement on the EXISTING design-time placeholders. Create no
+> new visual objects (hard rule 1). Every presenter lives in Scripts/Widgets/,
+> subscribes to the EventBus, reads VisualConfig, and contains no logic (rule 3):
+> [1 StatusBar two faces; 2 GuidePanel; 3 Checklist sequential highlight;
+> 4 GaugeTimer; 5 companionChanged single handler, type:null hides all]
+>
+> Also fix the ownership hack you flagged: introduce a ModeRouter in
+> Scripts/Engine/ that owns enabling and disabling HUDRoot and WorldRoot per
+> mode. StatusBarPresenter must stop doing it. Update SCENE-MAP.md.
+>
+> Verify in preview with the debug fixture keys, not by reasoning: [...] attach
+> preview screenshots of the idle state, a normal step, a safety-gated step with
+> the warning strip, and the checklist mid-progress. Then load the water fixture
+> and screenshot a step with companion:null to prove nothing stale is left on
+> screen.
+>
+> Per rule 4, append to CLAD-PROMPT-LOG.md, then commit:
+> feat: HUD widgets v2 — idle state, right guide panel
+
+**Summary:** Few-shot rebalance worked. Twelve Sharp icons imported and routed
+through `VisualConfig`. **VT323 rejected on the stated criterion and replaced
+with JetBrains Mono.** Five presenters + `ModeRouter` built on the existing
+placeholders, verified with five preview screenshots. Two real bugs found by
+running it rather than reasoning about it.
+
+**1. Few-shot anchoring — fixed, and it moved the model.** Campfire few-shot
+rewritten to 6 steps (spanning hologram stages 2→3→4), tent kept at 4, plus an
+explicit line telling the model not to copy an example's length.
+
+| Request | Before (4-step campfire example) | After (6-step campfire example) |
+|---|---|---|
+| campfire | 4 steps | **6 steps** |
+| tent | 4 steps | **6 steps**, then 4 on a later run |
+| water | 5 steps | still **FAILS** validation |
+
+So the examples do anchor length, as suspected, and spanning the range unpins
+it. Worth noting the tent came back 6 on one run and 4 on the next **at
+temperature 0** — output is not reproducible run to run, so a single sample
+never proves a prompt change.
+
+**Water is now a reproducible defect, not a fluke.** Three consecutive runs
+returned a `checklist` companion with **no `items`**. The schema cannot express
+"items required when type is checklist" (no conditional requires in the Vertex
+subset), so I hardened the prompt with an explicit per-companion required-field
+list. That **halved** the failure (2 issues → 1) but did not eliminate it. I
+stopped there rather than burn more runs. Recommendation for later: either make
+the validator degrade a malformed companion to `null` and keep the lesson —
+rejecting a whole 5-step lesson because one widget is malformed is harsh — or
+add a repair pass. Not done here; out of scope.
+
+Fixtures: campfire (6 steps) and tent regenerated; the known-good 5-step water
+fixture left in place so the engine has something valid to load.
+
+**2. Icons.** Twelve Material Symbols imported in **Sharp** style; the importer
+suffixes the filename, so they land as `Assets/Icons/<name>_sharp.png`. `tent`
+and `sos` are not in the curated catalog — `camping` is the tent glyph, and
+`sos` exists in the full Material Symbols set.
+
+`VisualConfig` now owns the set behind a semantic accessor: `icon(kind)` over
+twelve `@input Texture` fields, plus `iconForCompanion()` and
+`iconForLessonTitle()`. **No presenter names an icon asset.** To be precise
+about "one change": swapping the family is one *place* (VisualConfig's
+Inspector), not one *field* — re-importing in a different style produces twelve
+new filenames that have to be re-pointed. The decoupling that matters is that
+the mapping is not scattered across five presenters.
+
+**3. Typeface — VT323 rejected.** On the stated criterion it loses:
+
+- it ships **`regular` only**, so stroke weight cannot be raised, and thin
+  strokes wash out against a bright background on a see-through display;
+- bitmap-derived with a low x-height — wrong at arm's length.
+
+Replaced with **JetBrains Mono**: highest x-height of the monospace candidates,
+glyphs drawn to disambiguate `0/O`, `1/l/I`, `5/S` (which is exactly what
+`NN/NN` and `MM:SS` need), weight axis to 800, and monospace advance so a
+counting-down timer does not jitter. VT323 is still in the project; swapping is
+the single `VisualConfig.font` field.
+
+**4. Presenters.** `Widgets/`: `StatusBarPresenter` (rewritten),
+`GuidePanelPresenter`, `ChecklistPresenter`, `GaugeTimerPresenter`,
+`CompanionRouter`, plus a shared `WidgetUtils`. All subscribe to the bus, read
+`VisualConfig`, create nothing. `Engine/ModeRouter` now owns HUDRoot/WorldRoot
+visibility; **StatusBarPresenter no longer touches HUDRoot** — the hack flagged
+last session is gone.
+
+`CompanionRouter` is the single `companionChanged` handler and hides all four
+widgets on `type: null`, so no presenter infers "hide" from silence.
+
+**Two bugs found by running it, not by reasoning:**
+
+1. **Enabling a row is not enough — its children ship disabled too.** The
+   checklist logged "collected 6 rows" and "render items=3" and the screen
+   stayed blank: `ChecklistItem_N` was enabled but its `Label` and
+   `CheckIndicator` were still off from the design-time pass. Every level of the
+   chain has to be turned on. Recorded in SCENE-MAP.
+2. **The COMPLETE→IDLE timer was not cancelled on a new lesson.** Finishing the
+   campfire lesson and immediately loading water left the old 4 s delayed
+   callback pending; it fired mid-lesson and yanked the HUD back to IDLE. Only
+   visible because the walkthrough happened to chain the two. `loadLesson()`
+   now cancels it.
+
+Also discovered: **`baseTex` on the `PH_*` materials is a silent no-op.**
+`UnlitMaterialPreset` gates it behind the `ENABLE_BASE_TEX` shader define, so
+assigning an icon texture produced a blank shape with no error. Added
+`PH_Icon.mat` with the define baked on and `WidgetUtils.adoptMaterial()` to
+clone it per slot. Two placeholders also had to be re-meshed to quads
+(`MicIcon` was a disc, `IconSlot` a box) — an icon texture on a disc is
+unreadable. Positioning and populating existing objects is allowed under rule 1;
+creating them is not.
+
+World-space `Text` has no width to wrap against without a ScreenTransform, so
+`WidgetUtils.wrapText()` wraps the instruction at a configurable character
+budget. Deterministic, and therefore testable.
+
+**5. Verified in preview** with the debug keys, five captures: IDLE (pulsing
+mic, hint, ticker cycling real prompts), a normal step (`01/06`, compass icon,
+wrapped instruction, additive plate that brightens rather than darkens), the
+checklist mid-progress (`[x]` dimmed / `[>]` amber active / `[ ]` pending, 3 of
+6 rows shown), the safety-gated step (red strip + verbatim warning at `05/06`,
+checklist correctly cleared), and — after `confirm` — the strip gone. Then the
+water fixture at `03/05` with `companion: null`: previous step's checklist
+absent, icon falling back to the lesson's water drop. Nothing stale.
+
+**Notable decisions / open issues:**
+
+- **`GaugeTimer` is a shrinking ring, not a true radial sweep.** A real sweep
+  needs a shader with an angular mask or a rebuilt mesh, and hard rule 1 forbids
+  building one at runtime. The fill ring scales down inside the static track and
+  reads correctly; it swaps for a real sweep with no change to the presenter's
+  inputs.
+- `ChecklistPresenter` takes the container as one `@input` and walks
+  `ChecklistItem_1..6` by index rather than twelve inspector fields. That
+  structure is documented here and enforced by the scene guard, so it is a
+  contract rather than an assumption.
+- `WorldRoot` stays hidden during a lesson (`worldVisibleInLesson`, default
+  off) because its contents are still placeholders. Flip the `@input` when the
+  survey lands.
+- The `AiPreviewAgent Handler` object was re-injected **twice more** this
+  session, by `CaptureRuntimeViewTool` this time rather than the GraphQL query.
+  Removed again. The scene guard catches it; treat it as expected after any
+  session that captures or queries the preview.

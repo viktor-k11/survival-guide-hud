@@ -1,0 +1,67 @@
+- !<AssetImportMetadata/f91b166d-abce-4ab3-afe2-b2b60f8a5abe>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 395bad62-2a65-4815-a423-34852e481d66
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 395bad62-2a65-4815-a423-34852e481d66
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> fedaf641-15a0-4ea4-bbde-433691b48663
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/fedaf641-15a0-4ea4-bbde-433691b48663>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 172d2bc0-2bb4-4dbd-ba9b-528b61c92713
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    checklist: false
+    compassRose: false
+    enableLogging: false
+    gaugeTimer: false
+    theme: false
+    zoneCircle: false
+    zoneRect: false
+    zoneWidget: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      zoneWidget: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      zoneCircle: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      zoneRect: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      compassRose: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      gaugeTimer: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      checklist: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject zoneWidget {"hint":"WorldRoot/ZoneWidget"}'
+    - '// @input SceneObject zoneCircle {"hint":"WorldRoot/ZoneWidget/ZoneCircle"}'
+    - '// @input SceneObject zoneRect {"hint":"WorldRoot/ZoneWidget/ZoneRect"}'
+    - '// @input SceneObject compassRose {"hint":"WorldRoot/CompassRose"}'
+    - '// @input SceneObject gaugeTimer {"hint":"HUDRoot/GaugeTimer"}'
+    - '// @input SceneObject checklist {"hint":"HUDRoot/Checklist"}'
+    - // @input bool enableLogging = true

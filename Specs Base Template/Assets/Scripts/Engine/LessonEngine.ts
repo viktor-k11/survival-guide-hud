@@ -334,6 +334,10 @@ export class LessonEngine extends BaseScriptComponent {
     this.propCounts = {};
     this.safetyPending = false;
     this.stopTimer();
+    // Cancel any pending COMPLETE->IDLE return. Without this, finishing a
+    // lesson and immediately starting another one lets the old timer fire
+    // mid-lesson and yank the user back to IDLE.
+    this.completeDelay.enabled = false;
 
     this.setMode("LESSON");
     this.emit(Events.lessonStarted, { title: plan.title, stepCount: plan.steps.length });
@@ -569,6 +573,7 @@ export class LessonEngine extends BaseScriptComponent {
       steps: this.plan ? this.plan.steps.length : 0,
     });
     this.setMode("COMPLETE");
+    this.completeDelay.enabled = true;
     this.completeDelay.reset(this.completeReturnDelaySec);
   }
 

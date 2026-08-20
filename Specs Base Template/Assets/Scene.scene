@@ -213,6 +213,36 @@
     - !<own> c92b1867-0064-4541-b7cb-4dc20a53d387
   Components:
     []
+- !<SceneObject/03db23b0-5f7c-437f-9cbf-b593819f9f82>
+  PrefabRemaps:
+    []
+  Name: CompanionRouter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> af6cd6cb-21bc-4ab2-8d0d-777a1a71c3bd
+- !<SceneObject/03dcc466-6a94-454b-abbd-f10e2be03013>
+  PrefabRemaps:
+    []
+  Name: GuidePanelPresenter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 57fa8c14-7f80-4483-893b-4ed316445887
 - !<SceneObject/0436cd9b-016c-43c4-af64-ecb2be445575>
   PrefabRemaps:
     []
@@ -1058,7 +1088,7 @@
   LocalTransform: !<TransformEntity>
     Position: {x: 0.000000, y: 7.000000, z: 0.300000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Scale: {x: 8.000000, y: 8.000000, z: 8.000000}
+    Scale: {x: 6.000000, y: 6.000000, z: 6.000000}
     HasSegmentScaleCompensation: false
   Children:
     []
@@ -1286,6 +1316,29 @@
     []
   Components:
     - !<own> c1692b36-dfd7-4eaf-b562-194fa4988a33
+- !<ScriptComponent/3115182b-8469-4632-ac66-4146c4f25123>
+  PrefabRemaps:
+    []
+  Name: GaugeTimerPresenter
+  Enabled: true
+  ScriptAsset: !<reference> 2a17b451-b590-463a-bb91-d3b50acdac83
+  ScriptInputsDefault:
+    fillFullScale: true
+    urgentBelow: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
+      gauge: !<reference.SceneObject> 49a1b55b-f6ad-43e2-b30e-0fa466d5b780
+      track: !<reference.SceneObject> 5685c6aa-973e-40e7-af42-81a23446e113
+      fill: !<reference.SceneObject> 078d628d-3da6-44af-a6b2-7bdf0b2b7f1c
+      label: !<reference.Text> 44e35be1-1c1b-45f3-9579-29babf4c51cd
+      fillFullScale: 0.800000
+      urgentBelow: 0.200000
+  ScriptTypes:
+    "":
+      {}
 - !<Text/31e193fa-8928-40a6-b66a-57d2921232ad>
   PrefabRemaps:
     []
@@ -2069,6 +2122,11 @@
     - !<own> da19f5a7-00c5-4053-a647-598c34afefd3
     - !<own> c77b043f-d23e-45e7-bafd-5be84cdefb44
     - !<own> 0436cd9b-016c-43c4-af64-ecb2be445575
+    - !<own> 9f33082b-0f4b-49ea-af61-ea7880a30aa3
+    - !<own> 03dcc466-6a94-454b-abbd-f10e2be03013
+    - !<own> 605b37ef-b3a7-4fb6-99e7-73e9eff9e8e8
+    - !<own> 6c43a036-2903-4453-aba7-39ee61f0696d
+    - !<own> 03db23b0-5f7c-437f-9cbf-b593819f9f82
   Components:
     []
 - !<Text/5608a90a-af26-49e0-8d63-6fdf1eecb7d3>
@@ -2200,6 +2258,30 @@
     []
   Components:
     - !<own> b0136e26-f995-45ab-85d0-a32e70d54785
+- !<ScriptComponent/57fa8c14-7f80-4483-893b-4ed316445887>
+  PrefabRemaps:
+    []
+  Name: GuidePanelPresenter
+  Enabled: true
+  ScriptAsset: !<reference> 4fce9c55-6edc-4418-80b2-c51592926b7d
+  ScriptInputsDefault:
+    {}
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
+      panel: !<reference.SceneObject> 3b077941-fcf7-4a64-9a43-7f86d30f8e98
+      backingPlate: !<reference.SceneObject> 25b96f96-55ab-445c-a6fd-467371fb3589
+      iconSlot: !<reference.SceneObject> dc94c942-c997-4fa6-907c-f4a4a26b1319
+      stepCounter: !<reference.Text> 0a5ccb04-719d-45e5-8ed1-64bb4c7d8ad0
+      instruction: !<reference.Text> df8a47c4-f138-4aa2-a654-ff234fb74e5c
+      quadMesh: !<reference.RenderMesh> 9c7cf554-730c-4975-a208-a19a01740f30
+      iconMaterial: !<reference.Material> b70f04ba-96e8-415c-abfc-2f02f8869b09
+      instructionWrapChars: !<float> 20.000000
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/5853cc54-ce16-49b8-a57a-e5644a1f0bf0>
   PrefabRemaps:
     []
@@ -2428,6 +2510,21 @@
   ScriptTypes:
     "":
       {}
+- !<SceneObject/605b37ef-b3a7-4fb6-99e7-73e9eff9e8e8>
+  PrefabRemaps:
+    []
+  Name: ChecklistPresenter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> cedf7aa6-6f4d-4b11-b6d4-92f718a8eecd
 - !<ScriptComponent/62967490-d66e-4479-8829-e5c9da5b5b57>
   PrefabRemaps:
     []
@@ -2722,6 +2819,21 @@
     - !<own> 0e778a10-bd57-4a2a-b20a-b6f4326e8058
   Components:
     []
+- !<SceneObject/6c43a036-2903-4453-aba7-39ee61f0696d>
+  PrefabRemaps:
+    []
+  Name: GaugeTimerPresenter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 3115182b-8469-4632-ac66-4146c4f25123
 - !<SceneObject/6dbaab8f-d98a-4f36-b836-1d7c8a0cca87>
   PrefabRemaps:
     []
@@ -3576,6 +3688,26 @@
     []
   Components:
     - !<own> 5b381e9c-6aff-4d4b-93af-1e62728799c6
+- !<ScriptComponent/8429d026-933d-4613-90b3-8c08bd070445>
+  PrefabRemaps:
+    []
+  Name: ModeRouter
+  Enabled: true
+  ScriptAsset: !<reference> 7f17bd3d-b43d-45d0-bfc1-45563e9069db
+  ScriptInputsDefault:
+    worldVisibleInLesson: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      hudRoot: !<reference.SceneObject> 7900773a-f725-480b-b9c2-013b043f3fe1
+      worldRoot: !<reference.SceneObject> ea7dbcaf-e057-4f57-a13d-23656d867f62
+      worldVisibleInLesson: false
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/859e1ef3-3021-4825-8626-f1dc323b9252>
   PrefabRemaps:
     []
@@ -3946,6 +4078,21 @@
     - !<own> 46ea93d6-d161-4453-9064-6ac11e1d6523
   Components:
     []
+- !<SceneObject/9f33082b-0f4b-49ea-af61-ea7880a30aa3>
+  PrefabRemaps:
+    []
+  Name: ModeRouter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 8429d026-933d-4613-90b3-8c08bd070445
 - !<SceneObject/a2cc28b7-e488-48b9-a985-dfe708eeb57b>
   PrefabRemaps:
     []
@@ -4235,6 +4382,29 @@
     []
   Components:
     - !<own> 7fac2c0b-54d4-4980-bbe8-d4ffe99c747d
+- !<ScriptComponent/af6cd6cb-21bc-4ab2-8d0d-777a1a71c3bd>
+  PrefabRemaps:
+    []
+  Name: CompanionRouter
+  Enabled: true
+  ScriptAsset: !<reference> 395bad62-2a65-4815-a423-34852e481d66
+  ScriptInputsDefault:
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
+      zoneWidget: !<reference.SceneObject> 7e79fc6d-5474-477c-9089-d3c35431df8f
+      zoneCircle: !<reference.SceneObject> 50e5a325-9da0-4654-a708-79922499ed96
+      zoneRect: !<reference.SceneObject> 5b94bdd9-9460-4e35-8c80-7cb66006311b
+      compassRose: !<reference.SceneObject> 99f5219c-199e-4710-ae39-ba41fdfc4b30
+      gaugeTimer: !<reference.SceneObject> 49a1b55b-f6ad-43e2-b30e-0fa466d5b780
+      checklist: !<reference.SceneObject> b6b6739a-e41f-4c3b-8960-b25bc418e832
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<RenderMeshVisual/b0136e26-f995-45ab-85d0-a32e70d54785>
   PrefabRemaps:
     []
@@ -4551,6 +4721,8 @@
     primaryPhosphor: true
     accentAmber: true
     warningColor: true
+    dimColor: true
+    pulseHz: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
@@ -4558,9 +4730,23 @@
       primaryPhosphor: !<Vec4> {x: 0.350000, y: 1.000000, z: 0.550000, w: 1.000000}
       accentAmber: !<Vec4> {x: 1.000000, y: 0.700000, z: 0.150000, w: 1.000000}
       warningColor: !<Vec4> {x: 1.000000, y: 0.300000, z: 0.220000, w: 1.000000}
+      dimColor: !<Vec4> {x: 0.120000, y: 0.380000, z: 0.220000, w: 1.000000}
       glowIntensity: 0.750000
       panelOpacity: 0.230000
-      font: !<reference.Font> 060f7e1b-5783-41f3-8031-12bd05c34dcb
+      pulseHz: 1.200000
+      font: !<reference.Font> 36cf56bf-331a-48c8-82b6-7f951dc6a23a
+      iconFire: !<reference.Texture> 41e2fcff-1870-42dd-a9cf-38b68a558c59
+      iconTent: !<reference.Texture> c6907fcb-cb68-4241-bd74-9bb46bdb7a92
+      iconCompass: !<reference.Texture> e7815631-67f0-4a9d-91a6-a24df685106d
+      iconWater: !<reference.Texture> 22d5557a-45d4-4111-8981-2ba2ada59044
+      iconChecklist: !<reference.Texture> 355483cc-3cda-4832-b0fd-60c492ffb18b
+      iconTimer: !<reference.Texture> 5ee949cb-29c3-43a1-bca3-e4173786a88c
+      iconWarning: !<reference.Texture> d522b9b0-3773-4c2a-9ae3-dce65635212b
+      iconMic: !<reference.Texture> ee962abe-a265-4661-9139-d17ba34b18e2
+      iconNext: !<reference.Texture> a6071ba9-5c5a-46eb-b99a-99344824fa27
+      iconBack: !<reference.Texture> 848ba8aa-2c86-4081-beb0-b7858675dfa7
+      iconSos: !<reference.Texture> 11a70d35-dc8c-4b77-83a3-1d9f7f6c9b18
+      iconQuestion: !<reference.Texture> 6ec71845-08e5-4b07-830b-1bb87c334bff
   ScriptTypes:
     "":
       {}
@@ -4812,6 +4998,30 @@
     - !<own> 650dc0b4-8d22-4aab-87b4-d8e56fb59a67
   Components:
     - !<own> 0847d2bb-a13f-4c4a-a404-169f67308f6f
+- !<ScriptComponent/cedf7aa6-6f4d-4b11-b6d4-92f718a8eecd>
+  PrefabRemaps:
+    []
+  Name: ChecklistPresenter
+  Enabled: true
+  ScriptAsset: !<reference> f8cbf4d8-e508-4e4b-9733-ff101751d518
+  ScriptInputsDefault:
+    checkedPrefix: true
+    activePrefix: true
+    pendingPrefix: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
+      container: !<reference.SceneObject> b6b6739a-e41f-4c3b-8960-b25bc418e832
+      checkedPrefix: "[x] "
+      activePrefix: "[>] "
+      pendingPrefix: "[ ] "
+      enableLogging: false
+  ScriptTypes:
+    "":
+      {}
 - !<RenderMeshVisual/cf505c8e-91bf-4696-87a0-2243ddc959ee>
   PrefabRemaps:
     []
@@ -5009,18 +5219,31 @@
     idleHint: true
     listeningHint: true
     finalizingHint: true
+    tickerPrompts: true
+    tickerIntervalSec: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
     "":
-      hudRoot: !<reference.SceneObject> 7900773a-f725-480b-b9c2-013b043f3fe1
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
       statusBar: !<reference.SceneObject> 7c4fea64-8bb9-4b10-906c-5caae79cf521
       micIcon: !<reference.SceneObject> 7e84a4ef-65c7-4509-a8f4-ff74b70ae0ac
       hintText: !<reference.Text> e5c38c6b-5255-4fd3-8640-e57318ab7787
       tickerText: !<reference.Text> 42a08ba9-ea70-4afb-925c-0c66ad668223
+      lessonTitle: !<reference.Text> 59de084a-d49d-41c9-ac14-3ff5fc9597cb
+      warningStrip: !<reference.SceneObject> 70732fee-4fca-4a77-a6d2-42a8475b36d3
+      quadMesh: !<reference.RenderMesh> 9c7cf554-730c-4975-a208-a19a01740f30
+      iconMaterial: !<reference.Material> b70f04ba-96e8-415c-abfc-2f02f8869b09
       idleHint: PINCH & HOLD — ASK FOR HELP
       listeningHint: LISTENING… RELEASE WHEN DONE
       finalizingHint: THINKING…
+      tickerPrompts: !<string[]>
+        - '"help me build a campfire"'
+        - '"help me purify water"'
+        - '"how do I signal for rescue"'
+        - '"help me pitch a tent"'
+        - '"how do I treat a burn"'
+      tickerIntervalSec: 2.500000
   ScriptTypes:
     "":
       {}
@@ -5501,7 +5724,7 @@
   EnableRichText: false
   SizeToFit: false
   FontSize: 32.000000
-  FontSource: !<reference> 060f7e1b-5783-41f3-8031-12bd05c34dcb
+  FontSource: !<reference> 36cf56bf-331a-48c8-82b6-7f951dc6a23a
   PreferredStyle: Regular
   LayoutRect:
     left: -7.500000
@@ -5841,9 +6064,9 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: -12.000000, z: 0.300000}
+    Position: {x: 0.000000, y: -7.000000, z: 0.300000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
-    Scale: {x: 4.000000, y: 4.000000, z: 4.000000}
+    Scale: {x: 4.500000, y: 4.500000, z: 4.500000}
     HasSegmentScaleCompensation: false
   Children:
     []

@@ -17,6 +17,22 @@ looks it up, so treat these names as API.
   `EventBus` event that will drive each object. Widgets subscribe; engine code
   emits. Engine never touches these objects directly.
 
+## Typeface: why not VT323
+
+VT323 was the original pick for period flavour. It lost on the actual criterion
+— legibility of digits and short imperatives at arm's length on an additive
+display:
+
+- it ships **`regular` only**, so stroke weight cannot be raised, and on a
+  see-through display thin strokes wash out against a bright background;
+- it is bitmap-derived with a low x-height, which is exactly wrong at distance.
+
+**JetBrains Mono** replaced it: the highest x-height of the monospace
+candidates, glyphs drawn specifically to disambiguate `0/O`, `1/l/I`, `5/S`
+(which matters for `NN/NN` and `MM:SS`), a weight axis up to 800, and monospace
+advance so a counting-down timer does not jitter. Both fonts are in the project;
+`VisualConfig.font` is the one field that swaps them.
+
 ## Enabled / disabled state
 
 | Object | State |
@@ -48,7 +64,10 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 | `PH_Magenta.mat` | spare (unused; reserved for props) |
 | `PH_PanelGlow.mat` | the translucent guide-panel glow — dim additive green |
 | `PH_GridDim.mat` | survey ground tint, kept dim so it does not blow out the scene |
-| `VT323.ttf` | HUD typeface — OFL licensed, no third-party IP (hard rule 7) |
+| `PH_Icon.mat` | **the only material that can show an icon** — ENABLE_BASE_TEX baked on |
+| `JetBrainsMono` | HUD typeface (OFL). Replaced VT323 on legibility grounds — see below |
+| `VT323.ttf` | kept in the project; swap it back via `VisualConfig.font` if you want the CRT look |
+| `Assets/Icons/*_sharp.png` | Material Symbols, Sharp. Named only in `VisualConfig` |
 
 > **Geometry gotcha, cost us a rebuild:** `PlaneMeshPreset`, `DiscMeshPreset`
 > and `TorusMeshPreset` are all **XZ-native (they lie flat)**. To face the user
@@ -132,7 +151,12 @@ placed against real terrain, not the head.
 | `Systems/RsgBootstrap` | `Engine/RsgBootstrap.ts` — installs the RSG tokens in `onAwake`. **Permanent.** Must stay enabled and must run before anything that calls Gemini/OpenAI. |
 | `Systems/VoiceInput` | `Engine/VoiceInput.ts` — hold-to-talk capture. Pinch, or hold the debug key. Emits `voiceStateChanged` / `voiceInterim` / `userRequest`. |
 | `Systems/LessonEngine` | `Engine/LessonEngine.ts` — the state machine. Subscribes to `userRequest`, routes it, owns mode/step/checklist/timer/safety. Deterministic: no Gemini, no TTS, no widget references. Debug keys C/W/N/B/K/D/R. |
-| `Systems/StatusBarPresenter` | `Widgets/StatusBarPresenter.ts` — drives `StatusBar`. Subscribes to the bus, enables existing children, writes text. No logic. |
+| `Systems/ModeRouter` | `Engine/ModeRouter.ts` — **the only owner of HUDRoot/WorldRoot visibility**, driven by `modeChanged`. Engine-side because it makes a decision. |
+| `Systems/StatusBarPresenter` | `Widgets/StatusBarPresenter.ts` — StatusBar's two faces: idle (pulsing mic, hint, rotating ticker) and lesson (title, mic state, warning strip). |
+| `Systems/GuidePanelPresenter` | `Widgets/GuidePanelPresenter.ts` — icon, `NN/NN`, wrapped instruction, additive backing plate. |
+| `Systems/ChecklistPresenter` | `Widgets/ChecklistPresenter.ts` — six rows, sequential highlight, shows only as many as the step needs. |
+| `Systems/GaugeTimerPresenter` | `Widgets/GaugeTimerPresenter.ts` — countdown ring + MM:SS on `timerTick`. |
+| `Systems/CompanionRouter` | `Widgets/CompanionRouter.ts` — the single `companionChanged` handler; switches Zone/Timer/Checklist/Compass and hides all four on `type: null`. |
 | `RSG Smoke Test [TEMP]` | Throwaway diagnostics. Carries **two** ScriptComponents: `RsgSmokeTest.ts` (now **disabled** — it passed, and it cost ~18s of API calls per boot) and `LessonProbe.ts` (the lesson-planner proving run). Delete the object and both scripts when done — see `TOKENS.md`. |
 
 > **Do not put permanent plumbing inside a `[TEMP]` object.** Token installation
@@ -140,10 +164,27 @@ placed against real terrain, not the head.
 > every Gemini call with `Proxy error: Parameter value for api-token cannot be
 > empty`. That is why `Systems/RsgBootstrap` exists.
 
-> `StatusBarPresenter` currently enables `HUDRoot` on start, because something
-> has to and no mode router exists yet. **That ownership moves to the mode
-> router** when it lands — a presenter should not be deciding that the HUD is
-> visible.
+> **Resolved:** `StatusBarPresenter` no longer touches `HUDRoot`.
+> `Systems/ModeRouter` owns root visibility per mode, and it is the only thing
+> that may enable or disable `HUDRoot` / `WorldRoot`. Presenters own only what
+> is *inside* the tree they drive.
+
+### Enabling a widget means enabling its whole chain
+
+Everything under `HUDRoot` / `WorldRoot` ships disabled (hard rule 1), **including
+leaf children**. Enabling `ChecklistItem_3` alone leaves an empty row, because
+its `Label` and `CheckIndicator` are still off. This cost a debugging cycle: the
+presenter reported six rows collected and rendered them, and the screen stayed
+blank. A presenter must enable every level it wants visible.
+
+### Icon materials need ENABLE_BASE_TEX
+
+`PH_*.mat` are `UnlitMaterialPreset` clones where `baseTex` is gated behind the
+`ENABLE_BASE_TEX` shader define. Assigning a texture to one of them **silently
+does nothing** — no error, just a blank shape. Icon slots must clone
+**`PH_Icon.mat`**, which has the define baked on. `WidgetUtils.adoptMaterial()`
+is the helper for that. Always clone: the PH_ materials are shared, so tinting
+one in place recolours every object using it.
 
 ## Event vocabulary
 
