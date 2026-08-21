@@ -39,6 +39,7 @@
     keyLoadWater: false
     keyNext: false
     keyRoutingSelfTest: false
+    navigateLine: false
     shortUtteranceMaxWords: false
     waterFixture: false
   ScriptTypesHidden:
@@ -52,6 +53,7 @@
   DefaultScriptInputs:
     - completeReturnDelaySec: !<float> 4.000000
       shortUtteranceMaxWords: !<float> 4.000000
+      navigateLine: HEAD FOR CAMP — WATCH THE DISTANCE READOUT ON ROW SIX
       enableDebugKeys: true
       keyLoadCampfire: C
       keyLoadWater: W
@@ -71,6 +73,7 @@
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Behaviour</span>"}'
     - '// @input float completeReturnDelaySec = 4 {"hint":"Seconds to sit in COMPLETE before returning to IDLE."}'
     - "// @input float shortUtteranceMaxWords = 4 {\"hint\":\"A bare command word ('next', 'check') only counts as navigation in an utterance this short. Longer ones are treated as questions.\"}"
+    - '// @input string navigateLine = "HEAD FOR CAMP — WATCH THE DISTANCE READOUT ON ROW SIX" {"hint":"Spoken when the user asks to be taken back to camp (menu row 6). The distance readout on the row is the visual half of the cue."}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug — preview iteration</span>"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Single letters A-Z. These call the SAME methods as voice, not a parallel branch. Click the Preview panel first so it has focus.</span>"}'

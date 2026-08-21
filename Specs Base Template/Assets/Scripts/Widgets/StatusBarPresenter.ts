@@ -83,14 +83,13 @@ export class StatusBarPresenter extends BaseScriptComponent {
   @input private finalizingHint: string = "THINKING…";
 
   @input
-  @hint("Rotating idle examples. These teach the user the system takes any request, not two.")
+  @hint("Rotating idle examples. These teach the user the system takes any request — so they must stay OUTSIDE the six main-menu rows, or they prove the opposite.")
   @widget(new TextAreaWidget())
   private tickerPrompts: string[] = [
-    '"help me build a campfire"',
-    '"help me purify water"',
     '"how do I signal for rescue"',
-    '"help me pitch a tent"',
-    '"how do I treat a burn"',
+    '"which way is north, no compass"',
+    '"how do I keep food from bears"',
+    '"how do I read incoming weather"',
   ];
 
   @input

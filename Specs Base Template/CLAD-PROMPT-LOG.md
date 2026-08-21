@@ -2746,3 +2746,71 @@ old text struck through rather than deleted so the error stays legible:
 Delete it with the rest of that object. Scene restored: hologram disabled,
 `HologramRoot` back to identity, camera reset, roots guard green. Not committed
 — the numbers are in, awaiting review.
+
+---
+
+## Prompt — two-column terminal main menu, on-demand survey, always-on ask widget
+
+> Build the main menu as a two-column terminal screen. Read Docs/SCENE-MAP.md first;
+> the object paths there are contracts. Design-time only — every object below is
+> authored in the scene and shipped DISABLED, nothing is instantiated at runtime.
+> [full prompt: CRT reference description; additive-display adaptation rules (no
+> filled bar with dark text, no dark plates, real stroke weight); LEFT COLUMN six
+> rows Row_1..6 (SCAN THIS AREA / I NEED SHELTER / I NEED FIRE / I NEED WATER /
+> I'M HURT / TAKE ME BACK TO CAMP, row 6 only when a camp point is set, rows 2-5
+> through the SAME Gemini path as voice, value column carries STATE); RIGHT
+> COLUMN StatusBlock / DescriptionBlock / AskWidget with rotating out-of-menu
+> examples and the live interim transcript; wiring (numerals as primary voice
+> shortcut through the LOCAL matcher, ColliderComponent + SIK Interactable at
+> design time, emit menuSelected, IDLE *is* the menu, remove boot auto-survey);
+> budget ±34 cm at z=-120 with a cut order; verify with PreviewPanelTool
+> screenshots to Docs/screens/, check-scene-roots, SCENE-MAP + log + commit.]
+
+**Done:** `HUDRoot/MainMenu` authored (62 objects, all shipped disabled): frame
+with corner brackets + interrupted top rule, six rows (box collider 30×4.6×6 +
+SIK Interactable each), single moving `Highlight` marker, DetailPane with
+StatusBlock / DescriptionBlock / AskWidget. `Widgets/MainMenuPresenter.ts` (new)
+renders it all; `menuSelected` + `campChanged` added to the bus with payloads in
+`RequestTypes.ts`. Ownership mirrors `siteSelected`: SurveyController takes row
+1 (`runOnBoot` removed — survey is on-demand now), LessonCoordinator rows 2-5
+(new `waterPhrase`/`burnPhrase` inputs, same generative path as a marker tap),
+LessonEngine row 6 (camp point recorded from `siteSelected`, spoken cue via
+`speakRequested`) plus the local menu-phrase matcher (digits/words first).
+Verified in preview: menu idle, highlight+description repaint, live interim in
+the prompt line, row 6 with live distance after a fixture survey + tent pick
+(`menu-idle.jpg`, `menu-row-highlighted.jpg`, `menu-ask-transcript.jpg`,
+`menu-camp-set.jpg`, all PreviewPanelTool captures).
+
+**Measured extents:** x −33.3..+33.3, y +10.3..−23.3 (TYPE affordance −27.4) —
+inside ±34 with edges included. **Nothing from the cut list was cut**; all six
+rows, the bordered StatusBlock and the 3-line description fit.
+
+**Highlight technique chosen:** amber left edge bar + corner ticks around the
+row, label tinted amber (option A). Reason: the reference's filled bar needs
+dark text, which an additive display erases; and dimming every other row
+(option B) taxes the whole list's legibility when the menu's job is teaching
+what the app can do. Amber marker matches the existing "active" convention
+(checklist cursor, listening mic).
+
+### Discovered / decided along the way
+
+- **Left/Right-aligned world Text anchors at its layoutRect edge, ±7.5×scale
+  from the object position.** First render put every left-aligned label ~31 cm
+  off-display. All aligned texts now compensate; gotcha recorded in SCENE-MAP.
+- **A real ASR capture blacks out the Preview's simulated camera feed**, so the
+  live-transcript UI cannot be screenshotted with a live mic. Added VoiceInput
+  debug key **M**: a scripted capture that streams words through the SAME
+  setState/onTranscription funnel and ends with an empty final — nothing
+  delivered, no Gemini call. The `menu-ask-transcript.jpg` capture uses it.
+- **KeyboardToggle moved** from HUD (28,+6) to (28,−26): its old spot sat inside
+  the menu's StatusBlock.
+- **StatusBar ticker prompts re-copied** (scene + defaults) to out-of-menu
+  topics — cycling "help me purify water" next to a menu row that says I NEED
+  WATER proves the opposite of what the ticker is for.
+- Row 6 label is "BACK TO CAMP" (12 chars): the full "TAKE ME BACK TO CAMP"
+  at readable scale collides with the value column; the voice matcher still
+  accepts the full phrase.
+- The row-6 screenshot was taken with LessonCoordinator temporarily disabled so
+  the tent-marker tap that sets the camp point would not fire a real Gemini
+  lesson request mid-verification; restored (and `useFixtureCloud` back off)
+  before the save + commit.

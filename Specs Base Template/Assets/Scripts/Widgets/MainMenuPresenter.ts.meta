@@ -1,0 +1,133 @@
+- !<AssetImportMetadata/f9795807-476e-4d8a-8b6f-c7a8ae5c55e3>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 6276d291-5f3b-4f70-98fb-afd9ea18b7dc
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 6276d291-5f3b-4f70-98fb-afd9ea18b7dc
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 386bd0cb-6f57-4d42-b924-11977c62b252
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/386bd0cb-6f57-4d42-b924-11977c62b252>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 585609c6-0a57-41bd-bae4-2f9ddf03729f
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    askExampleIntervalSec: false
+    askExamples: false
+    askTitle: false
+    cameraObject: false
+    caretHz: false
+    descriptionWrapChars: false
+    enableDebugKeys: false
+    enableLogging: false
+    iconMaterial: false
+    keyActivate: false
+    keyCycleHighlight: false
+    mainMenu: false
+    promptMaxChars: false
+    quadMesh: false
+    rowDescriptions: false
+    rowLabels: false
+    scanDoneValue: false
+    scanReadyValue: false
+    theme: false
+    trailLine: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      mainMenu: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      quadMesh: !<reference.RenderMesh> 00000000-0000-0000-0000-000000000000
+      iconMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
+      rowLabels: !<string[]>
+        - SCAN THIS AREA
+        - I NEED SHELTER
+        - I NEED FIRE
+        - I NEED WATER
+        - "I'M HURT"
+        - BACK TO CAMP
+      rowDescriptions: !<string[]>
+        - "Sweeps the ground ahead and rates flat, safe spots for a tent and a fire."
+        - A step-by-step tent pitch with staged blueprint holograms on your chosen site.
+        - "Build a campfire: cleared ground, tinder, log-cabin stack, then a safe light."
+        - "Purify found water, with boil timers and a gear checklist along the way."
+        - "First aid for a burn, step by step. In a real emergency, say SOS."
+        - "Points you home: the row reads the live distance back to your marked camp."
+      scanReadyValue: READY
+      scanDoneValue: DONE
+      descriptionWrapChars: !<float> 26.000000
+      trailLine: TRAIL OFF
+      askTitle: ASK ME ANYTHING
+      askExamples: !<string[]>
+        - 'try: "how do I splint a broken wrist"'
+        - 'try: "which way is north, no compass"'
+        - 'try: "how do I dry wet boots overnight"'
+        - 'try: "help me build a snare"'
+        - 'try: "what firewood burns longest"'
+      askExampleIntervalSec: !<float> 3.000000
+      caretHz: 2.500000
+      promptMaxChars: !<float> 30.000000
+      enableDebugKeys: true
+      keyCycleHighlight: J
+      keyActivate: L
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Children of HUDRoot/MainMenu are found by name (Row_1..6, Highlight, DetailPane/…) — the contract is Docs/SCENE-MAP.md, not two dozen inspector fields.</span>"}'
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject mainMenu {"hint":"HUDRoot/MainMenu"}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object — row 6 shows the live distance from here to the camp point."}'
+    - "// @input Asset.RenderMesh quadMesh {\"hint\":\"PH_Plane.mesh — the ask widget's mic glyph re-meshes to a quad so the icon reads.\"}"
+    - '// @input Asset.Material iconMaterial {"hint":"PH_Icon.mat — the only material that can show an icon texture (ENABLE_BASE_TEX baked on)."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Row copy</span>"}'
+    - "// @input string[] rowLabels = {\"SCAN THIS AREA\",\"I NEED SHELTER\",\"I NEED FIRE\",\"I NEED WATER\",\"I'M HURT\",\"BACK TO CAMP\"} {\"hint\":\"Row labels, top to bottom. Row 6 shows only once a camp point is set.\", \"widget\":\"text_area\"}"
+    - "// @input string[] rowDescriptions = {\"Sweeps the ground ahead and rates flat, safe spots for a tent and a fire.\",\"A step-by-step tent pitch with staged blueprint holograms on your chosen site.\",\"Build a campfire: cleared ground, tinder, log-cabin stack, then a safe light.\",\"Purify found water, with boil timers and a gear checklist along the way.\",\"First aid for a burn, step by step. In a real emergency, say SOS.\",\"Points you home: the row reads the live distance back to your marked camp.\"} {\"hint\":\"Description panel copy per row, 2-3 short lines once wrapped. This panel is the menu's real job: it teaches what the app can do.\", \"widget\":\"text_area\"}"
+    - '// @input string scanReadyValue = "READY" {"hint":"Row 1 value before a survey has finished."}'
+    - '// @input string scanDoneValue = "DONE" {"hint":"Row 1 value after surveyComplete."}'
+    - '// @input float descriptionWrapChars = 26 {"hint":"Characters per line for the description panel."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Status block</span>"}'
+    - '// @input string trailLine = "TRAIL OFF" {"hint":"Third status line. A trail system does not exist yet; this is its reserved line."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Ask widget</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">These examples MUST stay outside the six menu rows — they are the proof the menu is a suggestion list, not a limit.</span>"}'
+    - '// @input string askTitle = "ASK ME ANYTHING"'
+    - '// @input string[] askExamples = {"try: \"how do I splint a broken wrist\"","try: \"which way is north, no compass\"","try: \"how do I dry wet boots overnight\"","try: \"help me build a snare\"","try: \"what firewood burns longest\""} {"widget":"text_area"}'
+    - '// @input float askExampleIntervalSec = 3 {"hint":"Seconds each example stays up. Same slow, legible cycle as the StatusBar ticker.", "widget":"slider", "min":1, "max":8, "step":0.5}'
+    - '// @input float caretHz = 2.5 {"hint":"Caret blink rate on the prompt line, Hz.", "widget":"slider", "min":0.5, "max":6, "step":0.5}'
+    - '// @input float promptMaxChars = 30 {"hint":"The prompt line keeps the TAIL of a long interim transcript — the newest words are the ones being typed.", "widget":"slider", "min":10, "max":60, "step":1}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug — preview iteration</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">No gaze/pinch in the Preview panel. These call the SAME methods hover and pinch call.</span>"}'
+    - // @input bool enableDebugKeys = true
+    - '// @input string keyCycleHighlight = "J" {"hint":"Cycle the highlight down the visible rows."}'
+    - '// @input string keyActivate = "L" {"hint":"Activate the highlighted row."}'
+    - // @input bool enableLogging = true

@@ -45,6 +45,24 @@ export class VoiceInput extends BaseScriptComponent {
   @widget(new ComboBoxWidget([new ComboBoxItem("Space", 0), new ComboBoxItem("V", 1), new ComboBoxItem("T", 2)]))
   private debugKeyChoice: number = 0;
 
+  @input
+  @hint("Tap to play a SCRIPTED capture: the words below stream through the SAME setState/onTranscription funnel the ASR callbacks use, one word at a time, then end with an empty final — so nothing is emitted downstream and no Gemini call happens. Exists because a REAL capture blacks out the Preview's simulated camera feed, which makes the live-transcript UI impossible to verify or screenshot on a desk.")
+  private keySimulateCapture: string = "M";
+
+  @input
+  @hint("The phrase the simulated capture types out.")
+  private simulatedPhrase: string = "how do I splint a broken wrist in the field";
+
+  @input
+  @widget(new SliderWidget(0.1, 1.5, 0.05))
+  @hint("Seconds between simulated interim words.")
+  private simWordGapSec: number = 0.45;
+
+  @input
+  @widget(new SliderWidget(0.0, 6.0, 0.5))
+  @hint("How long the finished simulated transcript stays 'listening' before it ends. Room to take a screenshot.")
+  private simHoldSec: number = 2.0;
+
   @ui.separator
 
   @input
@@ -63,11 +81,18 @@ export class VoiceInput extends BaseScriptComponent {
   private finalDelivered: boolean = false;
   private activeSource: string = "";
 
+  // Scripted-capture state. Active only after keySimulateCapture is tapped.
+  private simActive: boolean = false;
+  private simWords: string[] = [];
+  private simIndex: number = 0;
+  private simClock: number = 0;
+
   onAwake(): void {
     // Gesture subscriptions and any session setup must bind in OnStartEvent,
     // not onAwake — SIK/GestureModule are not guaranteed ready before start.
     this.createEvent("OnStartEvent").bind(() => this.onStart());
     this.createEvent("OnDestroyEvent").bind(() => this.onDestroy());
+    this.createEvent("UpdateEvent").bind(() => this.onUpdate());
   }
 
   private log(msg: string): void {
@@ -144,10 +169,67 @@ export class VoiceInput extends BaseScriptComponent {
 
     this.createEvent("KeyPressEvent").bind((e: KeyPressEvent) => {
       if (e.key === wanted) this.beginCapture(label);
+      else if (e.key === this.keyFromLetter(this.keySimulateCapture)) this.startSimulatedCapture();
     });
     this.createEvent("KeyReleaseEvent").bind((e: KeyReleaseEvent) => {
       if (e.key === wanted) this.endCapture(label);
     });
+  }
+
+  private keyFromLetter(letter: string): Keys {
+    const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    const idx = letters.indexOf((letter || "").toUpperCase().charAt(0));
+    if (idx < 0) return Keys.Invalid;
+    return (Keys.A + idx) as Keys;
+  }
+
+  // ---------------------------------------------------- scripted capture
+
+  /**
+   * Streams simulatedPhrase through the SAME funnel the ASR callbacks use —
+   * setState("listening"), then onTranscription(word-by-word, isFinal=false) —
+   * and ends with an EMPTY final, so nothing reaches the request seam and no
+   * Gemini call is made. No AsrModule session is opened: a real capture cuts
+   * the Preview's simulated camera feed to black, which is exactly what this
+   * exists to avoid while verifying the live-transcript UI on a desk.
+   */
+  private startSimulatedCapture(): void {
+    if (this.state !== "idle") {
+      this.log("simulated capture ignored — state=" + this.state);
+      return;
+    }
+    this.simWords = (this.simulatedPhrase || "").split(" ");
+    if (this.simWords.length === 0) return;
+    this.simActive = true;
+    this.simIndex = 0;
+    this.simClock = 0;
+    this.latestTranscript = "";
+    this.finalDelivered = false;
+    this.activeSource = "debug:simulated";
+    this.setState("listening");
+    this.log('simulated capture — typing "' + this.simulatedPhrase + '"');
+  }
+
+  private onUpdate(): void {
+    if (!this.simActive) return;
+    this.simClock += getDeltaTime();
+
+    if (this.simIndex < this.simWords.length) {
+      if (this.simClock < this.simWordGapSec) return;
+      this.simClock = 0;
+      this.simIndex++;
+      this.onTranscription(this.simWords.slice(0, this.simIndex).join(" "), false);
+      return;
+    }
+
+    // Whole phrase shown — hold, then end without delivering anything.
+    if (this.simClock < this.simHoldSec) return;
+    this.simActive = false;
+    this.releaseAtMs = this.nowMs();
+    this.latestTranscript = "";
+    this.setState("finalizing");
+    this.deliverFinal("", "debug-sim");
+    this.log("simulated capture ended — nothing delivered, by design");
   }
 
   // -------------------------------------------------------- capture cycle

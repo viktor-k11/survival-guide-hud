@@ -1,5 +1,5 @@
 /**
- * SurveyController — the boot-time terrain survey.
+ * SurveyController — the on-demand terrain survey (menu row 1, or debug key S).
  *
  * Casts a grid of World Query rays through the camera's view every frame and
  * accumulates the hits into a point cloud with normals. When the survey ends —
@@ -28,6 +28,7 @@
  *    inside the FOV, and a null result is normal rather than an error.
  */
 import { eventBus, Events } from "./EventBus";
+import { MenuSelectedPayload } from "./RequestTypes";
 import {
   DEFAULT_SITE_OPTIONS,
   SiteCandidate,
@@ -59,14 +60,6 @@ export class SurveyController extends BaseScriptComponent {
   @input
   @hint("Camera Object. The survey rays are cast from here, through its view.")
   private cameraObject: SceneObject;
-
-  @input
-  @hint("Run the survey automatically when the Lens boots. Off = only the debug key starts it.")
-  private runOnBoot: boolean = true;
-
-  @input
-  @hint("Wait this long after boot before sampling, so world tracking has settled.")
-  private startDelaySec: number = 0.5;
 
   @input
   @widget(new SliderWidget(2, 30, 0.5))
@@ -233,11 +226,16 @@ export class SurveyController extends BaseScriptComponent {
         this.earlyExitGroundCells + " cells"
     );
 
-    if (this.runOnBoot) {
-      const delayed = this.createEvent("DelayedCallbackEvent");
-      delayed.bind(() => this.beginSurvey());
-      delayed.reset(this.startDelaySec);
-    }
+    // The survey is ON DEMAND now: menu row 1 ("SCAN THIS AREA") starts it.
+    // No boot auto-start. The seam is unchanged — this controller still only
+    // reports facts (started / complete) and LessonEngine still decides what
+    // mode those mean. Re-selecting the row restarts the survey, which is the
+    // same behaviour as the S debug key.
+    eventBus.subscribe(Events.menuSelected, (p: MenuSelectedPayload) => {
+      if (!p || p.row !== 1) return;
+      this.log("menu row 1 (" + p.source + ") — starting survey");
+      this.beginSurvey();
+    });
   }
 
   /** Fixed yaw/pitch lattice across the view. Deterministic: no jitter, no random. */

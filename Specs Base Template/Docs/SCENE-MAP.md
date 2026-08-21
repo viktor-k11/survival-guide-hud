@@ -106,6 +106,21 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 > them, which renders as the pink missing-material pattern. After regenerating
 > a GLB, re-point every instance's RMV at the new material by id.
 
+> **World-space Text anchoring gotcha, cost a layout pass:** with
+> `horizontalOverflow: Overflow`, a **Left-aligned Text starts its glyphs at
+> the LEFT EDGE of its layoutRect — 7.5 × scale to the left of the object's
+> position** — and a Right-aligned Text ends at +7.5 × scale. Placing a
+> Left-aligned label "at" its intended left edge therefore pushes the actual
+> glyphs ~31 cm further left (at scale 4.2), straight off the display. Every
+> aligned Text in `MainMenu` compensates: `anchor_x = intended_edge ±
+> 7.5 × scale`. Measured char advance for JetBrains Mono at `size 20` is
+> ~0.26 cm per scale unit.
+
+> **ASR blacks out the Preview:** starting a real transcription session cuts
+> the Preview's simulated camera feed to black (the "ASR disables camera frame
+> access" rule, applied to the simulation). Any screenshot of live-mic UI is a
+> black frame. Use VoiceInput's debug key **M** (scripted capture) instead.
+
 > **Geometry gotcha, cost us a rebuild:** `PlaneMeshPreset`, `DiscMeshPreset`
 > and `TorusMeshPreset` are all **XZ-native (they lie flat)**. To face the user
 > a plane/disc/torus needs `rotation = [90, 0, 0]` (or `[-90,0,0]`); to lie on
@@ -144,7 +159,14 @@ Local origin sits 60 cm in front of the user.
 | `HUDRoot/GaugeTimer/Track` | Static full ring — the 100% reference | `timerTick` |
 | `HUDRoot/GaugeTimer/Fill` | Progress ring, scaled/swept against `Track` | `timerTick` |
 | `HUDRoot/GaugeTimer/Label` | `"MM:SS"` remaining | `timerTick` |
-| `HUDRoot/StatusBar/KeyboardToggle` | `"TYPE"` — tap to open the AR keyboard. The demo's fallback when voice misbehaves | `modeChanged` (shown by StatusBarPresenter) |
+| `HUDRoot/StatusBar/KeyboardToggle` | `"TYPE"` — tap to open the AR keyboard. The demo's fallback when voice misbehaves. **Moved to local (28, −50) = HUD (28, −26)** — its old spot (28, −18 = HUD +6) sat inside the main menu's StatusBlock | `modeChanged` (shown by StatusBarPresenter) |
+| `HUDRoot/MainMenu` | **The two-column terminal menu. IDLE *is* the menu** — no menu mode exists; MainMenuPresenter shows it in IDLE (and hides it while a request is COMPILING), ModeRouter still owns HUDRoot itself | `modeChanged`, `requestStateChanged` |
+| `HUDRoot/MainMenu/Frame` | Corner brackets + top/bottom rules; `TitleText` ("SURVIVAL GUIDE") and `SubTitleText` ("FIELD TERMINAL v1.0") sit ON the top rule, interrupting it | — (static chrome) |
+| `HUDRoot/MainMenu/Row_1..6` | The six rows, hard cap, same pattern as Checklist. Each carries a **box ColliderComponent (30 × 4.6 × 6 cm, `fitVisual` off) + SIK `Interactable`** at design time, and children `Label`, `Value` (right-aligned state column) and `ActiveDot` (the small filled "active/set" square). Row 6 (`BACK TO CAMP`, live distance in `Value`) shows ONLY once a camp point is set | `menuSelected`, `campChanged`, `surveyComplete` |
+| `HUDRoot/MainMenu/Highlight` | The single moving highlight marker: `EdgeBar` + four corner `Tick*` bars, amber. Hover/gaze moves it; there is always exactly one highlighted row (default row 1) so the description panel is never empty | hover (SIK), `menuSelected` |
+| `HUDRoot/MainMenu/DetailPane/StatusBlock` | Bordered panel: mic state / camp SET-UNSET / trail line (`Body` text + `Border_N,S,E,W`) | `voiceStateChanged`, `campChanged` |
+| `HUDRoot/MainMenu/DetailPane/DescriptionBlock` | Body copy for the CURRENTLY HIGHLIGHTED row — the menu's real job | hover, `menuSelected` |
+| `HUDRoot/MainMenu/DetailPane/AskWidget` | The always-available voice affordance: pulsing `MicGlyph`, `TitleText` ("ASK ME ANYTHING"), `PromptLine` ("> " + blinking caret; the LIVE interim transcript types here during a pinch-hold) and `ExampleLine` cycling prompts **deliberately outside the six rows** | `voiceStateChanged`, `voiceInterim` |
 | `HUDRoot/AssemblingLesson` | **Placeholder VFX** shown only while a lesson is compiling. Swap the contents, keep the path | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Ring` | Spinning amber torus | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Core` | Counter-pulsing green disc | `requestStateChanged` |
@@ -196,7 +218,7 @@ placed against real terrain, not the head.
 | `VisualConfig` | `VisualConfig.ts` — theme `@input`s only: `primaryPhosphor`, `accentAmber`, `warningColor`, `glowIntensity`, `panelOpacity`, `font`. No logic, no subscriptions. Enabled so it is editable in the Inspector. |
 | `Systems` | **Enabled** container for runtime controllers. Has to be enabled: `HUDRoot` and `WorldRoot` ship disabled, so something already running must turn them on. |
 | `Systems/RsgBootstrap` | `Engine/RsgBootstrap.ts` — installs the RSG tokens in `onAwake`. **Permanent.** Must stay enabled and must run before anything that calls Gemini/OpenAI. |
-| `Systems/VoiceInput` | `Engine/VoiceInput.ts` — hold-to-talk capture. Pinch, or hold the debug key. Emits `voiceStateChanged` / `voiceInterim` / `userRequest`. |
+| `Systems/VoiceInput` | `Engine/VoiceInput.ts` — hold-to-talk capture. Pinch, or hold the debug key (SPACE). Emits `voiceStateChanged` / `voiceInterim` / `userRequest`. Debug key **M** plays a SCRIPTED capture through the same setState/onTranscription funnel and ends with an empty final (nothing delivered, no Gemini) — exists because a REAL capture blacks out the Preview's simulated camera feed, making the live-transcript UI unverifiable on a desk. |
 | `Systems/LessonEngine` | `Engine/LessonEngine.ts` — the state machine. Subscribes to `userRequest`, routes it, owns mode/step/checklist/timer/safety. Deterministic: no Gemini, no TTS, no widget references. Debug keys C/W/N/B/K/D/R. |
 | `Systems/ModeRouter` | `Engine/ModeRouter.ts` — **the only owner of HUDRoot/WorldRoot visibility**, driven by `modeChanged`. Engine-side because it makes a decision. |
 | `Systems/StatusBarPresenter` | `Widgets/StatusBarPresenter.ts` — StatusBar's two faces: idle (pulsing mic, hint, rotating ticker) and lesson (title, mic state, warning strip). |
@@ -209,7 +231,8 @@ placed against real terrain, not the head.
 | `Systems/KeyboardInput` | `Engine/KeyboardInput.ts` — the AR keyboard, emitting the SAME `userRequest` event `VoiceInput` emits. Debug keys I (open) / U (submit canned text). |
 | `Systems/LessonCoordinator` | `Engine/LessonCoordinator.ts` — **the only thing that calls Gemini for a lesson.** Owns `lessonRequested`/`siteSelected` -> planner -> validator -> `engine.loadLesson()`, plus every failure path. |
 | `Systems/AssemblingLessonPresenter` | `Widgets/AssemblingLessonPresenter.ts` — enables and animates `HUDRoot/AssemblingLesson` while `requestStateChanged.state === "COMPILING"`. |
-| `Systems/SurveyController` | `Engine/SurveyController.ts` — the boot survey. Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys S (restart) / G (finish now). |
+| `Systems/SurveyController` | `Engine/SurveyController.ts` — the **on-demand** survey (menu row 1; boot auto-start removed). Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys S (restart) / G (finish now). |
+| `Systems/MainMenuPresenter` | `Widgets/MainMenuPresenter.ts` — drives `HUDRoot/MainMenu`: row copy/state, the moving highlight, description + status panels, the ask widget's caret/interim/example ticker, row 6's live distance. Emits `menuSelected` on pinch. Debug keys J (cycle highlight) / L (activate). |
 | `Systems/SurveyGridPresenter` | `Widgets/SurveyGridPresenter.ts` — drives `WorldRoot/SurveyGrid` from `surveyProgress`: follows the sampled bounds, grows, spins, rides a brightness wave. |
 | `Systems/SiteMarkerPresenter` | `Widgets/SiteMarkerPresenter.ts` — places the three markers on `surveyComplete`, labels them `FLATNESS NN%`, pulses the best one, and emits `siteSelected` on pinch or debug key T / Y / F. |
 | `RSG Smoke Test [TEMP]` | Throwaway diagnostics. Carries **two** ScriptComponents: `RsgSmokeTest.ts` (now **disabled** — it passed, and it cost ~18s of API calls per boot) and `LessonProbe.ts` (the lesson-planner proving run). Delete the object and both scripts when done — see `TOKENS.md`. |
@@ -250,7 +273,29 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `propPlaced` · `lessonCompleted` · `surveyStarted` · `surveyProgress` ·
 `surveyComplete` · `siteSelected` · `distanceWarning` · `stopRequested` ·
 `requestStateChanged` · `lessonAnchorChanged` · `speakRequested` ·
-`narrationStateChanged` · `qaAnswered` · `keyboardRequested`
+`narrationStateChanged` · `qaAnswered` · `keyboardRequested` ·
+`menuSelected` · `campChanged`
+
+### `menuSelected` is the siteSelected trick generalised
+
+Emitted by `MainMenuPresenter` (pinch, debug keys J/L) AND by `LessonEngine`
+(voice — numerals "one".."six"/digits first, then natural forms, matched
+LOCALLY per hard rule 6). Each row's behaviour is owned by its subscriber:
+
+| Row | Owner | What it does |
+|---|---|---|
+| 1 SCAN THIS AREA | `SurveyController` | `beginSurvey()` — **the survey is on-demand now; there is no boot auto-start** |
+| 2-5 shelter/fire/water/hurt | `LessonCoordinator` | fixed phrase (`tentPhrase`/`firePhrase`/`waterPhrase`/`burnPhrase`) through the SAME generative Gemini path a marker tap uses. No fixtures |
+| 6 BACK TO CAMP | `LessonEngine` | speaks a navigation cue (`speakRequested`); the row's live distance readout is the visual half |
+
+NO menu selection may reach Gemini directly — rows 2-5 become fixed phrases in
+the coordinator, and everything else never leaves the device.
+
+### `campChanged` — who owns the camp point
+
+`LessonEngine` records the position of any `siteSelected` as THE camp point and
+emits `campChanged`. Menu row 6 exists only after this has fired; the presenter
+renders the live camera-to-camp distance in its value column.
 
 Request-chain payload shapes live in `Engine/RequestTypes.ts`, alongside
 `SurveyTypes.ts`, for the same reason: presenters render this state and must not

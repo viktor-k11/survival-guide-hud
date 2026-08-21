@@ -32,7 +32,11 @@
     debugKeyChoice: false
     enableDebugTrigger: false
     enableLogging: false
+    keySimulateCapture: false
     silenceUntilTerminationMs: false
+    simHoldSec: false
+    simWordGapSec: false
+    simulatedPhrase: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -46,6 +50,10 @@
       accuracyMode: !<float> 0.000000
       enableDebugTrigger: true
       debugKeyChoice: !<float> 0.000000
+      keySimulateCapture: M
+      simulatedPhrase: how do I splint a broken wrist in the field
+      simWordGapSec: 0.450000
+      simHoldSec: !<float> 2.000000
       enableLogging: true
   ScriptTypes:
     -
@@ -60,5 +68,9 @@
     - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Hand pinch does not work in Lens Studio Preview. Click the Preview panel to focus it, then hold SPACE to record and release to stop. Runs the same code path as the pinch.</span>"}'
     - '// @input bool enableDebugTrigger = true {"hint":"Enable the hold-to-record debug key. Leave ON for desktop work; turn OFF before shipping."}'
     - '// @input float debugKeyChoice {"hint":"Which key holds to record. Space by default. Lens KeyPressEvent only sees A-Z, 0-9, Space, Backspace, arrows and modifiers.", "widget":"combobox", "values":[{"label":"Space", "value":0}, {"label":"V", "value":1}, {"label":"T", "value":2}]}'
+    - "// @input string keySimulateCapture = \"M\" {\"hint\":\"Tap to play a SCRIPTED capture: the words below stream through the SAME setState/onTranscription funnel the ASR callbacks use, one word at a time, then end with an empty final — so nothing is emitted downstream and no Gemini call happens. Exists because a REAL capture blacks out the Preview's simulated camera feed, which makes the live-transcript UI impossible to verify or screenshot on a desk.\"}"
+    - '// @input string simulatedPhrase = "how do I splint a broken wrist in the field" {"hint":"The phrase the simulated capture types out."}'
+    - '// @input float simWordGapSec = 0.45 {"hint":"Seconds between simulated interim words.", "widget":"slider", "min":0.1, "max":1.5, "step":0.05}'
+    - "// @input float simHoldSec = 2 {\"hint\":\"How long the finished simulated transcript stays 'listening' before it ends. Room to take a screenshot.\", \"widget\":\"slider\", \"min\":0, \"max\":6, \"step\":0.5}"
     - '// @ui {"widget":"separator"}'
     - "// @input bool enableLogging = true {\"hint\":\"Print [ASR] breadcrumbs at every transition. Without these, 'voice does not work' is undiagnosable.\"}"

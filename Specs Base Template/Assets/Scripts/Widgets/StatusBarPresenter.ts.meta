@@ -121,7 +121,7 @@
     - '// @input string idleHint = "PINCH & HOLD — ASK FOR HELP"'
     - '// @input string listeningHint = "LISTENING… RELEASE WHEN DONE"'
     - '// @input string finalizingHint = "THINKING…"'
-    - '// @input string[] tickerPrompts = {"\"help me build a campfire\"","\"help me purify water\"","\"how do I signal for rescue\"","\"help me pitch a tent\"","\"how do I treat a burn\""} {"hint":"Rotating idle examples. These teach the user the system takes any request, not two.", "widget":"text_area"}'
+    - '// @input string[] tickerPrompts = {"\"how do I signal for rescue\"","\"which way is north, no compass\"","\"how do I keep food from bears\"","\"how do I read incoming weather\""} {"hint":"Rotating idle examples. These teach the user the system takes any request — so they must stay OUTSIDE the six main-menu rows, or they prove the opposite.", "widget":"text_area"}'
     - '// @input float tickerIntervalSec = 2.5 {"hint":"Seconds each example stays up.", "widget":"slider", "min":1, "max":8, "step":0.5}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Compiling — the 12-second wait</span>"}'

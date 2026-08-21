@@ -12,6 +12,8 @@
 import { eventBus, Events } from "./EventBus";
 import { LessonCompanion, LessonPlan, LessonStep } from "./LessonSchema";
 import { describeDegradations, inferLessonKind, validateLesson } from "./LessonValidator";
+import { CampChangedPayload, MenuSelectedPayload } from "./RequestTypes";
+import { SiteSelectedPayload, XYZ } from "./SurveyTypes";
 
 export type EngineMode = "IDLE" | "SURVEY" | "LESSON" | "SOS" | "COMPLETE";
 
@@ -76,6 +78,50 @@ const NAV_PHRASES: { intent: NavIntent; phrase: string; anywhere: boolean }[] = 
   { intent: "check", phrase: "check", anywhere: false },
 ];
 
+/**
+ * Main-menu voice selection — matched LOCALLY, after navigation, IDLE only.
+ * Hard rule 6 still holds: none of this reaches Gemini; a match becomes a
+ * `menuSelected` emission and the row's owner takes it from there.
+ *
+ * Numerals are the PRIMARY shortcut ("one".."six" and the digits) because a
+ * single digit survives poor ASR far better than a phrase. Bare words only
+ * count in a short utterance — "how do I make fire from sticks" must stay a
+ * real question — while the specific multi-word forms match anywhere.
+ */
+const MENU_PHRASES: { row: number; phrase: string; anywhere: boolean }[] = [
+  { row: 1, phrase: "scan this area", anywhere: true },
+  { row: 1, phrase: "scan the area", anywhere: true },
+  { row: 2, phrase: "i need shelter", anywhere: true },
+  { row: 3, phrase: "i need fire", anywhere: true },
+  { row: 3, phrase: "i need a fire", anywhere: true },
+  { row: 4, phrase: "i need water", anywhere: true },
+  { row: 5, phrase: "im hurt", anywhere: true },
+  { row: 5, phrase: "i am hurt", anywhere: true },
+  { row: 6, phrase: "take me back to camp", anywhere: true },
+  { row: 6, phrase: "back to camp", anywhere: true },
+
+  { row: 1, phrase: "one", anywhere: false },
+  { row: 1, phrase: "1", anywhere: false },
+  { row: 1, phrase: "scan", anywhere: false },
+  { row: 1, phrase: "survey", anywhere: false },
+  { row: 2, phrase: "two", anywhere: false },
+  { row: 2, phrase: "2", anywhere: false },
+  { row: 2, phrase: "shelter", anywhere: false },
+  { row: 2, phrase: "tent", anywhere: false },
+  { row: 3, phrase: "three", anywhere: false },
+  { row: 3, phrase: "3", anywhere: false },
+  { row: 3, phrase: "fire", anywhere: false },
+  { row: 4, phrase: "four", anywhere: false },
+  { row: 4, phrase: "4", anywhere: false },
+  { row: 4, phrase: "water", anywhere: false },
+  { row: 5, phrase: "five", anywhere: false },
+  { row: 5, phrase: "5", anywhere: false },
+  { row: 5, phrase: "hurt", anywhere: false },
+  { row: 6, phrase: "six", anywhere: false },
+  { row: 6, phrase: "6", anywhere: false },
+  { row: 6, phrase: "camp", anywhere: false },
+];
+
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 @component
@@ -90,6 +136,10 @@ export class LessonEngine extends BaseScriptComponent {
   @input
   @hint("A bare command word ('next', 'check') only counts as navigation in an utterance this short. Longer ones are treated as questions.")
   private shortUtteranceMaxWords: number = 4;
+
+  @input
+  @hint("Spoken when the user asks to be taken back to camp (menu row 6). The distance readout on the row is the visual half of the cue.")
+  private navigateLine: string = "HEAD FOR CAMP — WATCH THE DISTANCE READOUT ON ROW SIX";
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Debug — preview iteration</span>')
@@ -142,6 +192,9 @@ export class LessonEngine extends BaseScriptComponent {
   private timerRunning: boolean = false;
   private lastTickWholeSec: number = -1;
 
+  /** Camp point, CENTIMETRES world. null until a site marker is chosen. */
+  private campPosition: XYZ | null = null;
+
   private completeDelay: DelayedCallbackEvent;
 
   // ---------------------------------------------------------------- lifecycle
@@ -171,10 +224,27 @@ export class LessonEngine extends BaseScriptComponent {
     eventBus.subscribe(Events.surveyComplete, () => {
       if (this.mode === "SURVEY") this.setMode("IDLE");
     });
-    // Nothing acts on a chosen site yet — starting a lesson from one is the
-    // next task. Logged so the seam is visible in a run rather than only in code.
-    eventBus.subscribe(Events.siteSelected, (p: { kind: string; slot: string }) => {
-      this.log("siteSelected " + (p ? p.slot + " (" + p.kind + ")" : "?") + " — no lesson wired to this yet");
+    // A chosen site is where the user is setting up — that IS the camp point.
+    // The coordinator starts the lesson; this only records the place, so menu
+    // row 6 ("take me back to camp") has somewhere to point.
+    eventBus.subscribe(Events.siteSelected, (p: SiteSelectedPayload) => {
+      if (!p || !p.position) return;
+      this.campPosition = p.position;
+      const camp: CampChangedPayload = { position: p.position, kind: p.kind };
+      this.log("siteSelected " + p.slot + " (" + p.kind + ") — camp point set");
+      this.emit(Events.campChanged, camp);
+    });
+
+    // Row 6 is the engine's row: a navigation cue, not a lesson and not a mode.
+    // Rows 1-5 have other owners (SurveyController, LessonCoordinator).
+    eventBus.subscribe(Events.menuSelected, (p: MenuSelectedPayload) => {
+      if (!p || p.row !== 6) return;
+      if (!this.campPosition) {
+        this.log("menu row 6 ignored — no camp point set");
+        return;
+      }
+      this.log("menu row 6 (" + p.source + ") — navigation cue");
+      this.emit(Events.speakRequested, { text: this.navigateLine, source: "menu" });
     });
 
     if (this.enableDebugKeys) this.bindDebugKeys();
@@ -221,6 +291,17 @@ export class LessonEngine extends BaseScriptComponent {
       return;
     }
 
+    // IDLE is the menu, so menu rows are voice targets — still local, still
+    // free (hard rule 6). Only what matches nothing may go on to Gemini.
+    if (this.mode === "IDLE") {
+      const row = this.matchMenuRow(text);
+      if (row > 0) {
+        this.log("routed: menu/row" + row + " (no AI call)");
+        this.selectMenuRow(row, "voice");
+        return;
+      }
+    }
+
     if (this.mode === "LESSON") {
       const step = this.currentStep();
       this.log("routed: qaRequested (unmatched during LESSON)");
@@ -263,6 +344,10 @@ export class LessonEngine extends BaseScriptComponent {
     if (text.length === 0) return "ignored/empty";
     const intent = this.matchNavIntent(text);
     if (intent) return "navigation/" + intent;
+    if (this.mode === "IDLE") {
+      const row = this.matchMenuRow(text);
+      if (row > 0) return "menu/row" + row;
+    }
     return this.mode === "LESSON" ? "qaRequested" : "lessonRequested";
   }
 
@@ -277,6 +362,9 @@ export class LessonEngine extends BaseScriptComponent {
       "start over",
       "confirm",
       "SOS!",
+      "three",
+      "i need shelter",
+      "take me back to camp",
       "help me build a campfire",
       "how do I check the wind direction?",
       "what kind of wood burns longest",
@@ -286,6 +374,36 @@ export class LessonEngine extends BaseScriptComponent {
     for (let i = 0; i < cases.length; i++) {
       this.log('  "' + cases[i] + '" -> ' + this.classify(cases[i]));
     }
+  }
+
+  /** 1..6, or 0 for no match. Same anywhere/short-utterance mechanics as nav. */
+  private matchMenuRow(text: string): number {
+    const wordCount = text.split(" ").length;
+    const isShort = wordCount <= this.shortUtteranceMaxWords;
+    for (let i = 0; i < MENU_PHRASES.length; i++) {
+      const entry = MENU_PHRASES[i];
+      if (!entry.anywhere && !isShort) continue;
+      if (this.containsPhrase(text, entry.phrase)) return entry.row;
+    }
+    return 0;
+  }
+
+  /**
+   * The one path a menu selection takes from the engine's side. The presenter
+   * emits the same event for a pinch; every row's owner subscribes to the bus,
+   * so voice and pinch are indistinguishable downstream.
+   */
+  public selectMenuRow(row: number, source: string): void {
+    if (row === 6 && !this.campPosition) {
+      this.log("menu row 6 (" + source + ") ignored — no camp point set");
+      return;
+    }
+    const payload: MenuSelectedPayload = {
+      row: row,
+      source: source,
+      position: row === 6 ? this.campPosition : null,
+    };
+    this.emit(Events.menuSelected, payload);
   }
 
   private matchNavIntent(text: string): NavIntent | null {

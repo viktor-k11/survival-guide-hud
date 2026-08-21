@@ -35,7 +35,7 @@
 import { eventBus, Events } from "./EventBus";
 import { LessonEngine } from "./LessonEngine";
 import { LessonRequestOutcome, requestLesson } from "./LessonPlanner";
-import { LessonAnchorPayload, LessonRequestFailure, RequestStatePayload } from "./RequestTypes";
+import { LessonAnchorPayload, LessonRequestFailure, MenuSelectedPayload, RequestStatePayload } from "./RequestTypes";
 import { describeDegradations } from "./LessonValidator";
 import { gatewayDropPending, gatewayStatus, GW_BACKGROUND } from "./GatewayQueue";
 import { XYZ } from "./SurveyTypes";
@@ -59,6 +59,13 @@ export class LessonCoordinator extends BaseScriptComponent {
 
   @input private tentPhrase: string = "help me pitch a tent";
   @input private firePhrase: string = "help me build a campfire";
+
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">Menu shortcuts</span>')
+  @ui.label('<span style="color: #94A3B8; font-size: 11px;">Main-menu rows 2-5 are the same trick as a marker tap: a fixed phrase through the SAME generative lesson path. No fixtures, no special-casing.</span>')
+
+  @input private waterPhrase: string = "help me purify water";
+  @input private burnPhrase: string = "how do I treat a burn";
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Failure handling</span>')
@@ -144,6 +151,22 @@ export class LessonCoordinator extends BaseScriptComponent {
         this.request(phrase, p.position, "marker");
       }
     );
+
+    // Menu rows 2-5 — the marker trick again: a fixed phrase, spoken by proxy,
+    // through the same Gemini path. Row 1 (survey) and row 6 (navigate) have
+    // other owners and are ignored here. No anchor: the lesson stands where
+    // the design-time zone default puts it.
+    eventBus.subscribe(Events.menuSelected, (p: MenuSelectedPayload) => {
+      if (!p) return;
+      const phrase =
+        p.row === 2 ? this.tentPhrase :
+        p.row === 3 ? this.firePhrase :
+        p.row === 4 ? this.waterPhrase :
+        p.row === 5 ? this.burnPhrase : "";
+      if (phrase.length === 0) return;
+      this.log("menu row " + p.row + " (" + p.source + ') -> "' + phrase + '"');
+      this.request(phrase, null, "menu");
+    });
 
     eventBus.subscribe(Events.stopRequested, () => {
       if (this.state === "COMPILING") this.abort("cancelled", "REQUEST CANCELLED");

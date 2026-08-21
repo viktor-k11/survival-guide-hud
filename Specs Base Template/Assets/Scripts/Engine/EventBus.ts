@@ -112,6 +112,22 @@ export const Events = {
   qaAnswered: "qaAnswered",
   /** Something asked for the AR keyboard. Payload: { source }. */
   keyboardRequested: "keyboardRequested",
+
+  // --- Main menu (MainMenuPresenter.ts + LessonEngine.ts) -----------------
+  /**
+   * The user picked a main-menu row. Payload: MenuSelectedPayload.
+   * Modelled on siteSelected: the presenter (pinch) and the engine (voice)
+   * both emit it, and each behaviour's owner subscribes — the coordinator for
+   * the lesson rows, SurveyController for row 1, the engine for row 6. NO menu
+   * selection may reach Gemini directly; rows 2-5 become fixed phrases in the
+   * coordinator, exactly like a site-marker tap.
+   */
+  menuSelected: "menuSelected",
+  /**
+   * A camp point was established (a site marker was chosen). Payload:
+   * CampChangedPayload. The menu's row 6 exists only while this has fired.
+   */
+  campChanged: "campChanged",
 } as const;
 
 export type EventName = (typeof Events)[keyof typeof Events];

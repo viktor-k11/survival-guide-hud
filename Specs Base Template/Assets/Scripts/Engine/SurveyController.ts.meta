@@ -58,8 +58,6 @@
     preferredMinDistanceM: false
     rayRangeCm: false
     raysPerFrame: false
-    runOnBoot: false
-    startDelaySec: false
     tentFootprintM: false
     useFixtureCloud: false
     yawHalfAngleDeg: false
@@ -73,8 +71,6 @@
     []
   DefaultScriptInputs:
     - cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
-      runOnBoot: true
-      startDelaySec: 0.500000
       durationSec: !<float> 12.000000
       minDurationSec: !<float> 3.000000
       earlyExitGroundCells: !<float> 260.000000
@@ -114,8 +110,6 @@
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Survey timing</span>"}'
     - '// @input SceneObject cameraObject {"hint":"Camera Object. The survey rays are cast from here, through its view."}'
-    - '// @input bool runOnBoot = true {"hint":"Run the survey automatically when the Lens boots. Off = only the debug key starts it."}'
-    - '// @input float startDelaySec = 0.5 {"hint":"Wait this long after boot before sampling, so world tracking has settled."}'
     - '// @input float durationSec = 12 {"hint":"Full survey length in seconds. The survey ALWAYS ends by this point.", "widget":"slider", "min":2, "max":30, "step":0.5}'
     - '// @input float minDurationSec = 3 {"hint":"Never finish before this, however fast the ground fills in. Stops a lucky first frame from ending the survey instantly.", "widget":"slider", "min":0, "max":15, "step":0.5}'
     - '// @input float earlyExitGroundCells = 260 {"hint":"Cheap precondition for the early exit, and the denominator of the coverage half of surveyProgress. Distinct ground cells. Set it very high to force the full duration."}'

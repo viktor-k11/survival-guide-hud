@@ -49,3 +49,29 @@ export interface LessonAnchorPayload {
   /** "site" | "default" — diagnostics only. */
   source: string;
 }
+
+/**
+ * A main-menu row was activated. Row numbers are the contract with the scene
+ * (HUDRoot/MainMenu/Row_1..6):
+ *
+ *   1 SCAN THIS AREA        -> SurveyController.beginSurvey()
+ *   2 I NEED SHELTER        -> coordinator, fixed tent phrase
+ *   3 I NEED FIRE           -> coordinator, fixed fire phrase
+ *   4 I NEED WATER          -> coordinator, fixed water phrase
+ *   5 I'M HURT              -> coordinator, fixed burn phrase
+ *   6 TAKE ME BACK TO CAMP  -> engine, navigation cue (only when camp is set)
+ */
+export interface MenuSelectedPayload {
+  row: number;
+  /** "pinch" | "voice" | "debugKey" — diagnostics only. */
+  source: string;
+  /** Camp position for row 6, CENTIMETRES world. null for every other row. */
+  position: XYZ | null;
+}
+
+/** A camp point exists from now on: the user chose a site marker. */
+export interface CampChangedPayload {
+  /** Centimetres, world. */
+  position: XYZ;
+  kind: "tent" | "fire";
+}
