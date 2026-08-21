@@ -168,7 +168,7 @@ export class SurveyController extends BaseScriptComponent {
   private logFirstNHits: number = 0;
 
   @input @hint("Turn off before shipping.") private enableDebugKeys: boolean = true;
-  @input @hint("Restart the survey from scratch.") private keyRestartSurvey: string = "S";
+  @input @hint("Restart the survey from scratch. P as in re-Ping — 'S' is walk-back and injected keys reach the Lens.") private keyRestartSurvey: string = "P";
   @input @hint("End the survey immediately with whatever has been collected.") private keyFinishSurvey: string = "G";
   @input private enableLogging: boolean = true;
 

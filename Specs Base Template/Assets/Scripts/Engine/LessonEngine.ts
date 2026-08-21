@@ -149,12 +149,15 @@ export class LessonEngine extends BaseScriptComponent {
   @hint("Turn every debug key off before shipping.")
   private enableDebugKeys: boolean = true;
 
+  // NO debug key may sit on W/A/S/D, Q/E or the arrows: those are Interactive
+  // Preview movement, injected keys DO reach the Lens, and a walking capture
+  // would silently drive the engine. Right-hand cluster only.
   @input private keyLoadCampfire: string = "C";
-  @input private keyLoadWater: string = "W";
+  @input @hint("H as in H2O — 'W' is walk-forward.") private keyLoadWater: string = "H";
   @input private keyNext: string = "N";
   @input private keyBack: string = "B";
   @input private keyConfirm: string = "K";
-  @input private keyDone: string = "D";
+  @input @hint("O as in dOne — 'D' is strafe-right.") private keyDone: string = "O";
 
   @input
   @hint("Runs a table of canned transcripts through the SAME classifier handleTranscript uses, and logs the routing decision for each. Non-destructive: classifies only, executes nothing.")

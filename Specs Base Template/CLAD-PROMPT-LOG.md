@@ -2814,3 +2814,76 @@ what the app can do. Amber marker matches the existing "active" convention
   the tent-marker tap that sets the camp point would not fire a real Gemini
   lesson request mid-verification; restored (and `useFixtureCloud` back off)
   before the save + commit.
+
+---
+
+## Prompt — debug keys off movement keys, boot sequence, SfxService, missing capture
+
+> Three small things, all engine-side. They must land before the Saturday freeze.
+> 1. Debug keys collide with Interactive Preview movement — BLOCKING. LessonEngine
+> keyLoadWater = "W" and keyDone = "D"; SurveyController keyRestartSurvey = "S" …
+> Move ALL debug keys off W/A/S/D, Q/E and the arrow keys. Record in SCENE-MAP.
+> 2. Boot sequence — short, skippable, silent-safe: CRT scanline wipe +
+> crt-power-on cue + two typed lines (typewriter machinery, caret 2.5 Hz), 3-4 s,
+> pinch-skippable, runIntro @input. Original wording, no Bethesda marks. Narration
+> only from bakedTracks, never live TTS; no baked audio → text-only and say so.
+> 3. SfxService — the six generated cues still play nowhere: Systems/SfxService,
+> ONE AudioComponent, event -> cue map, separate from NarrationService; silence +
+> log, never an exception; never talk over narration.
+> Also: the ask-widget mid-transcript capture. Verify with PreviewPanelTool only.
+
+**1 — keys.** All debug keys are now off W/A/S/D/Q/E/arrows: `keyLoadWater`
+W→**H** (as in H₂O), `keyDone` D→**O** (dOne), `keyRestartSurvey` S→**P**
+(re-Ping). Everything else already lived on safe keys (C N B K R / G / T Y F /
+I U / J L / M / SPACE). Changed in the .ts defaults AND the scene-serialized
+inputs; the rule ("no debug key on movement keys, right-hand cluster") is now
+stated at the key declarations and in SCENE-MAP's InjectPreviewGesture note.
+The first message asked for the bindings in the tracker's "как посмотреть
+результат в превью" list too — no file in the repo carries that heading (the
+closest match, `~/Downloads/master-plan-v2.md`, is outside git), so per the
+follow-up message the record lives in SCENE-MAP.
+
+**2 — boot.** `HUDRoot/BootIntro` (Wipe / Line1 / Line2, shipped disabled) +
+`Systems/BootIntroPresenter`. The wipe animates `wipeProgress` on a clone of
+`CRT_PanelGlow` — the CRT shader's own boot wipe, no new geometry. Two lines
+typed at `introCharsPerSec` with the 2.5 Hz caret: "SURVIVAL GUIDE — FIELD
+TERMINAL v1.0" then "VOICE INTERFACE ONLINE — PINCH AND HOLD TO ASK" (amber).
+Measured 3.9 s. Pinch skips it by observing `voiceStateChanged` — the same
+pinch that starts a capture, no second gesture path. `runIntro` off short-cuts
+to the done edge immediately. New event `introStateChanged {active}`; the menu
+and the StatusBar hold back while active. **Ships TEXT-ONLY: no baked narration
+track exists (TTS log shows baked=0), and a live TTS call at boot is forbidden
+by the narration seam — 6.5-18.6 s of opening silence.** No gateway call at boot.
+
+**3 — SFX.** `Systems/SfxService` (`Engine/SfxService.ts`): ONE AudioComponent,
+all six GeneratedSFX WAVs wired in the Inspector, event→cue map exactly as
+specified (power-on on the intro edge; confirm-blip on menuSelected / checklist
+tick / safety confirm; error-buzz on safetyRejected / request ERROR;
+survey-ping staggered once per placed marker; geiger rate-limited off
+surveyProgress as ambience; completion-sting on lessonCompleted). Guards: no
+track / no component / play() throw = silence + log line; cues SKIP (logged)
+while narration is speaking or pending — the boot cue is the one exception, by
+construction before any speech exists. NarrationService untouched.
+
+**4 — capture.** `menu-ask-transcript.jpg` had in fact been captured and
+committed in the previous batch; retaken anyway post-boot-changes (same
+filename, stable across sessions): LISTENING hint, interim transcript in the
+ticker AND typing into the ask widget's prompt line, MIC LISTENING in the
+status block. Captured via VoiceInput's scripted-capture key M — a REAL pinch
+capture cannot be screenshotted because ASR blacks out the Preview's simulated
+camera feed (recorded in SCENE-MAP last batch). New capture: `boot-intro.jpg`
+— wipe plate + both typed lines, menu and StatusBar holding back.
+
+### The debugging detour, and the lesson
+
+Half this session went to "the boot intro does not render": every capture of
+the intro (and then of the menu) came back empty while the logs were perfectly
+healthy. Editor state, layers, camera mask, enabled chains — all verified
+clean. The actual cause, spotted by the human: **the preview's tracked camera
+had been walked forward past z = −120, and the HUD is world-fixed (Headlock
+ships disabled) — everything was rendering fine, BEHIND the camera.** A
+Preview-panel scene reload (setConfig) resets the tracked camera; refresh alone
+does not. Lesson recorded here because it is the same mistake class as the
+frustum saga: an invisible HUD in a capture is a statement about the CAMERA
+POSE first and the scene second. Check `MovePreviewCamera getPose` before
+debugging the render.

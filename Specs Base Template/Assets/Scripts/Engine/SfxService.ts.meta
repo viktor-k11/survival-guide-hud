@@ -1,0 +1,78 @@
+- !<AssetImportMetadata/4908ebb7-9957-4ae7-9ecd-f7594a1ea99a>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 425fa836-5b46-4083-9f75-fcd3aa6c4900
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 425fa836-5b46-4083-9f75-fcd3aa6c4900
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 53169560-e876-4cb2-8a54-4472d3ac3aeb
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/53169560-e876-4cb2-8a54-4472d3ac3aeb>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 69ba2d72-dc42-444c-a109-e7cb45a7301d
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    cueCompletion: false
+    cueConfirm: false
+    cueError: false
+    cueGeiger: false
+    cuePowerOn: false
+    cueSurveyPing: false
+    enableLogging: false
+    geigerMinIntervalSec: false
+    pingSpacingSec: false
+    volume: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - cuePowerOn: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueConfirm: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueError: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueSurveyPing: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueGeiger: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueCompletion: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      geigerMinIntervalSec: 0.120000
+      pingSpacingSec: 0.400000
+      volume: 0.800000
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Cues — Assets/GeneratedSFX</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Unwired slot = that cue is silence plus a log line. Nothing throws.</span>"}'
+    - '// @input Asset.AudioTrackAsset cuePowerOn {"hint":"crt-power-on.wav — boot"}'
+    - '// @input Asset.AudioTrackAsset cueConfirm {"hint":"confirm-blip.wav — local acknowledgement"}'
+    - '// @input Asset.AudioTrackAsset cueError {"hint":"error-buzz.wav — rejection / failure"}'
+    - '// @input Asset.AudioTrackAsset cueSurveyPing {"hint":"survey-ping.wav — one per placed marker"}'
+    - '// @input Asset.AudioTrackAsset cueGeiger {"hint":"geiger-click.wav — survey ambience"}'
+    - '// @input Asset.AudioTrackAsset cueCompletion {"hint":"completion-sting.wav — lesson complete"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Pacing</span>"}'
+    - '// @input float geigerMinIntervalSec = 0.12 {"hint":"Minimum seconds between geiger clicks. The click is ambience for the survey, not a counter of accepted points.", "widget":"slider", "min":0.05, "max":1, "step":0.05}'
+    - '// @input float pingSpacingSec = 0.4 {"hint":"Stagger between the per-marker pings on surveyComplete.", "widget":"slider", "min":0.1, "max":1.5, "step":0.05}'
+    - '// @input float volume = 0.8 {"hint":"Playback volume for every cue.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - // @input bool enableLogging = true

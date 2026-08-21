@@ -177,6 +177,8 @@ export class MainMenuPresenter extends BaseScriptComponent {
 
   private mode: string = "IDLE";
   private requestState: string = "IDLE";
+  /** The boot intro holds the screen; the menu waits for its done edge. */
+  private introActive: boolean = false;
   private voiceState: string = "idle";
   private interimText: string = "";
   private highlightIndex: number = 0;
@@ -221,6 +223,10 @@ export class MainMenuPresenter extends BaseScriptComponent {
     eventBus.subscribe(Events.surveyComplete, () => {
       this.surveyDone = true;
       this.renderRows();
+    });
+    eventBus.subscribe(Events.introStateChanged, (p: { active: boolean }) => {
+      this.introActive = !!(p && p.active);
+      this.applyVisibility();
     });
     eventBus.subscribe(Events.campChanged, (p: CampChangedPayload) => {
       const had = this.camp !== null;
@@ -321,7 +327,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
   // -------------------------------------------------------------- visibility
 
   private isVisible(): boolean {
-    return this.mode === "IDLE" && this.requestState !== "COMPILING";
+    return this.mode === "IDLE" && this.requestState !== "COMPILING" && !this.introActive;
   }
 
   /**

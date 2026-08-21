@@ -263,6 +263,11 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.rangeWarning = "";
       this.applyWarning();
     });
+    // The boot intro owns the screen; the bar joins when it is done. This is
+    // the bar's own contents, not HUDRoot — ModeRouter still owns the roots.
+    eventBus.subscribe(Events.introStateChanged, (p: { active: boolean }) => {
+      setEnabled(this.statusBar, !(p && p.active));
+    });
 
     this.wireKeyboardToggle();
     this.applyFace();

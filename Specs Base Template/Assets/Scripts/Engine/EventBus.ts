@@ -128,6 +128,16 @@ export const Events = {
    * CampChangedPayload. The menu's row 6 exists only while this has fired.
    */
   campChanged: "campChanged",
+
+  // --- Boot intro (BootIntroPresenter.ts) ---------------------------------
+  /**
+   * The boot intro started or ended. Payload: { active: boolean }.
+   * Emitted ONCE with active:true when the intro begins (or active:false
+   * immediately, when runIntro is off) and once with active:false when it
+   * finishes or is skipped. The menu and the status bar hold back while
+   * active; SfxService plays the power-on cue on the rising edge.
+   */
+  introStateChanged: "introStateChanged",
 } as const;
 
 export type EventName = (typeof Events)[keyof typeof Events];

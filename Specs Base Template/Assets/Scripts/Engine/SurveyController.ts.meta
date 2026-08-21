@@ -152,6 +152,6 @@
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug</span>"}'
     - "// @input float logFirstNHits {\"hint\":\"Log this many individual hits per survey, with position and normal. 0 = off. The way to tell 'the rays are missing' from 'the rays all land in the same place'.\"}"
     - '// @input bool enableDebugKeys = true {"hint":"Turn off before shipping."}'
-    - '// @input string keyRestartSurvey = "S" {"hint":"Restart the survey from scratch."}'
+    - "// @input string keyRestartSurvey = \"P\" {\"hint\":\"Restart the survey from scratch. P as in re-Ping — 'S' is walk-back and injected keys reach the Lens.\"}"
     - '// @input string keyFinishSurvey = "G" {"hint":"End the survey immediately with whatever has been collected."}'
     - // @input bool enableLogging = true

@@ -1,0 +1,77 @@
+- !<AssetImportMetadata/9d6a46fb-b328-420a-8a9e-dca36c1b88f6>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> bbd68af0-0f87-4975-8a74-2c5fee1172f8
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> bbd68af0-0f87-4975-8a74-2c5fee1172f8
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 1bedbd21-568a-47d2-8340-512c5234ed78
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/1bedbd21-568a-47d2-8340-512c5234ed78>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: b56f3c7c-a39b-4f7f-9fd7-7410a7e21dec
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    bootIntro: false
+    caretHz: false
+    enableLogging: false
+    holdSec: false
+    introCharsPerSec: false
+    line1Text: false
+    line2Text: false
+    runIntro: false
+    theme: false
+    wipeSec: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      bootIntro: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      runIntro: true
+      line1Text: SURVIVAL GUIDE — FIELD TERMINAL v1.0
+      line2Text: VOICE INTERFACE ONLINE — PINCH AND HOLD TO ASK
+      wipeSec: 0.700000
+      introCharsPerSec: !<float> 32.000000
+      holdSec: 0.800000
+      caretHz: 2.500000
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject bootIntro {"hint":"HUDRoot/BootIntro — children Wipe / Line1 / Line2 are found by name."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Sequence</span>"}'
+    - '// @input bool runIntro = true {"hint":"Run the intro at boot. OFF for preview iteration — the done event still fires immediately, so nothing downstream waits."}'
+    - '// @input string line1Text = "SURVIVAL GUIDE — FIELD TERMINAL v1.0" {"hint":"Line 1 — names the system."}'
+    - "// @input string line2Text = \"VOICE INTERFACE ONLINE — PINCH AND HOLD TO ASK\" {\"hint\":\"Line 2 — says it listens. The product's thesis.\"}"
+    - '// @input float wipeSec = 0.7 {"hint":"Seconds for the scanline wipe to sweep the plate in.", "widget":"slider", "min":0.2, "max":2, "step":0.1}'
+    - "// @input float introCharsPerSec = 32 {\"hint\":\"Typewriter speed — same machinery as the StatusBar's request echo.\", \"widget\":\"slider\", \"min\":10, \"max\":80, \"step\":1}"
+    - '// @input float holdSec = 0.8 {"hint":"Seconds both lines hold before the menu takes over.", "widget":"slider", "min":0, "max":3, "step":0.1}'
+    - '// @input float caretHz = 2.5 {"hint":"Caret blink rate, Hz.", "widget":"slider", "min":0.5, "max":6, "step":0.5}'
+    - // @input bool enableLogging = true

@@ -79,11 +79,11 @@
     - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Single letters A-Z. These call the SAME methods as voice, not a parallel branch. Click the Preview panel first so it has focus.</span>"}'
     - '// @input bool enableDebugKeys = true {"hint":"Turn every debug key off before shipping."}'
     - '// @input string keyLoadCampfire = "C"'
-    - '// @input string keyLoadWater = "W"'
+    - "// @input string keyLoadWater = \"H\" {\"hint\":\"H as in H2O — 'W' is walk-forward.\"}"
     - '// @input string keyNext = "N"'
     - '// @input string keyBack = "B"'
     - '// @input string keyConfirm = "K"'
-    - '// @input string keyDone = "D"'
+    - "// @input string keyDone = \"O\" {\"hint\":\"O as in dOne — 'D' is strafe-right.\"}"
     - '// @input string keyRoutingSelfTest = "R" {"hint":"Runs a table of canned transcripts through the SAME classifier handleTranscript uses, and logs the routing decision for each. Non-destructive: classifies only, executes nothing."}'
     - '// @input Asset.JsonAsset campfireFixture {"hint":"Assets/AI/fixtures/lesson-help-me-build-a-campfire.raw.json"}'
     - '// @input Asset.JsonAsset waterFixture {"hint":"Assets/AI/fixtures/lesson-help-me-purify-water.raw.json — no hologram, exercises companion:null"}'

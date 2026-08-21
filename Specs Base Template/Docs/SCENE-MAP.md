@@ -37,7 +37,7 @@ advance so a counting-down timer does not jitter. Both fonts are in the project;
 
 | Object | State |
 |---|---|
-| `HUDRoot` + all 34 descendants | **disabled** |
+| `HUDRoot` + ALL descendants (incl. `MainMenu`, `BootIntro`) | **disabled** |
 | `WorldRoot` + all 34 descendants | **disabled** |
 | `Headlock` component on `HUDRoot` | **disabled** (component, not object) |
 | `VisualConfig` | **enabled** — config holder, draws nothing |
@@ -76,12 +76,12 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 | `GeneratedMeshes/FirewoodLog.glb` | Training prop, 45 x 24 x 25 cm, long axis **X** (the stacking snap axis). Authored geometry: faceted octagonal bark, inset cut ends, one branch stub. **Untextured, ONE material slot (`FirewoodLog_Flat`), flat-shaded** — recolour by editing that one material. Regenerate with `node Tools/make-prop-meshes.js` (deterministic). |
 | `GeneratedMeshes/KindlingBundle.glb` | Training prop, 11 x 24 x 11 cm. Seven splayed sticks + cord band, one material slot (`KindlingBundle_Flat`). |
 | `GeneratedMeshes/TentStake.glb` | Training prop, 9 x 18.5 x 8 cm. Head / shaft / pyramid tip silhouette, one material slot (`TentStake_Flat`). |
-| `GeneratedSFX/geiger-click.wav` | Survey sampling tick, 30 ms mono, dry on purpose (fires many times per survey). **Not wired** — no widget owns an AudioComponent yet. |
-| `GeneratedSFX/confirm-blip.wav` | Local-keyword acknowledgement, 90 ms. Not wired. |
-| `GeneratedSFX/error-buzz.wav` | Request failure / safety rejection, 450 ms. Not wired. |
-| `GeneratedSFX/crt-power-on.wav` | Boot cue, 2.5 s stereo. Not wired. |
-| `GeneratedSFX/survey-ping.wav` | One per placed site marker, single sonar note, 1.15 s. Not wired. |
-| `GeneratedSFX/completion-sting.wav` | `lessonCompleted`, ascending bell arpeggio, 1.8 s. Not wired. |
+| `GeneratedSFX/geiger-click.wav` | Survey sampling tick, 30 ms mono, dry on purpose (fires many times per survey). Wired: `Systems/SfxService`, rate-limited off `surveyProgress`. |
+| `GeneratedSFX/confirm-blip.wav` | Local acknowledgement, 90 ms. Wired: SfxService — `menuSelected`, checklist tick, safety confirm. |
+| `GeneratedSFX/error-buzz.wav` | Request failure / safety rejection, 450 ms. Wired: SfxService — `safetyRejected`, request ERROR. |
+| `GeneratedSFX/crt-power-on.wav` | Boot cue, 2.5 s stereo. Wired: SfxService — `introStateChanged {active:true}`. |
+| `GeneratedSFX/survey-ping.wav` | One per placed site marker, single sonar note, 1.15 s. Wired: SfxService — staggered on `surveyComplete`. |
+| `GeneratedSFX/completion-sting.wav` | `lessonCompleted`, ascending bell arpeggio, 1.8 s. Wired: SfxService. |
 | `CRT_Phosphor.graphShader` | **The phosphor CRT shader family's single pass.** Code-node graph: screen-space scanlines, floored phosphor flicker, and a boot scanline wipe normalized against the mesh's own local AABB (`wipeProgress` 0→1, `wipeAxis` 0 = local Y for holograms, 1 = local Z for XZ-native plane meshes). Every knob is a material property. |
 | `CRT_HologramWire.mat` | CRT pass tuned for the hologram line work — cyan, glow 1.8, scanlines 0.30. Assigned to **all nine** hologram stage visuals, so `baseColor` here is the ONE field that re-tints the whole hologram. |
 | `CRT_PanelGlow.mat` | CRT pass tuned as the guide panel's translucent backing — dim green glow, stronger scanlines, `wipeAxis` 1. Assigned to `GuidePanel/BackingPlate` only. |
@@ -167,6 +167,10 @@ Local origin sits 60 cm in front of the user.
 | `HUDRoot/MainMenu/DetailPane/StatusBlock` | Bordered panel: mic state / camp SET-UNSET / trail line (`Body` text + `Border_N,S,E,W`) | `voiceStateChanged`, `campChanged` |
 | `HUDRoot/MainMenu/DetailPane/DescriptionBlock` | Body copy for the CURRENTLY HIGHLIGHTED row — the menu's real job | hover, `menuSelected` |
 | `HUDRoot/MainMenu/DetailPane/AskWidget` | The always-available voice affordance: pulsing `MicGlyph`, `TitleText` ("ASK ME ANYTHING"), `PromptLine` ("> " + blinking caret; the LIVE interim transcript types here during a pinch-hold) and `ExampleLine` cycling prompts **deliberately outside the six rows** | `voiceStateChanged`, `voiceInterim` |
+| `HUDRoot/BootIntro` | The boot intro surface — shown once at boot for ~3.9 s, then disabled for the session | `introStateChanged` (emitted by its presenter) |
+| `HUDRoot/BootIntro/Wipe` | Full-menu-sized plate carrying a clone of `CRT_PanelGlow`; the presenter animates the shader's own `wipeProgress` 0→1 — the scanline wipe is a material property, not new geometry | — |
+| `HUDRoot/BootIntro/Line1` | "SURVIVAL GUIDE — FIELD TERMINAL v1.0", typed with the typewriter machinery | — |
+| `HUDRoot/BootIntro/Line2` | "VOICE INTERFACE ONLINE — PINCH AND HOLD TO ASK" (amber) — the product's thesis, in the first thing the user ever sees | — |
 | `HUDRoot/AssemblingLesson` | **Placeholder VFX** shown only while a lesson is compiling. Swap the contents, keep the path | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Ring` | Spinning amber torus | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Core` | Counter-pulsing green disc | `requestStateChanged` |
@@ -219,7 +223,7 @@ placed against real terrain, not the head.
 | `Systems` | **Enabled** container for runtime controllers. Has to be enabled: `HUDRoot` and `WorldRoot` ship disabled, so something already running must turn them on. |
 | `Systems/RsgBootstrap` | `Engine/RsgBootstrap.ts` — installs the RSG tokens in `onAwake`. **Permanent.** Must stay enabled and must run before anything that calls Gemini/OpenAI. |
 | `Systems/VoiceInput` | `Engine/VoiceInput.ts` — hold-to-talk capture. Pinch, or hold the debug key (SPACE). Emits `voiceStateChanged` / `voiceInterim` / `userRequest`. Debug key **M** plays a SCRIPTED capture through the same setState/onTranscription funnel and ends with an empty final (nothing delivered, no Gemini) — exists because a REAL capture blacks out the Preview's simulated camera feed, making the live-transcript UI unverifiable on a desk. |
-| `Systems/LessonEngine` | `Engine/LessonEngine.ts` — the state machine. Subscribes to `userRequest`, routes it, owns mode/step/checklist/timer/safety. Deterministic: no Gemini, no TTS, no widget references. Debug keys C/W/N/B/K/D/R. |
+| `Systems/LessonEngine` | `Engine/LessonEngine.ts` — the state machine. Subscribes to `userRequest`, routes it, owns mode/step/checklist/timer/safety. Deterministic: no Gemini, no TTS, no widget references. Debug keys C/H (load), N/B/K/O (nav), R (self-test). |
 | `Systems/ModeRouter` | `Engine/ModeRouter.ts` — **the only owner of HUDRoot/WorldRoot visibility**, driven by `modeChanged`. Engine-side because it makes a decision. |
 | `Systems/StatusBarPresenter` | `Widgets/StatusBarPresenter.ts` — StatusBar's two faces: idle (pulsing mic, hint, rotating ticker) and lesson (title, mic state, warning strip). |
 | `Systems/GuidePanelPresenter` | `Widgets/GuidePanelPresenter.ts` — icon, `NN/NN`, wrapped instruction, additive backing plate. |
@@ -231,7 +235,9 @@ placed against real terrain, not the head.
 | `Systems/KeyboardInput` | `Engine/KeyboardInput.ts` — the AR keyboard, emitting the SAME `userRequest` event `VoiceInput` emits. Debug keys I (open) / U (submit canned text). |
 | `Systems/LessonCoordinator` | `Engine/LessonCoordinator.ts` — **the only thing that calls Gemini for a lesson.** Owns `lessonRequested`/`siteSelected` -> planner -> validator -> `engine.loadLesson()`, plus every failure path. |
 | `Systems/AssemblingLessonPresenter` | `Widgets/AssemblingLessonPresenter.ts` — enables and animates `HUDRoot/AssemblingLesson` while `requestStateChanged.state === "COMPILING"`. |
-| `Systems/SurveyController` | `Engine/SurveyController.ts` — the **on-demand** survey (menu row 1; boot auto-start removed). Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys S (restart) / G (finish now). |
+| `Systems/SurveyController` | `Engine/SurveyController.ts` — the **on-demand** survey (menu row 1; boot auto-start removed). Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys P (restart) / G (finish now). |
+| `Systems/SfxService` | `Engine/SfxService.ts` — **the ONE owner of non-speech audio cues.** One AudioComponent, subscribes to the bus, maps events to the six GeneratedSFX WAVs (power-on / confirm / error / survey-ping / geiger / completion-sting). Separate from NarrationService (speech). A cue that cannot play is silence + a log line; cues skip while narration has the air. |
+| `Systems/BootIntroPresenter` | `Widgets/BootIntroPresenter.ts` — the boot intro: CRT scanline wipe + two typed lines (~3.9 s), skippable by pinch (the same pinch that starts a capture, observed via `voiceStateChanged`). `runIntro` @input off = no intro and the done edge fires immediately. Emits `introStateChanged`; NO audio calls of its own (SfxService plays the power-on cue), no narration — no baked track exists and live TTS at boot is forbidden (6.5-18.6 s of opening silence). |
 | `Systems/MainMenuPresenter` | `Widgets/MainMenuPresenter.ts` — drives `HUDRoot/MainMenu`: row copy/state, the moving highlight, description + status panels, the ask widget's caret/interim/example ticker, row 6's live distance. Emits `menuSelected` on pinch. Debug keys J (cycle highlight) / L (activate). |
 | `Systems/SurveyGridPresenter` | `Widgets/SurveyGridPresenter.ts` — drives `WorldRoot/SurveyGrid` from `surveyProgress`: follows the sampled bounds, grows, spins, rides a brightness wave. |
 | `Systems/SiteMarkerPresenter` | `Widgets/SiteMarkerPresenter.ts` — places the three markers on `surveyComplete`, labels them `FLATNESS NN%`, pulses the best one, and emits `siteSelected` on pinch or debug key T / Y / F. |
@@ -274,7 +280,7 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `surveyComplete` · `siteSelected` · `distanceWarning` · `stopRequested` ·
 `requestStateChanged` · `lessonAnchorChanged` · `speakRequested` ·
 `narrationStateChanged` · `qaAnswered` · `keyboardRequested` ·
-`menuSelected` · `campChanged`
+`menuSelected` · `campChanged` · `introStateChanged`
 
 ### `menuSelected` is the siteSelected trick generalised
 
@@ -542,9 +548,13 @@ the frame says. The 3 Hz ticker is the floor even when a status line is holding.
 > *different* tool, **`InjectPreviewGesture`**, sends keys:
 > `{type:"key", key:"W", state:"start"}` presses and holds, `state:"end"`
 > releases. Injected keys reach both the preview camera AND the Lens's own
-> `KeyPressEvent` — which means **`W` and `D` also fire LessonEngine's debug
-> keys and `S` fires SurveyController's restart.** Budget for that overlap when
-> scripting a walk.
+> `KeyPressEvent`.
+>
+> **DEBUG KEYS MUST STAY OFF W/A/S/D, Q/E AND THE ARROWS** — those are
+> Interactive Preview movement, so a walking capture would silently drive the
+> engine. Fixed 2026-08-21: water fixture `W`→**H** (as in H₂O), done/check
+> `D`→**O** (dOne), survey restart `S`→**P** (re-Ping). Any future debug key
+> follows the same rule: right-hand cluster, no movement keys.
 
 ### What a walking survey actually collects
 
