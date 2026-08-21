@@ -19,6 +19,16 @@ export const Events = {
   companionChanged: "companionChanged",
   /** Blueprint hologram should advance to a named stage group. */
   hologramStage: "hologramStage",
+  /**
+   * A blueprint just became visible for the first time this lesson. Payload:
+   * { family, stage, distanceM, anchored, text }. Emitted by HologramPresenter.
+   *
+   * Exists because of the project's own rule about world content: ground
+   * geometry may sit outside a level gaze ONLY if the HUD says where to look.
+   * The StatusBar renders `text`; silence is the failure mode, not the
+   * placement.
+   */
+  hologramShown: "hologramShown",
   /** Countdown / duration tick for GaugeTimer. */
   timerTick: "timerTick",
   /** A checklist item was ticked or cleared. */

@@ -210,7 +210,7 @@ placed against real terrain, not the head.
 | `WorldRoot/ZoneWidget/ZoneRect` | Rectangular form; group of four edges | `stepChanged` |
 | `WorldRoot/ZoneWidget/ZoneRect/Edge_N,_S,_E,_W` | The four sides of the rect outline | `stepChanged` |
 | `WorldRoot/CompassRose` | Ground compass for orientation and "walk that way" cues | `distanceWarning` |
-| `WorldRoot/HologramRoot` | Container for staged blueprint holograms | `hologramStage` |
+| `WorldRoot/HologramRoot` | Container for staged blueprint holograms. **Driven by `Systems/HologramPresenter` since 2026-08-21** — before that `hologramStage` was emitted and nobody subscribed, so the nine baked stage groups had never once been enabled during a lesson | `hologramStage` |
 | `WorldRoot/HologramRoot/HologramTent` | Tent blueprint. Stage groups are **mutually exclusive** — enable one, disable the rest | `hologramStage` |
 | `…/HologramTent/S1_Footprint` | Stage 1 — ground footprint | `hologramStage` |
 | `…/HologramTent/S2_Poles` | Stage 2 — pole frame | `hologramStage` |
@@ -254,6 +254,7 @@ placed against real terrain, not the head.
 | `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
 | `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
 | `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. Its 400 cm drift guard stays as the OUTER belt-and-braces; with HudFollower's stable maths it should never fire. |
+| `Systems/HologramPresenter` | `Widgets/HologramPresenter.ts` — **the subscriber `hologramStage` never had.** Enables exactly one stage group (whole ancestor chain), anchors it, spins it slowly, runs the stage transition, and announces the first appearance. See the hologram section below for the family rule and the measured placement. |
 | `Systems/CompletionCardPresenter` | `Widgets/CompletionCardPresenter.ts` — the completion card (see the CompletionCard row). Relays a pinch on the next line as `suggestionAccepted`; the ENGINE owns what acceptance means. |
 | `Systems/JournalPresenter` | `Widgets/JournalPresenter.ts` — the session log (see the Journal row). Debug key **V** toggles via the same `menuChipSelected` the chip and voice use. |
 | `Systems/HudFollower` | `Engine/HudFollower.ts` — **owns HUDRoot's transform every frame** (replaced SIK Headlock 2026-08-21 — see the enabled/disabled table). Unconditionally stable smoothing (`1 − exp(−dt/tau)`), dt clamp, NaN rejection, Headlock-feel dead-zones, own inner drift guard against its own target, `settled N s` log lines. On `recenterRequested` it drops state and re-seeds from the live camera so it never fights HudRecenter. `logIntervalSec` > 0 turns on a 1 Hz distance-from-target diagnostic (ships 0). |
@@ -303,7 +304,7 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `menuSelected` · `campChanged` · `introStateChanged` · `menuChipSelected` ·
 `trailStateChanged` · `navigateRequested` · `navigateUpdated` · `campReached` ·
 `recenterRequested` · `hazardsDetected` · `suggestionAccepted` ·
-`journalStateChanged`
+`journalStateChanged` · `hologramShown`
 
 ### next_suggestion — built, gated, REVERTED at the wire (2026-08-21)
 
@@ -359,6 +360,78 @@ fixture's time-based reveal makes the accepted-point tally vary with frame
 timing — measured 344-387 across sessions (the "381 points" in older log
 entries is one session's reading, not a contract). Never assert an exact
 count in a test; assert the site/warning/hazard outcomes above.
+
+### Holograms — family inference, and the measured placement
+
+**The plan never says tent or fire.** It carries `{stage:int}` and nothing
+else, and that is deliberate: `lesson-system-prompt.txt` + `LessonSchema.ts`
+stay byte-identical to HEAD. `HologramPresenter` therefore infers the family
+ONCE per lesson at `lessonStarted`, from the **originating request text plus
+the plan's title**, by calling `inferLessonKind()` — the VALIDATOR'S OWN
+function, not a copy, because the validator already used it to decide which
+stage range to accept. A private reimplementation could disagree with the
+range check that already ran and draw a fire stage inside a tent lesson.
+
+- Neither matches → **no hologram at all**, plus a log line. A confidently
+  wrong blueprint is worse than none — the same rule as degrading a broken
+  companion to null.
+- An out-of-range stage is **dropped, never clamped**.
+- The request text is **consumed** at `lessonStarted`. Leaving it set let the
+  next lesson inherit it: measured live, loading the purify-water fixture
+  straight after a campfire lesson inferred `fire` and would have drawn a fire
+  blueprint over a water lesson.
+
+**Placement is measured, not guessed** (`logMeasurements` prints the world AABB
+and the angle it subtends every time a stage appears; the wireframes are
+MeshBuilder output, so editor-side bounds report only the placeholder mesh and
+the measurement has to be taken from inside the Lens). The display is a
+RECTANGLE, so the test is per-axis against ±16-18°, not a Euclidean cone.
+
+| Stage (tent) | AABB at scale 1.3 | yaw | pitch | verdict at 6.05 m |
+|---|---|---|---|---|
+| S1 footprint | 117 x 1 x 143 cm | ±7.0° | −13.0..−10.0° | fits |
+| S3 canopy | 173 x 81 x 157 cm | ±9.4° | −13.0..−3.3° | fits |
+| **S4 stakes (widest)** | **232 x 81 x 244 cm** | **±13.6°** | **−14.1..−3.1°** | **fits — the binding case** |
+| S5 complete | 224 x 92 x 205 cm | ±12.7° | −13.6..−2.3° | fits |
+
+The first pair tried (550 cm / scale 1.4) FAILED on S4 at ±18.0° yaw. Pushing
+the distance out beats shrinking, because distance improves the yaw **and** the
+ground-plane pitch, while shrinking at a fixed distance leaves the pitch where
+it was. Shipping pair: **600 cm, scale 1.3**, worst axis ~14° with ~2° of
+margin, confirmed in `hologram-tent-stage1/3/5.jpg` at level gaze.
+
+**The anchored case deliberately breaks that budget.** A lesson started from a
+site marker anchors to the surveyed position (~3.6 m in the fixtures), which at
+1.2 m eye height sits ~18° below a level gaze — outside the window. That is the
+correct trade (the blueprint belongs on the ground the survey rated) and it is
+exactly what the announcement exists for: `hologramShown` puts
+`LOOK DOWN · BLUEPRINT ON YOUR SITE` on the StatusBar's second line for
+`holoCueHoldSec`. Keep that copy under ~34 characters — the first draft was 46
+and ran off both edges of the display.
+
+**Transitions are timeboxed and have an explicit off switch.** A stage change
+runs the CRT shader's own `wipeProgress` 0→1 (wipeAxis 0 = local Y, so the
+blueprint redraws from the ground up) plus a glow surge decaying over the same
+window — the same machinery the boot intro uses, no new geometry.
+`enableTransitions` off = hard stage switching, which is a complete shippable
+behaviour. Fire's last stage additionally runs a flame loop: the shared
+material goes warm amber with a pulsing glow (`hologram-fire-flame-stage4.jpg`).
+
+**One material, nine stages.** The presenter clones `CRT_HologramWire` once and
+assigns the clone to all nine visuals, so the runtime wipe/glow/flame writes
+cannot bleed into anything else while the "one field re-tints the whole
+hologram" property survives.
+
+**`ModeRouter` now shows WorldRoot in COMPLETE** so the finished blueprint
+stays standing under the completion card instead of being blanked at the exact
+moment the lesson succeeds (`hologram-complete-standing.jpg`).
+
+> **A real "pitch a tent" plan uses exactly ONE hologram step (stage 3).** The
+> full 1→5 walk, the back-step check and the stage 1/3/5 captures are therefore
+> driven by `Assets/AI/fixtures/lesson-tent-STAGING-TEST-stages-1-5.json` — a
+> hand-built STAGING TEST INPUT, not demo content, and not wired to a debug key
+> by default. Campfire plans use three (stages 2, 3, 4), so a live fire lesson
+> does reach the flame on its own.
 
 ### NAVIGATE — a mode, not a companion
 

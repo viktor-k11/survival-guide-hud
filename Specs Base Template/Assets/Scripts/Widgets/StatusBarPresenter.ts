@@ -150,6 +150,11 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
   @input @hint("Copy shown on the keyboard affordance.") private keyboardToggleLabel: string = "TYPE";
 
+  @input
+  @widget(new SliderWidget(2, 20, 1))
+  @hint("How long the hologram's 'look down' cue holds. World content outside a level gaze is only allowed if this line appears — see Docs/SCENE-MAP.md.")
+  private holoCueHoldSec: number = 7;
+
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Waiting for the voice</span>')
   @ui.label('<span style="color: #94A3B8; font-size: 11px;">Synthesis measures 6.5-18.6 s. The step is readable the instant it arrives — text has never waited on audio — but the line under it used to sit blank for that whole window, which reads as "it did not hear me". This is what fills it.</span>')
@@ -181,6 +186,9 @@ export class StatusBarPresenter extends BaseScriptComponent {
   private busyRemaining: number = 0;
   private qaAnswer: string = "";
   private qaRemaining: number = 0;
+  /** The hologram's first-appearance cue, and how long it still has to run. */
+  private holoCue: string = "";
+  private holoRemaining: number = 0;
   private speaking: boolean = false;
   /** The user is owed a voice line that has not arrived yet. */
   private narrationPending: boolean = false;
@@ -256,6 +264,13 @@ export class StatusBarPresenter extends BaseScriptComponent {
     eventBus.subscribe(Events.stepChanged, () => {
       this.qaAnswer = "";
       this.qaRemaining = 0;
+    });
+    // "Look down" — the one line that keeps ground content from being invisible
+    // by silence. Held long enough to read, then it gets out of the way.
+    eventBus.subscribe(Events.hologramShown, (p: { text: string }) => {
+      this.holoCue = p && p.text ? p.text : "";
+      this.holoRemaining = this.holoCue.length > 0 ? this.holoCueHoldSec : 0;
+      this.applyWarning();
     });
     eventBus.subscribe(Events.narrationStateChanged, (p: { speaking: boolean; pending: boolean }) => {
       this.speaking = !!(p && p.speaking);
@@ -395,6 +410,11 @@ export class StatusBarPresenter extends BaseScriptComponent {
     } else if (this.qaRemaining > 0 && this.qaAnswer.length > 0) {
       setText(this.tickerText, this.qaAnswer);
       if (this.theme) setTextColor(this.tickerText, this.theme.accentAmber, this.theme.glowIntensity);
+    } else if (this.holoRemaining > 0 && this.holoCue.length > 0) {
+      // Below a Q&A answer on purpose: an answer to a question the user just
+      // asked outranks a cue about something already on the ground.
+      setText(this.tickerText, this.holoCue);
+      if (this.theme) setTextColor(this.tickerText, this.theme.accentAmber, this.theme.glowIntensity);
     } else {
       setText(this.tickerText, "");
     }
@@ -506,6 +526,17 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.qaRemaining -= dt;
       if (this.mode === "LESSON" && this.activeWarning().length === 0) {
         setText(this.tickerText, this.qaRemaining > 0 ? this.qaAnswer : "");
+        if (this.theme) setTextColor(this.tickerText, this.theme.accentAmber, this.theme.glowIntensity);
+      }
+    }
+
+    // The hologram cue runs on its own clock, and yields to a warning or a
+    // live Q&A answer rather than fighting them for the line.
+    if (this.holoRemaining > 0) {
+      this.holoRemaining -= dt;
+      const clear = this.activeWarning().length === 0 && !(this.qaRemaining > 0 && this.qaAnswer.length > 0);
+      if (this.mode === "LESSON" && clear) {
+        setText(this.tickerText, this.holoRemaining > 0 ? this.holoCue : "");
         if (this.theme) setTextColor(this.tickerText, this.theme.accentAmber, this.theme.glowIntensity);
       }
     }

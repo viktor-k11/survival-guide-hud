@@ -7100,6 +7100,7 @@
     - !<own> 0cb2ba09-61ca-4ad2-8770-3e0de5cdfcac
     - !<own> 6d7ca2df-2839-4525-95e4-36a61c512bec
     - !<own> ea39448a-0dc0-4552-9d50-a332c72a31fe
+    - !<own> 9cdd8fc8-8cb5-42a9-9b76-6ffbfa0f7a43
   Components:
     []
 - !<SceneObject/55e380f3-d46b-4965-8c0e-b01788ebb0a9>
@@ -12911,6 +12912,21 @@
   ScriptTypes:
     "":
       {}
+- !<SceneObject/9cdd8fc8-8cb5-42a9-9b76-6ffbfa0f7a43>
+  PrefabRemaps:
+    []
+  Name: HologramPresenter
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> b758b66e-e8fc-4dc6-a1fa-1b253d568705
 - !<SceneObject/9d2e2ad0-5b8e-4f28-a7e2-2d13e6c61dda>
   PrefabRemaps:
     []
@@ -14819,6 +14835,47 @@
     - !<own> 5e3390cb-debc-4b09-aad2-d9b6712b98a9
   Components:
     []
+- !<ScriptComponent/b758b66e-e8fc-4dc6-a1fa-1b253d568705>
+  PrefabRemaps:
+    []
+  Name: HologramPresenter
+  Enabled: true
+  ScriptAsset: !<reference> 4608770f-d012-443c-a6e3-9fe82115b62e
+  ScriptInputsDefault:
+    rotationDegPerSec: true
+    enableTransitions: true
+    wipeSec: true
+    glowSurge: true
+    enableFlameLoop: true
+    flameHz: true
+    flameAmplitude: true
+    logMeasurements: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      theme: !<MappingBased.AssignableType_1> c1692b36-dfd7-4eaf-b562-194fa4988a33
+      hologramRoot: !<reference.SceneObject> 928816a5-9ee5-4a10-af04-572f25334a9e
+      tentGroup: !<reference.SceneObject> 03410edd-3579-4204-a4b1-820131f67338
+      fireGroup: !<reference.SceneObject> 7d38e26c-8057-4165-94fe-51fcbe6e8b56
+      cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
+      distanceCm: !<float> 600.000000
+      hologramScale: 1.300000
+      rotationDegPerSec: !<float> 8.000000
+      enableTransitions: true
+      wipeSec: 0.550000
+      glowSurge: 2.600000
+      enableFlameLoop: true
+      flameHz: 2.600000
+      flameAmplitude: 0.550000
+      cueFormat: "LOOK DOWN · BLUEPRINT {D} M AHEAD"
+      cueAnchored: LOOK DOWN · BLUEPRINT ON YOUR SITE
+      logMeasurements: true
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/b7790bcf-d551-481e-b2d6-77b22b2fd8b5>
   PrefabRemaps:
     []
@@ -17163,6 +17220,7 @@
     qaHoldSec: true
     qaWrapChars: true
     keyboardToggleLabel: true
+    holoCueHoldSec: true
     voicePendingHint: true
     navBearingHint: true
     navTrailHint: true
@@ -17207,6 +17265,7 @@
       qaHoldSec: !<float> 9.000000
       qaWrapChars: !<float> 46.000000
       keyboardToggleLabel: TYPE
+      holoCueHoldSec: !<float> 7.000000
       voicePendingHint: VOICE INCOMING
       navBearingHint: FOLLOW THE ARROW — SAY STOP TO EXIT
       navTrailHint: FOLLOW THE STAKES — SAY STOP TO EXIT

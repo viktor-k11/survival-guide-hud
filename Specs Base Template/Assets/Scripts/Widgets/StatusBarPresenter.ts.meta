@@ -33,6 +33,7 @@
     compilingLines: false
     finalizingHint: false
     hintText: false
+    holoCueHoldSec: false
     iconMaterial: false
     idleHint: false
     keyboardToggle: false
@@ -102,6 +103,7 @@
       qaHoldSec: !<float> 9.000000
       qaWrapChars: !<float> 46.000000
       keyboardToggleLabel: TYPE
+      holoCueHoldSec: !<float> 7.000000
       voicePendingHint: VOICE INCOMING
       navBearingHint: FOLLOW THE ARROW — SAY STOP TO EXIT
       navTrailHint: FOLLOW THE STAKES — SAY STOP TO EXIT
@@ -146,6 +148,7 @@
     - '// @input float qaHoldSec = 9 {"hint":"How long a spoken answer stays up AFTER its voice has finished. The clock does not start while the answer is still being synthesized or spoken — otherwise the text expires before the sentence is said.", "widget":"slider", "min":2, "max":20, "step":1}'
     - '// @input float qaWrapChars = 46 {"hint":"Characters per line for the answer. World-space Text has no width to wrap against."}'
     - '// @input string keyboardToggleLabel = "TYPE" {"hint":"Copy shown on the keyboard affordance."}'
+    - "// @input float holoCueHoldSec = 7 {\"hint\":\"How long the hologram's 'look down' cue holds. World content outside a level gaze is only allowed if this line appears — see Docs/SCENE-MAP.md.\", \"widget\":\"slider\", \"min\":2, \"max\":20, \"step\":1}"
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Waiting for the voice</span>"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Synthesis measures 6.5-18.6 s. The step is readable the instant it arrives — text has never waited on audio — but the line under it used to sit blank for that whole window, which reads as \"it did not hear me\". This is what fills it.</span>"}'

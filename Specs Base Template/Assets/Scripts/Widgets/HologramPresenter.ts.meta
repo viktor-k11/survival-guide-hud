@@ -1,0 +1,111 @@
+- !<AssetImportMetadata/ea2f87d4-c60e-46c3-9215-20c2ec932621>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 4608770f-d012-443c-a6e3-9fe82115b62e
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 4608770f-d012-443c-a6e3-9fe82115b62e
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 50603562-c934-400f-b5a1-2a5815dd9c31
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/50603562-c934-400f-b5a1-2a5815dd9c31>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 32bf5938-5968-4e26-8e7b-4bb20e6a30e2
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    cameraObject: false
+    cueAnchored: false
+    cueFormat: false
+    distanceCm: false
+    enableFlameLoop: false
+    enableLogging: false
+    enableTransitions: false
+    fireGroup: false
+    flameAmplitude: false
+    flameHz: false
+    glowSurge: false
+    hologramRoot: false
+    hologramScale: false
+    logMeasurements: false
+    rotationDegPerSec: false
+    tentGroup: false
+    theme: false
+    wipeSec: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      hologramRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      tentGroup: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      fireGroup: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      distanceCm: !<float> 550.000000
+      hologramScale: 1.400000
+      rotationDegPerSec: !<float> 8.000000
+      enableTransitions: true
+      wipeSec: 0.550000
+      glowSurge: 2.600000
+      enableFlameLoop: true
+      flameHz: 2.600000
+      flameAmplitude: 0.550000
+      cueFormat: "BLUEPRINT ON THE GROUND · {D} M AHEAD — LOOK DOWN"
+      cueAnchored: "BLUEPRINT ON THE MARKED SITE · {D} M — LOOK DOWN"
+      logMeasurements: true
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Stage groups are found by name prefix (S1.., S2..) under each family, so the contract is Docs/SCENE-MAP.md rather than nine inspector slots.</span>"}'
+    - '// @input SceneObject hologramRoot {"hint":"WorldRoot/HologramRoot"}'
+    - '// @input SceneObject tentGroup {"hint":"WorldRoot/HologramRoot/HologramTent"}'
+    - '// @input SceneObject fireGroup {"hint":"WorldRoot/HologramRoot/HologramFire"}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object — used for the un-anchored placement and for the distance in the announcement line."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Placement — measured, see Docs/SCENE-MAP.md</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Distance and scale trade against each other against the ±16-18° display window. These defaults are the measured pair; changing one means re-measuring the other.</span>"}'
+    - '// @input float distanceCm = 600 {"hint":"How far ahead a VOICE-started lesson puts its blueprint, centimetres. MEASURED pair with hologramScale — see the note below; moving one means re-reading the MEASURED log line for the WIDEST stage, which is tent S4 (the stakes splay well outside the canopy).", "widget":"slider", "min":200, "max":900, "step":10}'
+    - '// @input float hologramScale = 1.3 {"hint":"Uniform scale of the blueprint. Pushing distance out beats shrinking: distance improves the yaw AND the pitch, while shrinking at a fixed distance leaves the ground-plane pitch where it was.", "widget":"slider", "min":0.4, "max":3, "step":0.05}'
+    - '// @input float rotationDegPerSec = 8 {"hint":"Auto-rotation, degrees per second about Y. Slow on purpose — it must never pull the eye off the step text. 0 disables it.", "widget":"slider", "min":0, "max":45, "step":1}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Transitions — timeboxed</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Stages matter; transitions do not. Turn this off and the presenter hard-switches stages with no animation, which is a complete and shippable behaviour.</span>"}'
+    - '// @input bool enableTransitions = true {"hint":"OFF = hard stage switching, no animation. The explicit fallback."}'
+    - "// @input float wipeSec = 0.55 {\"hint\":\"Seconds for the reassembly wipe (the shader's own wipeProgress, wipeAxis 0 = local Y: the blueprint draws itself from the ground up).\", \"widget\":\"slider\", \"min\":0.15, \"max\":2, \"step\":0.05}"
+    - '// @input float glowSurge = 2.6 {"hint":"Glow multiplier at the instant a stage changes, decaying back to the authored value across wipeSec.", "widget":"slider", "min":1, "max":6, "step":0.1}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Fire — final stage flame loop</span>"}'
+    - "// @input bool enableFlameLoop = true {\"hint\":\"Loop a bright saturated flame treatment on the fire family's last stage.\"}"
+    - '// @input float flameHz = 2.6 {"hint":"Flame flicker rate, Hz.", "widget":"slider", "min":0.5, "max":6, "step":0.1}'
+    - '// @input float flameAmplitude = 0.55 {"hint":"Flame glow swing either side of the base glow.", "widget":"slider", "min":0, "max":1.5, "step":0.05}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Announcement</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Project rule: world content outside a level gaze is only allowed if the HUD SAYS where to look. Silence is the failure mode, not the placement.</span>"}'
+    - '// @input string cueFormat = "LOOK DOWN · BLUEPRINT {D} M AHEAD" {"hint":"First-appearance cue. {D} = distance in metres. Keep it under ~34 characters or it runs off the display."}'
+    - '// @input string cueAnchored = "LOOK DOWN · BLUEPRINT ON YOUR SITE" {"hint":"Cue used when the lesson is anchored to a surveyed site."}'
+    - "// @input bool logMeasurements = true {\"hint\":\"Log the blueprint's measured world AABB and the angle it subtends from the camera, every time a stage appears. This is how the distance/scale pair was chosen — the ±16-18° display window is the constraint, and guessing at it is what put the whole HUD off-screen once already.\"}"
+    - // @input bool enableLogging = true

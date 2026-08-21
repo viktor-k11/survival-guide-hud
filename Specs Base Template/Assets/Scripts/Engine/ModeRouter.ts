@@ -70,7 +70,12 @@ export class ModeRouter extends BaseScriptComponent {
       world = false;
     } else if (mode === "COMPLETE") {
       hud = true;
-      world = false;
+      // WorldRoot stays UP through COMPLETE (changed 2026-08-21): the last
+      // hologram stage — the finished tent, the lit fire — is the payoff frame
+      // the completion card sits over. Blanking the world at the exact moment
+      // the lesson succeeds threw away the one picture worth keeping. Contents
+      // are individually disabled, so this shows only what a presenter placed.
+      world = true;
     }
 
     if (this.hudRoot) this.hudRoot.enabled = hud;

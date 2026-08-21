@@ -3308,3 +3308,85 @@ Also: journal/card ship disabled per hard rule 1 (checker clean, DEMO_ENV
 back to disabled after an unexplained editor-side re-enable — disk was never
 dirty), `AiPreviewAgent Handler` re-injected by the runtime query tool and
 deleted AGAIN before commit.
+
+## Prompt — holograms finally render (HologramPresenter)
+
+> Holograms are emitted but never rendered. LessonEngine fires hologramStage;
+> nobody subscribes. [1] Widgets/HologramPresenter — mutually exclusive stage
+> groups, enable the whole ancestor chain. Infer the family ONCE from title +
+> request; do NOT add a schema/prompt field; neither matches = NO hologram;
+> out-of-range = dropped, not clamped. [2] Anchor at the site when there is
+> one, else ahead of the user; expose distance + scale, MEASURE the subtended
+> angle and confirm in a capture — say which you sacrificed if it cannot both
+> fit and read. Slow auto-rotation. [3] Transitions TIMEBOXED: cross-fade +
+> glow surge + reassembly, flame VFX on fire's last stage; if they do not come
+> together, ship HARD switching and say so. [4] The HUD must say where to look
+> the first time. [5] Verify with a real lesson: tent stages 1/3/5, a fire
+> lesson reaching flame, back-step returns, completion leaves it standing.
+
+**Built.** `Widgets/HologramPresenter.ts` on `Systems/HologramPresenter`.
+Family inferred once at `lessonStarted` by calling **the validator's own
+`inferLessonKind()`** rather than a copy — the validator already used it to
+bound the stage range, so a private reimplementation could disagree with the
+check that had just run. No schema or prompt change: `git diff` on
+`lesson-system-prompt.txt` and `LessonSchema.ts` is empty.
+
+**Placement — measured, and the first guess was wrong.** `logMeasurements`
+prints the stage's world AABB and its subtended angle on every appearance;
+the wireframes are MeshBuilder output so editor bounds report only the
+placeholder mesh — the measurement had to be taken from inside the Lens
+(`worldAabbMin` is not usable here either; it falls back to the mesh AABB
+through the world transform). Also: the display is a RECTANGLE, so the test
+is per-axis, not a Euclidean cone — a corner at (7.6°, 14.2°) is inside a
+±16° window even though its diagonal is 16.1°.
+
+| pair | S1 | S3 | S4 (widest) | S5 | verdict |
+|---|---|---|---|---|---|
+| 550 cm / 1.4 | ±7.6° | — | **±18.0° yaw** | ±17.1° | **FAIL on S4** |
+| **600 cm / 1.3** | ±7.0° | ±9.4° | **±13.6°, pitch −14.1°** | ±12.7° | ships |
+
+Distance beats scale: pushing out improves yaw AND the ground-plane pitch,
+shrinking at a fixed distance only helps yaw. Nothing was sacrificed for the
+voice-started case. **The anchored case deliberately exceeds the budget** — a
+site at ~3.6 m sits ~18° below level gaze — and that is what the announcement
+is for. Confirmed at level gaze in `hologram-tent-stage1/3/5.jpg`.
+
+**Transitions shipped, not dropped:** the CRT shader's own `wipeProgress` 0→1
+(wipeAxis 0 = ground-up redraw) + a glow surge decaying over the same window,
+the boot-intro machinery, no new geometry. `enableTransitions` off = hard
+switching, explicit and complete. `hologram-transition-wipe.jpg` catches one
+mid-flight (wipeSec temporarily 3 s to make it catchable; ships at 0.55 s).
+Fire's final stage runs the flame loop — the whole blueprint goes warm amber
+with a pulsing glow (`hologram-fire-flame-stage4.jpg`).
+
+**Announcement:** new `hologramShown` event → StatusBar second line,
+`LOOK DOWN · BLUEPRINT 6 M AHEAD` (or `· ON YOUR SITE` when anchored), held
+7 s. The first draft was 46 characters and ran off both edges of the display
+in a capture; the instruction now leads and it fits on one line.
+
+**Verified:** real tent lesson (live Gemini) → `family=tent`; real campfire
+lesson → `family=fire`; purify water → `family=NONE — no hologram`. Stage walk
+1→5, back-step **5→4→3**, and `lessonCompleted` leaves the last stage standing
+(`hologram-complete-standing.jpg` — the lit fire under TASK COMPLETE).
+
+**Three bugs found by making it visible, none of them in the new file:**
+1. **`ModeRouter` blanked WorldRoot in COMPLETE** — the finished blueprint
+   vanished at the exact moment the lesson succeeded. Now `world = true` in
+   COMPLETE; the payoff frame is the completion card over the standing tent.
+2. **`loadFromFixture` inferred the lesson kind from the debug-key LABEL
+   alone**, while the live path uses label + title. A tent fixture loaded on
+   the "campfire" key was validated against the FIRE range, so its stage 5 was
+   dropped as out-of-range and the panel honestly reported
+   "STEP 5 · WIDGET UNAVAILABLE" for no reason a user could see. Fixed by
+   passing the fixture's own title, matching the live path.
+3. **Stale request text leaked between lessons.** `lastRequestText` was kept,
+   so a lesson with no request of its own inherited the previous one's:
+   measured, loading purify-water straight after a live campfire inferred
+   `fire` and would have drawn a fire blueprint over a water lesson. The text
+   is now CONSUMED at `lessonStarted`.
+
+**Note for the demo:** a real "pitch a tent" plan uses exactly ONE hologram
+step (stage 3), so the 1/3/5 progression and the back-step check are driven by
+`lesson-tent-STAGING-TEST-stages-1-5.json` — clearly named STAGING TEST INPUT,
+not demo content, not wired to a debug key by default. Campfire plans use three
+stages (2, 3, 4), so a live fire lesson reaches the flame on its own.

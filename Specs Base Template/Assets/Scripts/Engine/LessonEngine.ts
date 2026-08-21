@@ -652,8 +652,22 @@ export class LessonEngine extends BaseScriptComponent {
       return;
     }
 
+    // The plan's OWN TITLE is evidence, exactly as it is on the live path
+    // (LessonPlanner passes inferLessonKind(userText, title)). Passing only the
+    // debug-key label was a real bug the holograms exposed: a tent fixture
+    // loaded under the "campfire" key was validated against the FIRE stage
+    // range, so its stage 5 was dropped as out-of-range and the step rendered
+    // "WIDGET UNAVAILABLE" for no reason the user could see.
+    let fixtureTitle = "";
+    try {
+      const parsed = JSON.parse(payload);
+      if (typeof parsed.title === "string") fixtureTitle = parsed.title;
+    } catch (e) {
+      // validateLesson reports the parse failure properly a line below.
+    }
+
     // Same validator the live path uses — a fixture gets no special treatment.
-    const result = validateLesson(payload, inferLessonKind(label, ""));
+    const result = validateLesson(payload, inferLessonKind(label, fixtureTitle));
     if (!result.ok) {
       this.log("loadFromFixture(" + label + "): REJECTED — " + result.summary);
       return;
