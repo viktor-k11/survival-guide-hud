@@ -34,7 +34,7 @@
  */
 import { eventBus, Events } from "./EventBus";
 import { LessonEngine } from "./LessonEngine";
-import { LessonRequestOutcome, requestLesson } from "./LessonPlanner";
+import { LessonRequestOutcome, requestLesson, requestNextStep } from "./LessonPlanner";
 import { LessonAnchorPayload, LessonRequestFailure, MenuSelectedPayload, RequestStatePayload } from "./RequestTypes";
 import { describeDegradations } from "./LessonValidator";
 import { gatewayDropPending, gatewayStatus, GW_BACKGROUND } from "./GatewayQueue";
@@ -66,6 +66,19 @@ export class LessonCoordinator extends BaseScriptComponent {
 
   @input private waterPhrase: string = "help me purify water";
   @input private burnPhrase: string = "how do I treat a burn";
+
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">Next-step suggestion</span>')
+  @ui.label('<span style="color: #94A3B8; font-size: 11px;">A SEPARATE background call fired when a lesson completes — never a field in the lesson plan. Putting it in the lesson schema shifted lesson structure and was reverted; a second call cannot perturb the first one\'s output.</span>')
+
+  @input
+  @hint("Ask for a next-step suggestion when a lesson completes. Off = the completion card never gains a next line, and no extra call is made.")
+  private suggestNextStep: boolean = true;
+
+  @input
+  @widget(new SliderWidget(16, 200, 1))
+  @hint("Output cap for the suggestion. Deliberately far above six words: a cap tight enough to truncate is a worse bug than a long answer (see the 'If' incident in LessonPlanner).")
+  private nextStepMaxTokens: number = 60;
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Failure handling</span>')
@@ -107,6 +120,14 @@ export class LessonCoordinator extends BaseScriptComponent {
   private attempt: number = 0;
   private startedAtSec: number = 0;
   private systemPrompt: string = "";
+  private nextStepPrompt: string = "";
+  /**
+   * Generation counter for the suggestion, exactly like requestId is for a
+   * lesson: it moves on every completion AND on every new user request, so a
+   * suggestion that lands after the user has moved on drops itself instead of
+   * putting a stale line on a card that has already gone.
+   */
+  private suggestionId: number = 0;
 
   private watchdog: DelayedCallbackEvent;
   private retryTimer: DelayedCallbackEvent;
@@ -133,7 +154,16 @@ export class LessonCoordinator extends BaseScriptComponent {
   }
 
   private onStart(): void {
-    this.systemPrompt = this.loadPrompt();
+    this.systemPrompt = this.loadPrompt("lesson");
+    this.nextStepPrompt = this.loadPrompt("nextStep");
+
+    // A finished lesson is the only thing that asks for a suggestion, and it
+    // asks in the background while the user reads the completion card.
+    eventBus.subscribe(
+      Events.lessonCompleted,
+      (p: { title: string; steps: number; nextSuggestion?: string; finalStep?: string }) =>
+        this.askNextStep(p)
+    );
 
     eventBus.subscribe(Events.lessonRequested, (p: { text: string }) => {
       this.request(p ? p.text : "", null, "voice");
@@ -179,17 +209,55 @@ export class LessonCoordinator extends BaseScriptComponent {
     );
   }
 
-  private loadPrompt(): string {
+  private loadPrompt(key: string): string {
     if (!this.promptsAsset) {
       this.log("FAIL: promptsAsset not wired — every request will fail");
       return "";
     }
     try {
-      return JSON.parse(this.promptsAsset.getString()).lesson;
+      const value = JSON.parse(this.promptsAsset.getString())[key];
+      return typeof value === "string" ? value : "";
     } catch (e) {
       this.log("FAIL: could not read prompts asset: " + e);
       return "";
     }
+  }
+
+  /**
+   * Fire-and-forget suggestion request. Everything about it is allowed to fail
+   * quietly: the card renders with no next line and the lesson is unaffected.
+   */
+  private askNextStep(p: { title: string; nextSuggestion?: string; finalStep?: string }): void {
+    this.suggestionId++;
+    const id = this.suggestionId;
+
+    if (!this.suggestNextStep || this.nextStepPrompt.length === 0) return;
+    // A plan that already carries one (the dormant schema path) needs no call.
+    if (p && p.nextSuggestion && p.nextSuggestion.length > 0) return;
+
+    requestNextStep(
+      p ? p.title : "",
+      p && p.finalStep ? p.finalStep : "",
+      this.nextStepPrompt,
+      this.nextStepMaxTokens
+    ).then((outcome) => {
+      if (id !== this.suggestionId) {
+        this.log("dropping stale next-step suggestion (#" + id + " of #" + this.suggestionId + ")");
+        return;
+      }
+      if (outcome.text.length > 0) {
+        this.log('next step in ' + outcome.latencyMs + 'ms: "' + outcome.text + '"');
+      } else {
+        this.log(
+          "no next step (" + (outcome.dropped ? "dropped for a user request" : outcome.error || "none offered") + ")"
+        );
+      }
+      eventBus.emit(Events.nextStepSuggested, {
+        text: outcome.text,
+        latencyMs: outcome.latencyMs,
+        reason: outcome.dropped ? "dropped" : outcome.error,
+      });
+    });
   }
 
   // --------------------------------------------------------------- requests
@@ -222,6 +290,8 @@ export class LessonCoordinator extends BaseScriptComponent {
     const dropped = gatewayDropPending(GW_BACKGROUND, "user asked for a lesson");
     if (dropped > 0) this.log("cleared " + dropped + " queued background call(s) — " + gatewayStatus());
 
+    // A user request also retires any suggestion in flight — its card is gone.
+    this.suggestionId++;
     this.requestId++;
     this.activeText = clean;
     this.activeSource = source;

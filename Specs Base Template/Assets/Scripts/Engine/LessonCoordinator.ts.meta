@@ -34,10 +34,12 @@
     engine: false
     errorHoldSec: false
     firePhrase: false
+    nextStepMaxTokens: false
     promptsAsset: false
     requestTimeoutSec: false
     retryDelaySec: false
     slotWaitAllowanceSec: false
+    suggestNextStep: false
     tentPhrase: false
     waterPhrase: false
   ScriptTypesHidden:
@@ -55,6 +57,8 @@
       firePhrase: help me build a campfire
       waterPhrase: help me purify water
       burnPhrase: how do I treat a burn
+      suggestNextStep: true
+      nextStepMaxTokens: !<float> 60.000000
       requestTimeoutSec: !<float> 25.000000
       retryDelaySec: 0.600000
       slotWaitAllowanceSec: !<float> 45.000000
@@ -79,6 +83,11 @@
     - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Main-menu rows 2-5 are the same trick as a marker tap: a fixed phrase through the SAME generative lesson path. No fixtures, no special-casing.</span>"}'
     - '// @input string waterPhrase = "help me purify water"'
     - '// @input string burnPhrase = "how do I treat a burn"'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Next-step suggestion</span>"}'
+    - "// @ui {\"widget\":\"label\", \"label\":\"<span style=\\\"color: #94A3B8; font-size: 11px;\\\">A SEPARATE background call fired when a lesson completes — never a field in the lesson plan. Putting it in the lesson schema shifted lesson structure and was reverted; a second call cannot perturb the first one's output.</span>\"}"
+    - '// @input bool suggestNextStep = true {"hint":"Ask for a next-step suggestion when a lesson completes. Off = the completion card never gains a next line, and no extra call is made."}'
+    - "// @input float nextStepMaxTokens = 60 {\"hint\":\"Output cap for the suggestion. Deliberately far above six words: a cap tight enough to truncate is a worse bug than a long answer (see the 'If' incident in LessonPlanner).\", \"widget\":\"slider\", \"min\":16, \"max\":200, \"step\":1}"
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Failure handling</span>"}'
     - '// @input float requestTimeoutSec = 25 {"hint":"Give up on a response after this long and treat it as a network failure. A request that never resolves would otherwise leave the HUD compiling forever.", "widget":"slider", "min":5, "max":60, "step":1}'

@@ -26,6 +26,11 @@ OUT = os.path.join(AI_DIR, "prompts.generated.json")
 SOURCES = {
     "lesson": "lesson-system-prompt.txt",
     "qa": "qa-system-prompt.txt",
+    # Its OWN prompt on purpose. Folding the next-step suggestion into the
+    # lesson prompt was tried on 2026-08-21 and reverted: it shifted lesson
+    # STRUCTURE on the tasks that have no few-shot example. A separate call
+    # cannot perturb a lesson plan at all.
+    "nextStep": "next-step-prompt.txt",
 }
 
 

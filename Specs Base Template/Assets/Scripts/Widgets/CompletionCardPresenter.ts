@@ -95,6 +95,15 @@ export class CompletionCardPresenter extends BaseScriptComponent {
       Events.lessonCompleted,
       (p: { title: string; nextSuggestion?: string }) => this.show(p)
     );
+    // The suggestion is a SEPARATE background call, so it lands a few seconds
+    // after the card is already up. The card gains its next line then; an empty
+    // result simply leaves the card as it is.
+    eventBus.subscribe(Events.nextStepSuggested, (p: { text: string }) => {
+      const text = p && p.text ? p.text : "";
+      if (text.length === 0 || !this.card || !this.card.enabled) return;
+      this.setNextLine(text);
+      this.log('next line arrived: "' + text + '"');
+    });
     // ANY exit from COMPLETE retires the card — accept, decline, dwell, stop.
     eventBus.subscribe(Events.modeChanged, (p: { to: string }) => {
       if (!p || p.to !== "COMPLETE") setEnabled(this.card, false);
@@ -125,6 +134,18 @@ export class CompletionCardPresenter extends BaseScriptComponent {
       setTextColor(this.nextLine, theme.accentAmber, theme.glowIntensity);
       setTextColor(this.hintLine, theme.dimColor, theme.glowIntensity * 0.7);
     }
-    this.log("shown" + (this.hasSuggestion ? ' with suggestion "' + suggestion + '"' : " (no suggestion)"));
+    this.log("shown" + (this.hasSuggestion ? ' with suggestion "' + suggestion + '"' : " (waiting for a suggestion)"));
+  }
+
+  /** Adds (or replaces) the card's next line once a suggestion is in hand. */
+  private setNextLine(suggestion: string): void {
+    this.hasSuggestion = true;
+    setEnabled(this.nextLineRoot, true);
+    setText(this.nextLine, this.nextPrefix + suggestion.toUpperCase());
+    setText(this.hintLine, this.hintWithNext);
+    if (this.theme) {
+      setTextColor(this.nextLine, this.theme.accentAmber, this.theme.glowIntensity);
+      setTextColor(this.hintLine, this.theme.dimColor, this.theme.glowIntensity * 0.7);
+    }
   }
 }

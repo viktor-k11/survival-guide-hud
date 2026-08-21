@@ -25,7 +25,7 @@
  * blame the model for our own queuing.
  */
 import { Gemini } from "RemoteServiceGateway.lspkg/HostedExternal/Gemini";
-import { gatewaySubmit, GW_USER } from "./GatewayQueue";
+import { gatewaySubmit, gatewayWasDropped, GW_BACKGROUND, GW_USER } from "./GatewayQueue";
 import { GeminiTypes } from "RemoteServiceGateway.lspkg/HostedExternal/GoogleGenAITypes";
 import { GEMINI_MODEL } from "./RsgModels";
 import { LESSON_RESPONSE_SCHEMA } from "./LessonSchema";
@@ -146,6 +146,135 @@ function safeTitle(payload: string): string {
   } catch (e) {
     return "";
   }
+}
+
+// ------------------------------------------------------- next-step suggestion
+
+export interface NextStepOutcome {
+  /** The phrase, ready to render AND to submit verbatim as a request. "" = none. */
+  text: string;
+  latencyMs: number;
+  ok: boolean;
+  /** "" when ok; otherwise why — including "dropped" when a user request cleared it. */
+  error: string;
+  /** True when gatewayDropPending binned it because the user asked for something. */
+  dropped: boolean;
+}
+
+/**
+ * One short phrase naming the task that follows a finished lesson.
+ *
+ * ## Why this is a SEPARATE CALL and not a lesson-plan field
+ *
+ * The field was tried inside the lesson schema + prompt on 2026-08-21 and
+ * REVERTED by the regression gate: it shifted lesson structure at temperature 0
+ * on exactly the tasks that have no few-shot example ("purify water" lost a
+ * step, "treat a burn" gained one and lost every companion), while the two
+ * anchored tasks returned their few-shot suggestions verbatim. The diagnosis
+ * was the fix: a second call cannot perturb the first one's output at all, and
+ * `lesson-system-prompt.txt` / `LessonSchema.ts` stay byte-identical to HEAD.
+ *
+ * ## The rules this call lives by
+ *
+ * - **GW_BACKGROUND.** Nothing is waiting on it. A lesson request or a Q&A
+ *   answer takes the slot first, and `gatewayDropPending` bins this outright —
+ *   a user asking for something must never queue behind a suggestion.
+ * - **thinkingBudget 0.** gemini-2.5-flash draws thinking tokens from
+ *   maxOutputTokens; leaving it on is what once reduced an answer to the single
+ *   word "If". The cap is set generously above six words for the same reason:
+ *   a cap tight enough to truncate is a worse bug than a long answer, and
+ *   brevity is the prompt's job.
+ * - **Failure is silence.** Dropped, timed out, empty, "NONE", or too long all
+ *   return `text: ""`, and the card simply has no next line.
+ */
+export function requestNextStep(
+  lessonTitle: string,
+  finalStepInstruction: string,
+  systemPrompt: string,
+  maxTokens: number
+): Promise<NextStepOutcome> {
+  const context =
+    "Task just finished: " + (lessonTitle || "(unknown)") +
+    "\nIts final step: " + (finalStepInstruction || "(none)");
+
+  const request: GeminiTypes.Models.GenerateContentRequest = {
+    model: GEMINI_MODEL,
+    type: "generateContent",
+    body: {
+      systemInstruction: { parts: [{ text: systemPrompt }] },
+      contents: [{ parts: [{ text: context }], role: "user" }],
+      generationConfig: {
+        temperature: 0,
+        maxOutputTokens: maxTokens,
+        thinkingConfig: { thinkingBudget: 0 },
+      },
+    },
+  };
+
+  let t0 = nowMs();
+
+  return gatewaySubmit({
+    label: "nextStep",
+    priority: GW_BACKGROUND,
+    onDispatch: () => {
+      t0 = nowMs();
+    },
+    run: () => Gemini.models(request),
+  })
+    .then((response) => {
+      const latencyMs = Math.round(nowMs() - t0);
+      let text = "";
+      try {
+        text = response.candidates[0].content.parts[0].text;
+      } catch (e) {
+        text = "";
+      }
+      return {
+        text: cleanSuggestion(text),
+        latencyMs: latencyMs,
+        ok: true,
+        error: "",
+        dropped: false,
+      };
+    })
+    .catch((error) => {
+      const dropped = gatewayWasDropped(error);
+      return {
+        text: "",
+        latencyMs: Math.round(nowMs() - t0),
+        ok: false,
+        error: dropped ? "dropped" : String(error),
+        dropped: dropped,
+      };
+    });
+}
+
+/**
+ * Normalises the model's line into something renderable, or "" for none.
+ * Strips quotes/trailing punctuation the prompt asked it not to emit anyway,
+ * and refuses anything over the word budget rather than showing a sentence
+ * where a phrase belongs.
+ */
+function cleanSuggestion(raw: string): string {
+  let s = (raw || "").trim();
+  if (s.length === 0) return "";
+  // One line only; the model occasionally adds a second.
+  const nl = s.indexOf("\n");
+  if (nl >= 0) s = s.substring(0, nl).trim();
+  // Strip wrapping quotes and a trailing full stop.
+  while (s.length > 1 && (s.charAt(0) === '"' || s.charAt(0) === "'")) s = s.substring(1).trim();
+  while (s.length > 1 && (s.charAt(s.length - 1) === '"' || s.charAt(s.length - 1) === "'")) {
+    s = s.substring(0, s.length - 1).trim();
+  }
+  while (s.length > 1 && (s.charAt(s.length - 1) === "." || s.charAt(s.length - 1) === "!")) {
+    s = s.substring(0, s.length - 1).trim();
+  }
+  if (s.length === 0) return "";
+  if (s.toUpperCase() === "NONE") return "";
+  // Word budget is six; allow one over before giving up, then refuse.
+  const words = s.split(" ");
+  if (words.length > 7 || s.length > 60) return "";
+  return s;
 }
 
 // ------------------------------------------------------------------- Q&A

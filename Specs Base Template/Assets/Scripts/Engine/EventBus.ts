@@ -45,6 +45,17 @@ export const Events = {
    */
   lessonCompleted: "lessonCompleted",
   /**
+   * A next-step suggestion arrived (or definitively did not). Payload:
+   * { text, latencyMs, reason }. `text: ""` means none — dropped, failed,
+   * empty, or the model said NONE — and the card simply keeps no next line.
+   *
+   * Emitted by LessonCoordinator from a SEPARATE background Gemini call fired
+   * when a lesson completes, never from the lesson plan itself: putting the
+   * field in the lesson schema shifted lesson structure and was reverted (see
+   * LessonPlanner.requestNextStep).
+   */
+  nextStepSuggested: "nextStepSuggested",
+  /**
    * The user ACCEPTED the completion card's next-step suggestion (pinch on the
    * card; voice goes straight to the engine). Payload: { source }. The engine
    * owns what acceptance means: it emits `lessonRequested` with the suggestion

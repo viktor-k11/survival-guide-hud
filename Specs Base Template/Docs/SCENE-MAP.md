@@ -306,7 +306,46 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `recenterRequested` · `hazardsDetected` · `suggestionAccepted` ·
 `journalStateChanged` · `hologramShown`
 
-### next_suggestion — built, gated, REVERTED at the wire (2026-08-21)
+### next_suggestion — SHIPPED as its own call (2026-08-21, second attempt)
+
+The reverted attempt below diagnosed the problem precisely: adding the field
+perturbed the tasks WITHOUT a few-shot example while the anchored ones returned
+their examples verbatim. The fix was therefore not a better prompt but a
+**separate call**, which cannot perturb a lesson plan at all.
+
+- `Assets/AI/next-step-prompt.txt` (a third entry in `prompts.generated.json`
+  alongside `lesson` and `qa`): given the finished task's title and its final
+  step, return at most six words naming the next task, or `NONE`.
+- `LessonPlanner.requestNextStep()` — temperature 0, `thinkingBudget: 0`
+  (2.5-flash draws thinking tokens from `maxOutputTokens`; leaving it on is
+  what once reduced an answer to the word "If"), cap 60 tokens, far above six
+  words on purpose. `cleanSuggestion()` strips quotes/full stops and refuses
+  anything over seven words or 60 characters.
+- **GW_BACKGROUND**, fired by `LessonCoordinator` on `lessonCompleted` while
+  the user reads the card. A user request calls `gatewayDropPending` and bins
+  it; a `suggestionId` generation counter drops anything that lands after the
+  card is gone. Failure, timeout, drop, empty and `NONE` are all "no line".
+- The card gains the line late (`nextStepSuggested` → `CompletionCardPresenter`
+  adds it; the engine arms `pendingSuggestion` so "yes"/pinch still accept it).
+  Three dwells: `suggestionDwellSec` 14 s once a line is on the card,
+  `suggestionWaitSec` 11 s while one may still arrive, `completeReturnDelaySec`
+  4 s when the answer is a definite none — a failed call costs no extra wait.
+- **`LessonSchema.ts` and `lesson-system-prompt.txt` remain byte-identical to
+  HEAD**, verified with `git diff` before the commit.
+
+Measured live: "Pitch a Tent" → *"Gather firewood for the night"* (dispatched
+after 6.5 s of queue, 10.3 s call); "Purify Water" → *"Find more water
+sources"*. Four-phrase gate re-run and **passed** — see the log entry.
+
+> **The queue is the thing to watch, not the model.** A suggestion fired while
+> the boot TTS pre-warms are still running waited **20.6 s** for the slot and
+> arrived long after the card had gone (correctly dropped by the generation
+> counter). On the live path this does not happen, because a lesson request
+> already drops pending background work before it runs — but it is why the
+> wait window exists and why the suggestion must never be something the card
+> depends on.
+
+### next_suggestion — the FIRST attempt, reverted at the wire (kept for the record)
 
 The plan-level `next_suggestion` field (a short phrase that reads as a
 suggestion AND works verbatim as a request) was added to the schema + prompt +
@@ -320,10 +359,11 @@ prompt/schema were reverted per the gate's own rule. (The control also showed
 "how do I signal for rescue" drifting from baseline with NO change at all —
 that phrase is unstable upstream and cannot gate anything.)
 
-What ships: the ENTIRE downstream pipeline — validator parse, engine COMPLETE
-handling with local accept/decline phrases, the completion card, the
-`suggestionAccepted` seam — live but DORMANT, because the structured-output
-filter strips fields the schema does not declare. It is exercised end-to-end by
+What shipped from that attempt: the ENTIRE downstream pipeline — validator
+parse, engine COMPLETE handling with local accept/decline phrases, the
+completion card, the `suggestionAccepted` seam — live but dormant. **It is no
+longer dormant: the separate call above feeds it**, and the schema path is
+still supported (a plan carrying `nextSuggestion` skips the call). It is exercised end-to-end by
 `Assets/AI/fixtures/lesson-campfire-DOCTORED-next-suggestion.json` (the
 campfire envelope with the field hand-injected — clearly named, wired to debug
 key C), and accepting the fixture's suggestion fires a REAL Gemini lesson for

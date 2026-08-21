@@ -43,6 +43,7 @@
     navigateLine: false
     shortUtteranceMaxWords: false
     suggestionDwellSec: false
+    suggestionWaitSec: false
     waterFixture: false
   ScriptTypesHidden:
     {}
@@ -55,6 +56,7 @@
   DefaultScriptInputs:
     - completeReturnDelaySec: !<float> 4.000000
       suggestionDwellSec: !<float> 14.000000
+      suggestionWaitSec: !<float> 11.000000
       shortUtteranceMaxWords: !<float> 4.000000
       navigateLine: HEAD FOR CAMP — WATCH THE DISTANCE READOUT ON ROW SIX
       followTrailLine: Follow the stakes back. They are your own footsteps.
@@ -76,7 +78,8 @@
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Behaviour</span>"}'
     - '// @input float completeReturnDelaySec = 4 {"hint":"Seconds to sit in COMPLETE before returning to IDLE."}'
-    - '// @input float suggestionDwellSec = 14 {"hint":"Seconds to sit in COMPLETE when the plan carries a next-step suggestion — the user needs time to read it and answer. It NEVER auto-starts; the dwell ending just returns to IDLE."}'
+    - '// @input float suggestionDwellSec = 14 {"hint":"Seconds to sit in COMPLETE when a next-step suggestion is ON the card — the user needs time to read it and answer. It NEVER auto-starts; the dwell ending just returns to IDLE."}'
+    - "// @input float suggestionWaitSec = 11 {\"hint\":\"Seconds to hold the completion card while a next-step suggestion may still arrive (the coordinator's background call takes a few seconds). A definite 'none' cuts this short immediately, so a failed call costs nothing.\"}"
     - "// @input float shortUtteranceMaxWords = 4 {\"hint\":\"A bare command word ('next', 'check') only counts as navigation in an utterance this short. Longer ones are treated as questions.\"}"
     - '// @input string navigateLine = "Head for camp. Follow the arrow." {"hint":"Spoken on entering NAVIGATE in bearing mode (menu row 6 / voice)."}'
     - '// @input string followTrailLine = "Follow the stakes back. They are your own footsteps." {"hint":"Spoken on entering NAVIGATE in trail mode."}'

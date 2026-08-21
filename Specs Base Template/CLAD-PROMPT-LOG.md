@@ -3390,3 +3390,66 @@ step (stage 3), so the 1/3/5 progression and the back-step check are driven by
 `lesson-tent-STAGING-TEST-stages-1-5.json` — clearly named STAGING TEST INPUT,
 not demo content, not wired to a debug key by default. Campfire plans use three
 stages (2, 3, 4), so a live fire lesson reaches the flame on its own.
+
+## Prompt — next_suggestion, second attempt: its own call
+
+> Your own diagnosis was the fix: adding the field perturbed exactly the tasks
+> WITHOUT a few-shot example. So do not touch the lesson prompt at all — give
+> the suggestion its OWN call. Assets/AI/next-step-prompt.txt, temperature 0,
+> thinkingBudget 0, cap generously above six words, GatewayQueue at BACKGROUND
+> priority, fired when the lesson enters COMPLETE while the user reads the
+> card; a user request must be free to drop it. Failure/timeout/dropped = no
+> line. Reuse the proven downstream pipeline; rebuild nothing.
+> lesson-system-prompt.txt and LessonSchema.ts must stay byte-identical to
+> HEAD — git diff before committing, and if either appears, stop. Re-run the
+> gate on FOUR phrases; drop "signal for rescue", it drifts upstream.
+
+**Shipped, and the gate passed this time.** Four phrases, live, against the
+recorded baseline:
+
+| phrase | baseline | now | structure |
+|---|---|---|---|
+| help me pitch a tent | 4 · zone,compass,holo,timer · 0 degr | 9464ms · 4 · SAME · 0 | unchanged |
+| help me build a campfire | 6 · zone,checklist,holo,holo,compass,holo · 0 | 8803ms · 6 · SAME · 0 | unchanged |
+| help me purify water | 5 · none,checklist,none,timer,checklist · 1 | 10901ms · 5 · SAME · 1 | unchanged |
+| how do I treat a burn | 4 · none,none,checklist,checklist · 1 | 10400ms · 4 · SAME · 1 | unchanged |
+
+Every companion list and degradation count is identical to baseline; 2
+degradations total, as before. `git diff` on `lesson-system-prompt.txt` and
+`LessonSchema.ts` is **empty** — checked before the commit, as instructed.
+That is the whole point of the separate call: it cannot perturb the plan.
+
+**How it works.** `Assets/AI/next-step-prompt.txt` (third key in
+`prompts.generated.json`) + `LessonPlanner.requestNextStep()`: temperature 0,
+`thinkingBudget: 0`, cap 60 tokens (deliberately ~10x the six-word budget —
+a cap tight enough to truncate is a worse bug than a long answer, per the "If"
+incident). `cleanSuggestion()` strips quotes and trailing punctuation, maps
+`NONE` to "", and refuses anything past seven words. The coordinator fires it
+on `lessonCompleted` at **GW_BACKGROUND** and guards it with a `suggestionId`
+generation counter that moves on every completion AND every user request, so a
+late answer drops itself. The card gains the line when it lands
+(`nextStepSuggested`), the engine arms `pendingSuggestion` so "yes"/pinch
+still accept it, and three dwells cover the timing: 14 s once a line is up,
+11 s while one may still arrive, 4 s on a definite none.
+
+**Measured live:** "Pitch a Tent" → **"Gather firewood for the night"**
+(6.5 s queue + 10.3 s call); "Purify Water" → **"Find more water sources"**.
+Both landed on the card and armed the engine — three log lines each, COORD →
+ENGINE → CARD.
+
+**The finding worth keeping: the queue, not the model, is the risk.** A
+suggestion fired while the boot TTS pre-warms were still running waited
+**20.6 s** for the slot and arrived after the card had gone — correctly
+dropped by the generation counter, no stale line, no crash. That case only
+arose because I completed a FIXTURE lesson; a real request calls
+`gatewayDropPending(GW_BACKGROUND)` before it runs, so the queue is clear by
+the time that lesson completes. It is why the wait window exists and why the
+card must never depend on the suggestion arriving.
+
+**No screenshot of the live line.** Two attempts to capture the card with a
+freshly-generated line lost the race — the second caught a Lens reset mid-boot
+— and I deleted the misleading frame rather than ship it. The visual of the
+card carrying a next line is the previous batch's
+`completion-card-next-step.jpg` (identical rendering, sourced from the
+doctored fixture); the live path is evidenced by the COORD/ENGINE/CARD log
+lines quoted above.

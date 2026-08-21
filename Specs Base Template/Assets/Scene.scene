@@ -5367,6 +5367,8 @@
     firePhrase: true
     waterPhrase: true
     burnPhrase: true
+    suggestNextStep: true
+    nextStepMaxTokens: true
     requestTimeoutSec: true
     retryDelaySec: true
     slotWaitAllowanceSec: true
@@ -5383,6 +5385,8 @@
       firePhrase: help me build a campfire
       waterPhrase: help me purify water
       burnPhrase: how do I treat a burn
+      suggestNextStep: true
+      nextStepMaxTokens: !<float> 60.000000
       requestTimeoutSec: !<float> 25.000000
       retryDelaySec: 0.600000
       slotWaitAllowanceSec: !<float> 45.000000
@@ -9190,6 +9194,7 @@
   ScriptInputsDefault:
     completeReturnDelaySec: true
     suggestionDwellSec: true
+    suggestionWaitSec: true
     shortUtteranceMaxWords: true
     navigateLine: true
     followTrailLine: true
@@ -9206,6 +9211,7 @@
     "":
       completeReturnDelaySec: !<float> 4.000000
       suggestionDwellSec: !<float> 14.000000
+      suggestionWaitSec: !<float> 11.000000
       shortUtteranceMaxWords: !<float> 4.000000
       navigateLine: HEAD FOR CAMP — WATCH THE DISTANCE READOUT ON ROW SIX
       followTrailLine: Follow the stakes back. They are your own footsteps.

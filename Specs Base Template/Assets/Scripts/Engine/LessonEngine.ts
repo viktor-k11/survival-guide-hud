@@ -188,8 +188,12 @@ export class LessonEngine extends BaseScriptComponent {
   private completeReturnDelaySec: number = 4;
 
   @input
-  @hint("Seconds to sit in COMPLETE when the plan carries a next-step suggestion — the user needs time to read it and answer. It NEVER auto-starts; the dwell ending just returns to IDLE.")
+  @hint("Seconds to sit in COMPLETE when a next-step suggestion is ON the card — the user needs time to read it and answer. It NEVER auto-starts; the dwell ending just returns to IDLE.")
   private suggestionDwellSec: number = 14;
+
+  @input
+  @hint("Seconds to hold the completion card while a next-step suggestion may still arrive (the coordinator's background call takes a few seconds). A definite 'none' cuts this short immediately, so a failed call costs nothing.")
+  private suggestionWaitSec: number = 11;
 
   @input
   @hint("A bare command word ('next', 'check') only counts as navigation in an utterance this short. Longer ones are treated as questions.")
@@ -333,6 +337,25 @@ export class LessonEngine extends BaseScriptComponent {
     // handleTranscript; both funnel through acceptSuggestion.
     eventBus.subscribe(Events.suggestionAccepted, (p: { source: string }) => {
       this.acceptSuggestion(p ? p.source : "pinch");
+    });
+
+    // A late suggestion from the coordinator's background call. It only ever
+    // ARMS the card — accepting is still the user's act.
+    eventBus.subscribe(Events.nextStepSuggested, (p: { text: string }) => {
+      if (this.mode !== "COMPLETE") return;
+      const text = p && p.text ? p.text : "";
+      if (text.length > 0) {
+        this.pendingSuggestion = text;
+        this.log('next-step suggestion armed: "' + text + '"');
+        // Fresh time to read and answer, measured from when the line appeared.
+        this.completeDelay.enabled = true;
+        this.completeDelay.reset(this.suggestionDwellSec);
+      } else if (this.pendingSuggestion.length === 0) {
+        // A definite "none": stop holding the card open for nothing.
+        this.log("no next-step suggestion — shortening the completion dwell");
+        this.completeDelay.enabled = true;
+        this.completeDelay.reset(this.completeReturnDelaySec);
+      }
     });
 
     if (this.enableDebugKeys) this.bindDebugKeys();
@@ -940,17 +963,29 @@ export class LessonEngine extends BaseScriptComponent {
     this.stopTimer();
     const suggestion = this.plan && this.plan.nextSuggestion ? this.plan.nextSuggestion : "";
     this.pendingSuggestion = suggestion;
+    const last = this.plan ? this.plan.steps[this.plan.steps.length - 1] : null;
     this.emit(Events.lessonCompleted, {
       title: this.plan ? this.plan.title : "",
       steps: this.plan ? this.plan.steps.length : 0,
       nextSuggestion: suggestion,
+      // The coordinator's suggestion call is grounded in the finished task AND
+      // where it left off, so it can name what genuinely follows.
+      finalStep: last ? last.instruction : "",
     });
     this.setMode("COMPLETE");
     this.completeDelay.enabled = true;
-    // A card with a question on it needs reading-and-answering time; a plain
-    // "complete" needs only a beat. Either way the dwell ends in IDLE — the
-    // suggestion never fires on its own.
-    this.completeDelay.reset(suggestion.length > 0 ? this.suggestionDwellSec : this.completeReturnDelaySec);
+    // Three dwells, in order of how much the user has to do:
+    //   suggestion already on the card -> long, they must read and answer;
+    //   one may still arrive           -> hold, then re-arm when it lands;
+    //   none coming                    -> a beat.
+    // The dwell ending always means IDLE. Nothing here auto-starts anything.
+    this.completeDelay.reset(
+      suggestion.length > 0
+        ? this.suggestionDwellSec
+        : this.suggestionWaitSec > 0
+        ? this.suggestionWaitSec
+        : this.completeReturnDelaySec
+    );
   }
 
   private setMode(next: EngineMode): void {
