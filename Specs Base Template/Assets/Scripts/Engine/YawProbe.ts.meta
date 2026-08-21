@@ -1,0 +1,52 @@
+- !<AssetImportMetadata/38f1a46c-0e56-419e-8ac0-e6318ca9fa9b>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 71696119-fd7c-42d4-91db-09a31894e23f
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 71696119-fd7c-42d4-91db-09a31894e23f
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> a09e9c5b-ec20-4961-8553-fe2266b1ec5d
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/a09e9c5b-ec20-4961-8553-fe2266b1ec5d>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 61e6feeb-3cae-446c-9c2d-9cfe06977e82
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    cameraObject: false
+    hudRoot: false
+    runProbe: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      hudRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      runProbe: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input SceneObject cameraObject
+    - // @input SceneObject hudRoot
+    - // @input bool runProbe = true

@@ -2986,3 +2986,158 @@ camera teleports after W-hold kept cancelling (numbers above are real reads);
 the mid-REC HUD line was verified in the menu status block from the live run
 log rather than a dedicated screenshot (recording state shown as
 TRAIL ● REC · N MARKS · D M by MainMenuPresenter).
+
+---
+
+## 2026-08-21 — hackathon fit audit (no code)
+
+**Prompt (verbatim):**
+> я передивився умови конкурсу та https://lenslist.co/clad-summer-hackathon хочу
+> перевірити чи точно ми все ще підходимо по завданню - треба впевнитись що наш
+> досвід дійсно навчає чомусь або допомагає виконувати завдання реального світу.
+> Я також дивився воркошоп та там дуже наголошувалось на тому, що ленс має бути
+> не ігровий а практичний а також мати декілька кроків - що наш має навіть у
+> декількох сценаріях, так?
+
+**Done.** Fetched the rules page, audited the repo against them. Verdict: the
+project fits Week 2 "Guide" — *"tools guiding people to learn, complete, or
+improve real-world tasks"* — and the multi-step requirement is enforced in code,
+not just claimed: `MIN_STEPS = 4` / `MAX_STEPS = 6` live in the response schema,
+the validator AND the system prompt. Completion aids (not just text) are the
+safety gate with spoken confirmation, the voice-ticked checklist that
+auto-advances, timers, ground zones and the compass. Five distinct scenarios:
+survey → site choice, lesson from Gemini/fixtures, camp + trail + return,
+SOS, in-lesson Q&A.
+
+**Gaps found in the SUBMISSION, not the build.** Of four required deliverables
+only the prompt log is done. No README / project description with theme +
+audience (nothing in the repo root). No demo video. Repo visibility unverified —
+`gh` is not installed on this machine.
+
+**Noted risk:** the retro-phosphor styling plus the word "survival" is the one
+thing that could read as a game to a judge. Cheapest fix is demo order — open on
+water purification or the tent, with the safety gate and checklist on screen.
+
+---
+
+## 2026-08-21 — DEMO_ENV, and what an additive display will not let you fake
+
+**Prompt (verbatim):**
+> чи можна згенерувати новий інтерактивний превью? або ж до плейн додати 3д
+> обєкти для демо які як би допоможуть ілюструвати природу і намет, річку ітд
+
+**Answer to the first half: no.** The Preview ships six Interactive scenes and
+custom ones cannot be imported. Both "outdoor" options are a city plaza with
+palm trees and shopfronts — wrong for a wilderness demo. Verified via
+`PreviewPanelTool listSources` and a capture of `Sunlit Outdoor`.
+
+**Done (second half).** Generated six meshes with `GenerateFast3DAssets` into
+`Assets/DemoEnv/` (pine, broadleaf, bush, boulder, camp tent, grass tuft) and
+built a root-level `DEMO_ENV [PREVIEW ONLY]` diorama: 240 m ground at y = -120
+(deliberately the same floor as `WorldRoot`, so stakes and zones stand on
+visible grass), a river band, a dirt clearing, 25 trees, scatter props, a
+pitched tent. Documented in `Docs/SCENE-MAP.md`.
+
+**The finding worth keeping.** Opaque geometry drawn by the Lens renders
+TRANSLUCENT in the stereo preview — plaza buildings read straight through a
+240 m ground plane and through every tree. That is hard rule 2 arriving from
+the other side: the waveguide ADDS light, so nothing the Lens draws can occlude
+the world. **A solid-looking forest is impossible in principle, not merely
+unpolished.** The diorama is additionally clipped by the display frustum — the
+ground band ends in a straight horizontal line that is the waveguide edge, not
+the mesh edge. What survives is still worth the work: over the neutral grey of
+`Plane`, a ground band + river + horizon treeline turn a grey void into a
+legible outdoor setting with the HUD fully readable on top.
+
+**Two mistakes made and corrected, both by measuring instead of assuming:**
+- First placement put a 10 m-wide tree at 19 m dead centre, filling the frame.
+  Suspected the documented "prefabs come in at 100x" trap; `GetBoundingBox` said
+  otherwise — the tree was exactly 7.6 m with its base at y = -120.3, i.e.
+  correctly scaled and correctly grounded. The bug was composition, not scale.
+  Fixed by pushing the treeline to 17-35 m and clearing the central corridor.
+- The green ground appeared to stop at a hard line short of the viewer. That is
+  not a mesh edge — `GetBoundingBox` returned z = +10000..-14000, so it does
+  pass under the user. It is the display frustum clipping Lens output.
+
+**Hygiene.** `CaptureRuntimeViewTool` re-injected the `AiPreviewAgent Handler`
+root; `Tools/check-scene-roots.py` caught it and it was deleted. `DEMO_ENV
+[PREVIEW ONLY]` was added to the allowlist WITH a note (per that file's own
+rule) saying it must be disabled before any device run or publish. Project saved
+from the Editor API via `IModel.project.save()`.
+
+**Screenshots** (`Docs/screens/`, all `PreviewPanelTool screenshot` unless
+stated): `demoenv-baseline-plane.jpg` (grey void, the before),
+`demoenv-sunlit-outdoor.jpg` (why the built-in outdoor scene is wrong — it is a
+shopping street), `demoenv-v1-sunlit.jpg` (the translucency proof: buildings
+through the ground plane), `demoenv-v2-plane.jpg` (diorama over neutral grey,
+tree too close), `demoenv-v3-plane.jpg` (corridor cleared, only one tree left in
+frame), `demoenv-v4-treeline.jpg` (**the result** — horizon treeline, grass,
+river, HUD unobstructed).
+
+**Still open:** the "pine" prompt produced a broadleaf silhouette, so all 25
+trees look like the same species. Cosmetic; left alone.
+
+---
+
+## Prompt — hazard scoring over the survey cloud + the yaw question closed
+
+> Two things. [1] Finish the yaw question — keyboard rotation (Shift+A/D) was
+> the one untested input path; probe the tracked camera's rotation AND the
+> HUD's world position each second; outcomes a/b/c. [2] Hazard scoring — a
+> second, OPPOSITE judgement over the SAME cloud in the SAME pass: steepness,
+> hollows, broken ground. Pure function, no scene, LEAF-ready; do not import it
+> into the site selector's file. Markers WorldRoot/HazardMarker_1..3 in
+> warningColor, labelled with the REASON. [3] Hazards PENALISE sites, never
+> veto; overlap surfaces via the existing distanceWarning + a spoken line.
+> REGRESSION non-negotiable on both stored fixtures.
+
+**Yaw outcome: (b), with the real root cause found and fixed on our side.**
+`YawProbe` [TEMP] logged camYaw + HUD world position at 1 Hz under keyboard
+Shift+A/D and the MCP tool. The tracked camera's rotation DOES change under
+BOTH paths (342.7° → 338.2° live under Shift+A), and Headlock DOES follow yaw
+while healthy — the probe caught the HUD sitting exactly on the camera's
+forward axis at a rotated yaw. Every earlier "does not follow / vanished"
+reading had ONE cause the probe exposed: **SIK Headlock numerically diverges
+in Preview** — the HUD position multiplies ~x30 per second off to 1e19 cm
+(frame-time spikes tipping its exponential smoothing unstable). Fix, without
+forking SIK: `HudRecenter` grew a divergence guard — auto-recenter when the
+HUD strays past 400 cm (@input) or goes NaN, checked twice a second, a log
+line never a crash. Verified live catching a 4.9 m and an 8.2 m runaway and
+snapping the menu back. No filming constraint: rotation is drivable and the
+guard keeps the HUD present. SCENE-MAP's open question replaced with the
+answer. Probe left on `RSG Smoke Test [TEMP]` with `runProbe` OFF
+(CameraTrackProbe precedent).
+
+**Hazard scoring.** `Engine/HazardScoring.ts` — PURE, cloud in, ranked
+hazards out: steep (mean normal off vertical past 25°, value = degrees),
+hollow (cell ≥0.15 m below its neighbourhood mean — where rain collects),
+broken (mean normal spread across the neighbourhood past 18°). No import in
+either direction between it and SiteSelection — two judgements over one
+input; `SurveyController.runScorers` runs BOTH over the same cloud in the
+same pass (early-exit trial included, so the early exit judges with the same
+eyes as the full run). No second scan, no second wait.
+
+**Penalty, not veto.** `SiteSelectionOptions.penaltyZones` (generic zones —
+the selector stays ignorant of hazards) + `weightHazardPenalty` = **0.25**:
+score multiplier bottoms out at 0.75 dead-centre in a severity-1 zone.
+Site-overlap warning reuses the distanceWarning strip + speakRequested
+("Heads up: that site is on a slope."), fire-distance warning keeps priority.
+
+**Regression (the numbers):**
+- `survey-open-clearing`: 387 points / 3 sites (2 tents + fire) /
+  **fire clear 3.20 m ≥ 3 m** / no warning / 0 hazards (a clean clearing —
+  the scorer honestly says nothing). Baseline same session pre-penalty: 385 /
+  3 / 3.16 m — the ±2-point, ±4 cm wobble is the fixture's time-based reveal
+  (documented variance across all sessions: 344-387 points), not the penalty;
+  the demo invariants hold unchanged.
+- `survey-cramped-camp`: **distanceWarning at 1.03 m — bit-identical to
+  baseline** — plus 3 steep hazards (64° / 68° / 70°) on the rubble ring,
+  "placed 3/3 hazard markers". Penalty weight 0.25 kept as-is; nothing to
+  tune down.
+
+**Markers.** X of two crossed warning-red stakes + reason label
+("STEEP 68°" readable at ~5 m — `survey-hazard-label.jpg`), visually nothing
+like the green site markers. `survey-sites-and-hazards.jpg`: red X, green
+FLATNESS 83% tent label and amber FLATNESS 93% fire label standing together
+from one scan, with the FIRE TOO CLOSE strip up top in the same frame's twin
+capture. Pool ships disabled; `hazardsDetected` clears on `surveyStarted`.

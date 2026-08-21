@@ -36,6 +36,14 @@ export const Events = {
   /** Terrain survey finished; site markers can be shown. Payload: SurveyCompletePayload. */
   surveyComplete: "surveyComplete",
   /**
+   * Where NOT to camp, from the SAME scan that placed the site markers —
+   * no second pass, no second wait. Payload: HazardsDetectedPayload. Emitted
+   * right after surveyComplete. Hazards PENALISE candidate sites (through the
+   * selector's penaltyZones); they never veto — "here, but watch the slope"
+   * beats "no campsite found".
+   */
+  hazardsDetected: "hazardsDetected",
+  /**
    * The user picked a site marker. Payload: SiteSelectedPayload.
    * Nothing starts a lesson from this yet — that is deliberate, and the next
    * task. Emitting it now means the seam exists and is already exercised.

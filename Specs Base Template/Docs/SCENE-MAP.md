@@ -39,7 +39,7 @@ advance so a counting-down timer does not jitter. Both fonts are in the project;
 |---|---|
 | `HUDRoot` + ALL descendants (incl. `MainMenu`, `BootIntro`) | **disabled** |
 | `WorldRoot` + all 34 descendants | **disabled** |
-| `Headlock` component on `HUDRoot` | **ENABLED** since the camp/trail batch (walking is part of the product; a world-locked HUD gets walked through — the intro-debug session experienced that bug from the inside). Tuned lazy: `_distance` 120, easings 0.25, buffers 6 cm / 3° / 3° (7° buffers left a permanent ~15 cm dead-zone offset at 120 cm — measured). ONLY HUDRoot; WorldRoot stays world-anchored. **Preview findings:** positional follow works (walk captures); yaw/pitch follow did NOT respond to `MovePreviewCamera rotate` with locked flags in either state — verify angular follow on device with a real head, do not conclude about the platform from this tool. Preview-camera FLIP states (`lookAt`/±180 yaw produce rotation x=180/z=180) corrupt Headlock beyond recovery — avoid them; rotate in 90° steps. `recenterRequested` (voice "recenter" / key 5) is the way back. |
+| `Headlock` component on `HUDRoot` | **ENABLED** since the camp/trail batch. Tuned lazy: `_distance` 120, easings 0.25, buffers 6 cm / 3° / 3° (7° buffers left a permanent ~15 cm dead-zone offset at 120 cm — measured). ONLY HUDRoot; WorldRoot stays world-anchored. **The yaw question is CLOSED (probed with `YawProbe` [TEMP], keyboard Shift+A/D AND the MCP tool):** the tracked camera's rotation DOES change under both input paths, and Headlock DOES follow yaw while healthy — the earlier "no follow" readings were all one root cause: **SIK Headlock numerically DIVERGES in Preview** (position multiplies ~x30/s off to 1e19 cm; preview frame-time spikes tip its smoothing unstable). Every "HUD vanished / did not follow" symptom was this. Guard: `HudRecenter` auto-recenters when the HUD strays beyond `autoRecenterBeyondCm` (400) or goes NaN — verified live catching a 4.9 m and an 8.2 m runaway. Manual recenter: voice "recenter" / key 5. On device frame times are even; verify divergence never fires there. |
 | `VisualConfig` | **enabled** — config holder, draws nothing |
 | `RSG Smoke Test [TEMP]` | **enabled** — throwaway diagnostic, untouched |
 | `Camera Object`, `Lighting`, `SpectaclesInteractionKit` | enabled — stock |
@@ -215,6 +215,7 @@ placed against real terrain, not the head.
 | `…/HologramFire/S3_LogCabin` | Stage 3 — log-cabin stack | `hologramStage` |
 | `…/HologramFire/S4_Flame` | Stage 4 — lit flame | `hologramStage`, `lessonCompleted` |
 | `WorldRoot/PropsContainer` | Empty container for training props. **The only object here with no visual** — props get parented under it, but they must be pre-made children, never runtime-instantiated | `propPlaced` |
+| `WorldRoot/HazardMarker_1..3` | **The "do NOT camp here" pool, hard cap 3** — warning-coloured X of two crossed stakes (`Cross_A`/`Cross_B`) + a `Label` carrying the REASON with its number ("STEEP 31°", "COLLECTS WATER", "BROKEN GROUND"), deliberately not the site-marker language so the two verdicts separate at a glance. A hazard the user cannot interpret is decoration | `hazardsDetected`, `surveyStarted` (clear) |
 | `WorldRoot/TrailContainer/Crumb_01..24` | **The trail stake pool, hard cap 24** — vertical ~1.5 m stakes, not ground discs (the frustum limit is ANGULAR: floor content is invisible to a wearer facing the horizon, and a walker looks ahead, not down). When the pool fills, the controller DECIMATES (every second mark, spacing doubled) — coverage stays complete on a finite pool; measured live: 25th mark → 13 marks @ 300 cm | `trailStateChanged`, `navigateUpdated` (passed marks dim) |
 | `WorldRoot/CampStake` | The camp point marker: `Pole` (2 m, amber — same visual language as the crumbs, larger and distinct) + yaw-billboarded `Label` ("CAMP") | `campChanged` |
 | `WorldRoot/CompassRose/Disc,Arrow(Shaft/Tip),DistanceLabel` | The ONE bearing display, floated ahead of the user below eye level while navigating. Bearing SOURCE is the `navigateUpdated` event — SOS will later feed the same payload at the most open direction. **Do not fork this presenter.** `lastKnown` recolours everything warning-red | `navigateUpdated` |
@@ -290,7 +291,26 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `narrationStateChanged` · `qaAnswered` · `keyboardRequested` ·
 `menuSelected` · `campChanged` · `introStateChanged` · `menuChipSelected` ·
 `trailStateChanged` · `navigateRequested` · `navigateUpdated` · `campReached` ·
-`recenterRequested`
+`recenterRequested` · `hazardsDetected`
+
+### Two scorers, one cloud — the hazard split
+
+`SiteSelection.ts` answers "where SHOULD you camp"; `HazardScoring.ts` answers
+"where should you NOT" (steepness / hollows-that-collect-water / broken
+ground). Both are PURE, both run over the SAME cloud in the SAME pass
+(`SurveyController.runScorers`), and they deliberately do not import each
+other. Hazards reach the site scorer only as GENERIC penalty zones
+(`SiteSelectionOptions.penaltyZones`, `weightHazardPenalty` = **0.25**):
+a full-severity zone costs a candidate at most 25% of its score. **A PENALTY,
+never a veto** — a veto could silently empty the site list, and "no campsite
+found" is a worse answer than "here, but watch the slope". A selected site
+still overlapping a hazard is surfaced through the EXISTING `distanceWarning`
+strip plus a spoken line, not a new mechanism.
+
+Regression contract (the demo depends on it, re-verified with the penalty on):
+`survey-open-clearing` → 3 sites, fire clear ≥ 3 m, no warning, 0 hazards;
+`survey-cramped-camp` → `distanceWarning` at **1.03 m** (bit-identical to the
+pre-penalty baseline) plus 3 steep hazards (64-70°) off the rubble ring.
 
 ### NAVIGATE — a mode, not a companion
 
@@ -666,6 +686,72 @@ so regenerating produces byte-identical files.
 > The clouds only cover the arc **in front** of the user, because that is what a
 > survey actually collects. An early version wrapped the user in ground and duly
 > suggested a campsite behind their head.
+
+## DEMO_ENV [PREVIEW ONLY] — the desk diorama
+
+A root-level tree of ordinary opaque geometry: a 240 m grass plane, a river
+band, a dirt clearing, 25 generated trees, bushes, grass tufts, boulders and a
+pitched camp tent. Meshes come from `GenerateFast3DAssets` into
+`Assets/DemoEnv/`; the three flat colours are `DEMO_Grass` / `DEMO_Water` /
+`DEMO_Dirt` (`SimplePBRMaterialPreset`).
+
+| Path | What it is |
+|---|---|
+| `DEMO_ENV [PREVIEW ONLY]` | Master switch. **Ships enabled only while a demo is being shot.** |
+| `…/Terrain/Ground` | 240 x 240 m plane at y = -120 — the same floor level as `WorldRoot`, so stakes, zones and markers stand on visible grass instead of void |
+| `…/Terrain/River` | 160 m x 4.2 m water band at z = -19 m, yawed 8°. Context for the water lesson |
+| `…/Terrain/Clearing` | 9 m dirt disc under the user — the camp clearing |
+| `…/TreeLine/Pine_*, Broadleaf_*, Front_*` | 25 trees. `Front_*` is a deliberate arc at 17-35 m across ±50°, placed to sit ON THE HORIZON inside the display frustum |
+| `…/Undergrowth/Bush_*, Grass_*, Boulder_*` | Scatter. Boulders sit on the river banks, not in the water |
+| `…/CampProps/CampTent` | Pitched tent at 16 m, 25° yaw — reads as "camp is set" for the navigation scenario |
+
+> **THIS IS NOT LENS CONTENT AND CANNOT BECOME LENS CONTENT.** It must be
+> disabled before any device run or publish. It is in the scene-roots allowlist
+> with that note; the guard checks the root exists, not whether you left it on.
+
+### Why a demo diorama exists at all, and what it cannot do
+
+The Preview ships six Interactive scenes — `Plane`, `Sunlit Outdoor`,
+`Evening Outdoor`, `Sunlit Room`, `Evening Room`, `Colorful Home`. Both
+"outdoor" ones are a **city plaza with palm trees and shopfronts**, and custom
+environments cannot be imported. So a wilderness backdrop can only come from
+geometry we draw ourselves.
+
+Two hard limits, both measured on 2026-08-21, both visible in
+`Docs/screens/demoenv-v1-sunlit.jpg`:
+
+1. **Additive display — measured, not assumed.** Opaque PBR geometry rendered
+   by the Lens comes out TRANSLUCENT in the stereo preview: the plaza
+   buildings read straight through a 240 m ground plane and through every tree.
+   This is hard rule 2 arriving from the other direction — the waveguide adds
+   light, so nothing the Lens draws can occlude the world. A believable solid
+   forest is not achievable **in principle**, not just unpolished.
+2. **The display frustum clips it.** The diorama is cut off by the same
+   rectangle that clips the HUD (see the frustum section above). The ground
+   band ends in a straight horizontal line partway down the frame — that edge
+   is the waveguide, not the mesh.
+
+What survives both limits is worth having: against the neutral grey of `Plane`,
+the ground band, the river and a horizon treeline turn the backdrop from a grey
+void into a legible outdoor setting, and the HUD stays fully readable on top
+(`demoenv-v4-treeline.jpg`). That is the whole job. Anything more ambitious —
+"make the preview look like a real forest" — is spent effort.
+
+**Two capture modes, and they answer different questions.**
+
+- `PreviewPanelTool screenshot` — what the wearer sees. HUD over the diorama,
+  clipped to the frustum. This is the one that proves visibility.
+- `CaptureRuntimeViewTool` (scene mode, `center: {x:0,y:0,z:-1500}`,
+  `distance: 7000`) — the wide orthographic diorama shot, ignoring the frustum
+  entirely. Good for a README hero image or an establishing frame; it is NOT
+  evidence about what a wearer can see. **It returns an image, not a file** —
+  there is no `outputPath`, so a run of it cannot be filed in `Docs/screens/`.
+  Anything that has to be reviewable later must come from
+  `PreviewPanelTool screenshot`, which does take a path.
+
+> `CaptureRuntimeViewTool` re-injects the `AiPreviewAgent Handler` root every
+> time it runs. It did on this pass. Run `python3 Tools/check-scene-roots.py`
+> before committing and delete it again.
 
 ## Scene hygiene guard
 

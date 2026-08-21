@@ -88,6 +88,27 @@ export interface SiteSelectedPayload {
   source: string;
 }
 
+/** What kind of "do not camp here" a hazard is. */
+export type SurveyHazardKind = "steep" | "hollow" | "broken";
+
+/** One place NOT to camp, from the second scorer over the same cloud. */
+export interface SurveyHazard {
+  kind: SurveyHazardKind;
+  /** Centimetres, world. */
+  positionCm: XYZ;
+  /** 0..1 — worst first. */
+  severity: number;
+  /** The interpretable number: degrees (steep/broken) or metres (hollow). */
+  value: number;
+  /** Influence radius, centimetres — the site penalty's falloff range. */
+  radiusCm: number;
+}
+
+/** Emitted right after surveyComplete: the same scan's negative verdicts. */
+export interface HazardsDetectedPayload {
+  hazards: SurveyHazard[];
+}
+
 /** Emitted when the fire could not be placed clear of the tents. */
 export interface DistanceWarningPayload {
   /** Uppercase, ready for the warning strip. */

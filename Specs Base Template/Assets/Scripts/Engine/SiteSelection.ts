@@ -110,6 +110,30 @@ export interface SiteSelectionOptions {
   weightFlatness: number;
   weightCoverage: number;
   weightDistance: number;
+  /**
+   * How hard a penalty zone at full strength drags a candidate down, 0..1.
+   * 0.25 = a candidate dead-centre in a severity-1 zone loses a quarter of its
+   * score. A PENALTY, never a veto: the multiplier bottoms out at
+   * (1 - weightHazardPenalty), so a hazardous site still ranks and can still
+   * win when everything else is worse — "here, but watch the slope" beats
+   * "no campsite found".
+   */
+  weightHazardPenalty: number;
+  /**
+   * Places candidate sites should avoid, as GENERIC zones — this file stays
+   * ignorant of what produced them (today: HazardScoring.ts, via the
+   * controller). Metres, XZ.
+   */
+  penaltyZones?: PenaltyZone[];
+}
+
+/** A spot to keep away from: penalty falls off linearly to zero at radiusM. */
+export interface PenaltyZone {
+  x: number;
+  z: number;
+  radiusM: number;
+  /** 0..1 — scales the penalty. */
+  severity: number;
 }
 
 export const DEFAULT_SITE_OPTIONS: SiteSelectionOptions = {
@@ -128,6 +152,7 @@ export const DEFAULT_SITE_OPTIONS: SiteSelectionOptions = {
   weightFlatness: 1.0,
   weightCoverage: 1.0,
   weightDistance: 0.8,
+  weightHazardPenalty: 0.25,
 };
 
 /** One binned patch of ground. */
@@ -290,10 +315,28 @@ function scoreCells(
     const distanceScore = scoreDistance(distanceM, options);
     if (distanceScore <= 0) continue;
 
+    // Hazard penalty: the worst overlapping zone drags the score down, floor
+    // (1 - weightHazardPenalty). Never a veto — see the option's comment.
+    let hazardHit = 0;
+    const zones = options.penaltyZones;
+    if (zones) {
+      for (let zi = 0; zi < zones.length; zi++) {
+        const z = zones[zi];
+        if (!z || z.radiusM <= 0) continue;
+        const zdx = centre.cx - z.x;
+        const zdz = centre.cz - z.z;
+        const zd = Math.sqrt(zdx * zdx + zdz * zdz);
+        if (zd >= z.radiusM) continue;
+        const hit = clamp01(z.severity) * (1 - zd / z.radiusM);
+        if (hit > hazardHit) hazardHit = hit;
+      }
+    }
+
     const score =
       Math.pow(flatness, options.weightFlatness) *
       Math.pow(coverage, options.weightCoverage) *
-      Math.pow(distanceScore, options.weightDistance);
+      Math.pow(distanceScore, options.weightDistance) *
+      (1 - clamp01(options.weightHazardPenalty) * hazardHit);
 
     out.push({
       kind: kind,
@@ -402,6 +445,7 @@ function mergeOptions(overrides?: Partial<SiteSelectionOptions>): SiteSelectionO
     weightFlatness: DEFAULT_SITE_OPTIONS.weightFlatness,
     weightCoverage: DEFAULT_SITE_OPTIONS.weightCoverage,
     weightDistance: DEFAULT_SITE_OPTIONS.weightDistance,
+    weightHazardPenalty: DEFAULT_SITE_OPTIONS.weightHazardPenalty,
   };
   if (!overrides) return o;
   for (const k in overrides) {
@@ -410,6 +454,7 @@ function mergeOptions(overrides?: Partial<SiteSelectionOptions>): SiteSelectionO
       if (typeof v === "number" && !isNaN(v)) (o as any)[k] = v;
     }
   }
+  if (overrides.penaltyZones) o.penaltyZones = overrides.penaltyZones;
   return o;
 }
 

@@ -1,0 +1,68 @@
+- !<AssetImportMetadata/c7ffbd65-22c1-4ab3-a344-7e69f8f6ead4>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 9117f423-408f-4151-9b45-7c0117a17b86
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 9117f423-408f-4151-9b45-7c0117a17b86
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> fde4497d-78b5-4010-8a83-58f0d2d8c11f
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/fde4497d-78b5-4010-8a83-58f0d2d8c11f>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 26c8a4bd-4507-46d8-9028-a2292e2542a3
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    brokenLabel: false
+    cameraObject: false
+    enableLogging: false
+    hollowLabel: false
+    steepFormat: false
+    theme: false
+    worldRoot: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      worldRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      steepFormat: "STEEP {V}°"
+      hollowLabel: COLLECTS WATER
+      brokenLabel: BROKEN GROUND
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject worldRoot {"hint":"WorldRoot — children HazardMarker_1..3 are collected by name."}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object — labels yaw toward the user, like every world label here."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Copy</span>"}'
+    - '// @input string steepFormat = "STEEP {V}°" {"hint":"Steepness label. {V} = degrees."}'
+    - '// @input string hollowLabel = "COLLECTS WATER" {"hint":"Hollow label — the reason, not the number; depth means little to a user."}'
+    - '// @input string brokenLabel = "BROKEN GROUND" {"hint":"Broken-ground label."}'
+    - // @input bool enableLogging = true

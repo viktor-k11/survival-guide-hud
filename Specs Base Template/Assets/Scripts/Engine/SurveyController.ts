@@ -28,9 +28,11 @@
  *    inside the FOV, and a null result is normal rather than an error.
  */
 import { eventBus, Events } from "./EventBus";
+import { HazardCandidate, scoreHazards } from "./HazardScoring";
 import { MenuSelectedPayload } from "./RequestTypes";
 import {
   DEFAULT_SITE_OPTIONS,
+  PenaltyZone,
   SiteCandidate,
   SiteSelectionOptions,
   SiteSelectionResult,
@@ -39,9 +41,11 @@ import {
 } from "./SiteSelection";
 import {
   DistanceWarningPayload,
+  HazardsDetectedPayload,
   SiteSlot,
   SurveyBounds,
   SurveyCompletePayload,
+  SurveyHazard,
   SurveyProgressPayload,
   SurveySite,
 } from "./SurveyTypes";
@@ -159,6 +163,26 @@ export class SurveyController extends BaseScriptComponent {
   @input @hint("Nearest comfortable site distance, metres.") private preferredMinDistanceM: number = 1.5;
   @input @hint("Furthest comfortable site distance, metres.") private preferredMaxDistanceM: number = 6.0;
   @input @hint("Beyond this it is a hike, not a suggestion.") private maxDistanceM: number = 12.0;
+
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">Hazard scoring — the second judgement, same cloud, same pass</span>')
+  @ui.label('<span style="color: #94A3B8; font-size: 11px;">Where NOT to camp. Pure inputs to HazardScoring.ts. Hazards PENALISE candidate sites (weightHazardPenalty), never veto.</span>')
+
+  @input @hint("Slope beyond this many degrees is a steepness hazard.") private hazardSteepDeg: number = 25;
+  @input @hint("A cell this far below its neighbourhood collects water, metres.") private hazardHollowDepthM: number = 0.15;
+  @input @hint("Mean normal spread beyond this many degrees is broken ground.") private hazardBrokenDeg: number = 18;
+  @input @hint("Hazard influence radius, metres — the site penalty's falloff range.") private hazardRadiusM: number = 1.2;
+  @input @hint("Marker pool size. Hard rule 1: WorldRoot/HazardMarker_1..3.") private maxHazards: number = 3;
+  @input @hint("Two hazards closer than this are one patch of bad ground, metres.") private minHazardSeparationM: number = 2.0;
+
+  @input
+  @widget(new SliderWidget(0.0, 1.0, 0.05))
+  @hint("How hard a full-severity hazard drags a candidate site down. 0.25 = -25% score at zone centre. If this changes the stored-fixture regression numbers, it is too high.")
+  private weightHazardPenalty: number = 0.25;
+
+  @input
+  @hint("When a chosen site still overlaps a hazard, warn the way distanceWarning already works: StatusBar strip + a spoken line.")
+  private warnOnSiteHazardOverlap: boolean = true;
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Debug</span>')
@@ -282,8 +306,37 @@ export class SurveyController extends BaseScriptComponent {
     this.emitProgress(0);
   }
 
+  /**
+   * BOTH judgements over the same cloud in one pass: hazards first, then the
+   * site selector with the hazards handed in as generic penalty zones. One
+   * look, and the Lens tells you everything it knows about the ground.
+   */
+  private runScorers(cloudM: SurveyPoint[]): { hazards: HazardCandidate[]; selection: SiteSelectionResult } {
+    const hazards = scoreHazards(cloudM, {
+      cellSizeM: this.cellSizeM,
+      steepThresholdDeg: this.hazardSteepDeg,
+      hollowThresholdM: this.hazardHollowDepthM,
+      brokenThresholdDeg: this.hazardBrokenDeg,
+      minSeparationM: this.minHazardSeparationM,
+      maxHazards: this.maxHazards,
+    });
+    const zones: PenaltyZone[] = [];
+    for (let i = 0; i < hazards.length; i++) {
+      zones.push({
+        x: hazards[i].position.x,
+        z: hazards[i].position.z,
+        radiusM: this.hazardRadiusM,
+        severity: hazards[i].severity,
+      });
+    }
+    const opts = this.selectionOptions();
+    opts.penaltyZones = zones;
+    opts.weightHazardPenalty = this.weightHazardPenalty;
+    return { hazards: hazards, selection: selectSites(cloudM, this.userPositionM(), opts) };
+  }
+
   /** End the survey now and select sites from whatever has been collected. */
-  public finishSurvey(earlyExit: boolean, precomputed?: SiteSelectionResult): void {
+  public finishSurvey(earlyExit: boolean, precomputed?: { hazards: HazardCandidate[]; selection: SiteSelectionResult }): void {
     if (!this.running) return;
     this.running = false;
     const elapsed = getTime() - this.startTime;
@@ -292,9 +345,8 @@ export class SurveyController extends BaseScriptComponent {
     // selecting twice over the same cloud would be pure waste, and a second
     // pass over a cloud that grew in between would report different sites from
     // the ones that triggered the exit.
-    const result = precomputed
-      ? precomputed
-      : selectSites(this.toMetres(this.cloud), this.userPositionM(), this.selectionOptions());
+    const scored = precomputed ? precomputed : this.runScorers(this.toMetres(this.cloud));
+    const result = scored.selection;
 
     const sites: SurveySite[] = [];
     for (let i = 0; i < result.tents.length; i++) {
@@ -350,6 +402,26 @@ export class SurveyController extends BaseScriptComponent {
     this.emitProgress(1);
     eventBus.emit(Events.surveyComplete, payload);
 
+    // --- the second verdict: where NOT to camp, same scan ----------------
+    const hazardsCm: SurveyHazard[] = [];
+    for (let i = 0; i < scored.hazards.length; i++) {
+      const h = scored.hazards[i];
+      hazardsCm.push({
+        kind: h.kind,
+        positionCm: { x: h.position.x * CM_PER_M, y: h.position.y * CM_PER_M, z: h.position.z * CM_PER_M },
+        severity: h.severity,
+        value: h.value,
+        radiusCm: this.hazardRadiusM * CM_PER_M,
+      });
+      this.log(
+        "  HAZARD " + h.kind + " at (" + (h.position.x * CM_PER_M).toFixed(0) + ", " +
+          (h.position.z * CM_PER_M).toFixed(0) + ")cm severity=" + h.severity.toFixed(2) +
+          " value=" + h.value + " cells=" + h.cellCount
+      );
+    }
+    const hazardsPayload: HazardsDetectedPayload = { hazards: hazardsCm };
+    eventBus.emit(Events.hazardsDetected, hazardsPayload);
+
     if (payload.distanceWarning) {
       const warn: DistanceWarningPayload = {
         message: "FIRE TOO CLOSE TO SHELTER",
@@ -358,7 +430,45 @@ export class SurveyController extends BaseScriptComponent {
       };
       this.log("DISTANCE WARNING: " + warn.message + " (" + warn.actualM + "m < " + warn.requiredM + "m)");
       eventBus.emit(Events.distanceWarning, warn);
+    } else if (this.warnOnSiteHazardOverlap) {
+      // A selected site still overlapping a hazard is surfaced the way
+      // distanceWarning already works — a StatusBar warning plus a spoken
+      // line — never a veto, never a new mechanism. Worst overlap only; one
+      // warning said clearly beats three said at once.
+      this.warnIfSiteOverlapsHazard(sites, scored.hazards);
     }
+  }
+
+  private warnIfSiteOverlapsHazard(sites: SurveySite[], hazards: HazardCandidate[]): void {
+    let worst: { hazard: HazardCandidate; site: SurveySite; distM: number } | null = null;
+    for (let s = 0; s < sites.length; s++) {
+      for (let h = 0; h < hazards.length; h++) {
+        const dx = sites[s].positionCm.x / CM_PER_M - hazards[h].position.x;
+        const dz = sites[s].positionCm.z / CM_PER_M - hazards[h].position.z;
+        const d = Math.sqrt(dx * dx + dz * dz);
+        if (d < this.hazardRadiusM && (worst === null || hazards[h].severity > worst.hazard.severity)) {
+          worst = { hazard: hazards[h], site: sites[s], distM: d };
+        }
+      }
+    }
+    if (!worst) return;
+
+    const kind = worst.hazard.kind;
+    const message =
+      kind === "steep" ? "SITE ON A SLOPE — " + worst.hazard.value + "°" :
+      kind === "hollow" ? "SITE MAY COLLECT WATER" : "BROKEN GROUND AT SITE";
+    const spoken =
+      kind === "steep" ? "Heads up: that site is on a slope." :
+      kind === "hollow" ? "Heads up: that spot may collect water in rain." :
+      "Heads up: the ground at that site is broken.";
+    const warn: DistanceWarningPayload = {
+      message: message,
+      actualM: Math.round(worst.distM * 100) / 100,
+      requiredM: this.hazardRadiusM,
+    };
+    this.log("HAZARD OVERLAP: " + worst.site.slot + " sits " + warn.actualM + "m from a " + kind + " hazard — warning raised");
+    eventBus.emit(Events.distanceWarning, warn);
+    eventBus.emit(Events.speakRequested, { text: spoken, source: "survey" });
   }
 
   // ------------------------------------------------------------- the sweep
@@ -393,7 +503,10 @@ export class SurveyController extends BaseScriptComponent {
     if (elapsed - this.lastReadinessCheck < this.earlyExitCheckSec) return;
     this.lastReadinessCheck = elapsed;
 
-    const trial = selectSites(this.toMetres(this.cloud), this.userPositionM(), this.selectionOptions());
+    // The SAME double judgement the final pass runs — an early exit that
+    // scored sites without the hazard penalty would pick different sites from
+    // the ones the full run would have picked.
+    const trial = this.runScorers(this.toMetres(this.cloud));
 
     // `!distanceWarning` is not decoration. Without it the survey stops the
     // moment it can NAME three sites, and a partial cloud's best fire is often
@@ -403,7 +516,9 @@ export class SurveyController extends BaseScriptComponent {
     // the constraint. If the terrain genuinely cannot, the full duration runs
     // out and the warning is the honest result rather than an impatient one.
     const complete =
-      trial.tents.length >= this.earlyExitRequiresTents && trial.fire !== null && !trial.distanceWarning;
+      trial.selection.tents.length >= this.earlyExitRequiresTents &&
+      trial.selection.fire !== null &&
+      !trial.selection.distanceWarning;
     if (complete) this.finishSurvey(true, trial);
   }
 

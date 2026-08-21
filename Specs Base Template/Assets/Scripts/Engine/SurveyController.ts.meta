@@ -43,13 +43,19 @@
     flatnessToleranceM: false
     gridColumns: false
     gridRows: false
+    hazardBrokenDeg: false
+    hazardHollowDepthM: false
+    hazardRadiusM: false
+    hazardSteepDeg: false
     keyFinishSurvey: false
     keyRestartSurvey: false
     logFirstNHits: false
     maxDistanceM: false
+    maxHazards: false
     maxPoints: false
     minDurationSec: false
     minFireToTentM: false
+    minHazardSeparationM: false
     minTentSeparationM: false
     minUpDot: false
     pitchMaxDeg: false
@@ -60,6 +66,8 @@
     raysPerFrame: false
     tentFootprintM: false
     useFixtureCloud: false
+    warnOnSiteHazardOverlap: false
+    weightHazardPenalty: false
     yawHalfAngleDeg: false
   ScriptTypesHidden:
     {}
@@ -98,6 +106,14 @@
       preferredMinDistanceM: 1.500000
       preferredMaxDistanceM: !<float> 6.000000
       maxDistanceM: !<float> 12.000000
+      hazardSteepDeg: !<float> 25.000000
+      hazardHollowDepthM: 0.150000
+      hazardBrokenDeg: !<float> 18.000000
+      hazardRadiusM: 1.200000
+      maxHazards: !<float> 3.000000
+      minHazardSeparationM: !<float> 2.000000
+      weightHazardPenalty: 0.250000
+      warnOnSiteHazardOverlap: true
       logFirstNHits: !<float> 0.000000
       enableDebugKeys: true
       keyRestartSurvey: S
@@ -148,6 +164,17 @@
     - '// @input float preferredMinDistanceM = 1.5 {"hint":"Nearest comfortable site distance, metres."}'
     - '// @input float preferredMaxDistanceM = 6 {"hint":"Furthest comfortable site distance, metres."}'
     - '// @input float maxDistanceM = 12 {"hint":"Beyond this it is a hike, not a suggestion."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Hazard scoring — the second judgement, same cloud, same pass</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Where NOT to camp. Pure inputs to HazardScoring.ts. Hazards PENALISE candidate sites (weightHazardPenalty), never veto.</span>"}'
+    - '// @input float hazardSteepDeg = 25 {"hint":"Slope beyond this many degrees is a steepness hazard."}'
+    - '// @input float hazardHollowDepthM = 0.15 {"hint":"A cell this far below its neighbourhood collects water, metres."}'
+    - '// @input float hazardBrokenDeg = 18 {"hint":"Mean normal spread beyond this many degrees is broken ground."}'
+    - "// @input float hazardRadiusM = 1.2 {\"hint\":\"Hazard influence radius, metres — the site penalty's falloff range.\"}"
+    - '// @input float maxHazards = 3 {"hint":"Marker pool size. Hard rule 1: WorldRoot/HazardMarker_1..3."}'
+    - '// @input float minHazardSeparationM = 2 {"hint":"Two hazards closer than this are one patch of bad ground, metres."}'
+    - '// @input float weightHazardPenalty = 0.25 {"hint":"How hard a full-severity hazard drags a candidate site down. 0.25 = -25% score at zone centre. If this changes the stored-fixture regression numbers, it is too high.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input bool warnOnSiteHazardOverlap = true {"hint":"When a chosen site still overlaps a hazard, warn the way distanceWarning already works: StatusBar strip + a spoken line."}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug</span>"}'
     - "// @input float logFirstNHits {\"hint\":\"Log this many individual hits per survey, with position and normal. 0 = off. The way to tell 'the rays are missing' from 'the rays all land in the same place'.\"}"
