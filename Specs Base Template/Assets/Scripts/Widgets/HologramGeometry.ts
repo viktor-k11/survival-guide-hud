@@ -115,11 +115,32 @@ export class HologramGeometry extends BaseScriptComponent {
   @input @hint("HologramFire/S4_Flame") private fireS4: SceneObject;
 
   @ui.separator
-  @ui.label('<span style="color: #7CFFB2;">Tent dimensions (cm)</span>')
+  @ui.label('<span style="color: #7CFFB2;">Tent dimensions (cm) — DOME, crossed poles</span>')
+  @ui.label('<span style="color: #94A3B8; font-size: 11px;">A dome pitched on two poles crossing corner-to-corner, per the assembly reference: footprint, poles crossed over it, body clipped up, fly with a vestibule, then pegged out. NOT an A-frame ridge tent.</span>')
   @input @widget(new SliderWidget(40, 200, 1)) @hint("Footprint width (X).") private tentWidth: number = 90;
   @input @widget(new SliderWidget(40, 240, 1)) @hint("Footprint depth (Z). Door faces +Z.") private tentDepth: number = 110;
-  @input @widget(new SliderWidget(30, 160, 1)) @hint("Ridge height.") private tentHeight: number = 62;
+  @input @widget(new SliderWidget(30, 160, 1)) @hint("Apex height where the two poles cross.") private tentHeight: number = 62;
   @input @widget(new SliderWidget(4, 40, 1)) @hint("How far outside the corners the stakes sit.") private stakeOffset: number = 16;
+
+  @input
+  @widget(new SliderWidget(6, 32, 1))
+  @hint("Segments per pole arc. More = smoother dome, more line segments.")
+  private poleSegments: number = 14;
+
+  @input
+  @widget(new SliderWidget(1, 5, 1))
+  @hint("Horizontal body rings between ground and apex. These are what make the wireframe read as a DOME rather than as two loose arcs.")
+  private bodyRings: number = 3;
+
+  @input
+  @widget(new SliderWidget(0, 90, 1))
+  @hint("How far the fly's vestibule/porch reaches beyond the front edge (+Z). 0 = no vestibule.")
+  private vestibuleDepth: number = 34;
+
+  @input
+  @widget(new SliderWidget(0.0, 0.6, 0.02))
+  @hint("How far the poles bow OUTWARD from the straight corner-to-corner line, as a fraction of half-width. Real dome poles bow; 0 gives flat vertical arches.")
+  private poleBow: number = 0.18;
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Fire-lay dimensions (cm)</span>')
@@ -143,13 +164,21 @@ export class HologramGeometry extends BaseScriptComponent {
   }
 
   private buildAll(): void {
-    // Tent — cumulative stages.
+    // Tent — cumulative stages, in the order the reference assembles a DOME:
+    //   1 footprint down · 2 poles crossed over it · 3 body clipped up ·
+    //   4 fly + vestibule · 5 pegged out, door in.
+    // The object names are the SCENE-MAP contract and do not move; S4 now
+    // carries the fly (it used to carry the stakes) because that is the order
+    // a dome actually goes up — you cannot peg a fly you have not draped.
     this.buildInto(this.tentS1, (m) => this.tentFootprint(m));
     this.buildInto(this.tentS2, (m) => { this.tentFootprint(m); this.tentPoles(m); });
     this.buildInto(this.tentS3, (m) => { this.tentFootprint(m); this.tentPoles(m); this.tentCanopy(m); });
-    this.buildInto(this.tentS4, (m) => { this.tentFootprint(m); this.tentPoles(m); this.tentCanopy(m); this.tentStakes(m); });
+    this.buildInto(this.tentS4, (m) => {
+      this.tentFootprint(m); this.tentPoles(m); this.tentCanopy(m); this.tentFly(m);
+    });
     this.buildInto(this.tentS5, (m) => {
-      this.tentFootprint(m); this.tentPoles(m); this.tentCanopy(m); this.tentStakes(m); this.tentDoor(m);
+      this.tentFootprint(m); this.tentPoles(m); this.tentCanopy(m); this.tentFly(m);
+      this.tentStakes(m); this.tentDoor(m);
     });
     // Fire — cumulative stages.
     this.buildInto(this.fireS1, (m) => this.fireCleared(m));
@@ -175,56 +204,127 @@ export class HologramGeometry extends BaseScriptComponent {
 
   // ---------------------------------------------------------------- tent ----
 
-  /** S1 — ground footprint: rect, diagonals, dashed ridge hint. */
+  /**
+   * A point on a dome pole: an arc from corner A to corner B over the apex.
+   *
+   * `t` runs 0..1 along the pole. Height is a half-sine (0 at both corners,
+   * `tentHeight` at the crossing point). The arc also BOWS outward from the
+   * straight A-B line by `poleBow`, perpendicular in plan — real dome poles
+   * bow, and without it the two arcs read as flat crossed hoops rather than a
+   * dome.
+   */
+  private polePoint(ax: number, az: number, bx: number, bz: number, t: number): number[] {
+    const x = ax + (bx - ax) * t;
+    const z = az + (bz - az) * t;
+    const y = this.groundLift + this.tentHeight * Math.sin(Math.PI * t);
+    // Perpendicular to A->B in plan, scaled by a sine so the bow is zero at
+    // the pegged corners and greatest at the apex.
+    const dx = bx - ax, dz = bz - az;
+    const len = Math.sqrt(dx * dx + dz * dz) || 1;
+    const bow = this.poleBow * (this.tentWidth / 2) * Math.sin(Math.PI * t);
+    return [x + (-dz / len) * bow, y, z + (dx / len) * bow];
+  }
+
+  /** S1 — the footprint sheet on the ground: outline, diagonals, fold hints. */
   private tentFootprint(m: WireMesh): void {
     const w = this.tentWidth / 2, d = this.tentDepth / 2, g = this.groundLift;
     m.polyline([[-w, g, -d], [w, g, -d], [w, g, d], [-w, g, d]], true);
+    // The diagonals are not decoration: they are the lines the two poles will
+    // follow, so step 1 already shows where step 2 goes.
     m.line(-w, g, -d, w, g, d);
     m.line(w, g, -d, -w, g, d);
-    // Dashed centre line marks the future ridge orientation.
-    const dashes = 6;
-    for (let i = 0; i < dashes; i++) {
-      const t0 = i / dashes, t1 = t0 + 0.6 / dashes;
-      m.line(0, g, -d + this.tentDepth * t0, 0, g, -d + this.tentDepth * t1);
+    // Corner tabs — where the pole ends and the pegs land.
+    const tab = 7;
+    for (const sx of [1, -1]) {
+      for (const sz of [1, -1]) {
+        m.line(sx * w, g, sz * d, sx * (w - tab), g, sz * d);
+        m.line(sx * w, g, sz * d, sx * w, g, sz * (d - tab));
+      }
     }
   }
 
-  /** S2 — A-frame pole set: two A ends, ridge, crossbars. */
+  /** S2 — the two poles, crossed corner to corner over the footprint. */
   private tentPoles(m: WireMesh): void {
-    const w = this.tentWidth / 2, d = this.tentDepth / 2, h = this.tentHeight, g = this.groundLift;
-    for (const s of [1, -1]) {
-      const z = d * s;
-      m.line(0, h, z, -w, g, z); // A legs
-      m.line(0, h, z, w, g, z);
-      const t = 0.55; // crossbar at 45% height
-      m.line(-w * t, h * (1 - t), z, w * t, h * (1 - t), z);
+    const w = this.tentWidth / 2, d = this.tentDepth / 2;
+    const segs = Math.max(4, Math.round(this.poleSegments));
+    const corners: number[][] = [
+      [-w, -d, w, d], // pole A: back-left -> front-right
+      [w, -d, -w, d], // pole B: back-right -> front-left
+    ];
+    for (const c of corners) {
+      const pts: number[][] = [];
+      for (let i = 0; i <= segs; i++) {
+        pts.push(this.polePoint(c[0], c[1], c[2], c[3], i / segs));
+      }
+      m.polyline(pts, false);
     }
-    m.line(0, h, d, 0, h, -d); // ridge
   }
 
-  /** S3 — canopy: fabric panel lines over the frame. */
+  /**
+   * S3 — the inner tent clipped up onto the poles.
+   *
+   * Horizontal rings through the four points where the two arcs sit at the
+   * same height. That is what turns two crossed arcs into a legible dome, and
+   * it is the shape the reference shows standing before the fly goes on.
+   */
   private tentCanopy(m: WireMesh): void {
-    const w = this.tentWidth / 2, d = this.tentDepth / 2, h = this.tentHeight;
-    for (const t of [1 / 3, 2 / 3]) {
-      const y = h * (1 - t);
-      // Slope panel seams, ridge-parallel, both sides.
-      m.line(-w * t, y, -d, -w * t, y, d);
-      m.line(w * t, y, -d, w * t, y, d);
-      // Rear wall panel seams close the back face.
-      m.line(-w * t, y, -d, w * t, y, -d);
+    const w = this.tentWidth / 2, d = this.tentDepth / 2;
+    const rings = Math.max(1, Math.round(this.bodyRings));
+    for (let r = 1; r <= rings; r++) {
+      // Ring r sits at parameter t along each pole, so all four points share a height.
+      const t = (r / (rings + 1)) * 0.5;
+      const a1 = this.polePoint(-w, -d, w, d, t);
+      const a2 = this.polePoint(-w, -d, w, d, 1 - t);
+      const b1 = this.polePoint(w, -d, -w, d, t);
+      const b2 = this.polePoint(w, -d, -w, d, 1 - t);
+      // Order them around the dome: back-left, back-right, front-right, front-left.
+      m.polyline([a1, b1, a2, b2], true);
     }
   }
 
-  /** S4 — staking out: four stakes with guy lines and ground ticks. */
+  /** S4 — the fly over the dome, with the vestibule reaching out at the door. */
+  private tentFly(m: WireMesh): void {
+    const w = this.tentWidth / 2, d = this.tentDepth / 2, g = this.groundLift;
+    const segs = Math.max(4, Math.round(this.poleSegments));
+    const v = this.vestibuleDepth;
+    if (v <= 0) return;
+
+    // Vestibule ridge: from the apex out and down to the ground ahead of the
+    // door — the porch in step 5 of the reference.
+    const apex = this.polePoint(-w, -d, w, d, 0.5);
+    const nose = [0, g, d + v];
+    const ridge: number[][] = [];
+    for (let i = 0; i <= segs; i++) {
+      const t = i / segs;
+      ridge.push([
+        apex[0] + (nose[0] - apex[0]) * t,
+        apex[1] + (nose[1] - apex[1]) * t + Math.sin(Math.PI * t) * this.tentHeight * 0.12,
+        apex[2] + (nose[2] - apex[2]) * t,
+      ]);
+    }
+    m.polyline(ridge, false);
+
+    // Vestibule side seams, front corners out to the nose.
+    for (const sx of [1, -1]) {
+      m.line(sx * w, g, d, nose[0], nose[1], nose[2]);
+      // and the fly hem along the ground at the front.
+      m.line(sx * w, g, d, sx * w * 0.5, g, d + v * 0.45);
+      m.line(sx * w * 0.5, g, d + v * 0.45, nose[0], nose[1], nose[2]);
+    }
+  }
+
+  /** S5 — pegged out: angled stakes, guy lines, and the door. */
   private tentStakes(m: WireMesh): void {
-    const w = this.tentWidth / 2, d = this.tentDepth / 2, h = this.tentHeight, g = this.groundLift;
+    const w = this.tentWidth / 2, d = this.tentDepth / 2, g = this.groundLift;
     const o = this.stakeOffset;
     for (const sx of [1, -1]) {
       for (const sz of [1, -1]) {
         const ax = sx * (w + o), az = sz * (d + o); // ground anchor
-        m.line(ax + sx * 3, 10, az + sz * 3, ax, g, az); // stake, leaning away
-        // Guy line from mid-slope edge to stake head.
-        m.line(sx * w * 0.5, h * 0.5, sz * d, ax + sx * 3, 10, az + sz * 3);
+        // The peg leans AWAY from the tent at ~45°, as in the reference's
+        // step 6/7 detail circles.
+        m.line(ax + sx * 4, 11, az + sz * 4, ax, g, az);
+        // Guy line from the pole's corner foot to the peg head.
+        m.line(sx * w, g, sz * d, ax + sx * 4, 11, az + sz * 4);
         // Ground tick (small X) at the anchor.
         m.line(ax - 3, g, az - 3, ax + 3, g, az + 3);
         m.line(ax - 3, g, az + 3, ax + 3, g, az - 3);
@@ -232,15 +332,22 @@ export class HologramGeometry extends BaseScriptComponent {
     }
   }
 
-  /** S5 — finished: door V, zipper, ridge pennant. */
+  /** S5 — the D-shaped door on the front face of the dome. */
   private tentDoor(m: WireMesh): void {
-    const w = this.tentWidth / 2, d = this.tentDepth / 2, h = this.tentHeight, g = this.groundLift;
-    m.line(0, h * 0.8, d, -w * 0.35, g, d); // door V
-    m.line(0, h * 0.8, d, w * 0.35, g, d);
-    m.line(0, h * 0.8, d, 0, h * 0.42, d); // zipper
-    // Pennant on the front ridge end.
-    m.line(0, h, d, 0, h + 9, d);
-    m.polyline([[0, h + 9, d], [7, h + 7, d], [0, h + 5, d]], true);
+    const d = this.tentDepth / 2, h = this.tentHeight, g = this.groundLift;
+    const segs = 10;
+    const rx = this.tentWidth * 0.3, ry = h * 0.62;
+    const z = d + (this.vestibuleDepth > 0 ? 1.5 : 0.8);
+    // Half-ellipse door arch, hinged on the ground line.
+    const pts: number[][] = [];
+    for (let i = 0; i <= segs; i++) {
+      const a = Math.PI * (i / segs);
+      pts.push([Math.cos(a) * rx, g + Math.sin(a) * ry, z]);
+    }
+    m.polyline(pts, false);
+    m.line(-rx, g, z, rx, g, z);
+    // Zip pull down the middle.
+    m.line(0, g + ry, z, 0, g + ry * 0.45, z);
   }
 
   // ---------------------------------------------------------------- fire ----

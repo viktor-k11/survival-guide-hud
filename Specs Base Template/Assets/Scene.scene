@@ -2362,6 +2362,10 @@
     tentDepth: true
     tentHeight: true
     stakeOffset: true
+    poleSegments: true
+    bodyRings: true
+    vestibuleDepth: true
+    poleBow: true
     clearRadius: true
     tinderRadius: true
     tinderHeight: true
@@ -2387,6 +2391,10 @@
       tentDepth: !<float> 110.000000
       tentHeight: !<float> 62.000000
       stakeOffset: !<float> 16.000000
+      poleSegments: !<float> 14.000000
+      bodyRings: !<float> 3.000000
+      vestibuleDepth: !<float> 34.000000
+      poleBow: 0.180000
       clearRadius: !<float> 40.000000
       tinderRadius: !<float> 9.000000
       tinderHeight: !<float> 14.000000
@@ -14867,7 +14875,7 @@
       fireGroup: !<reference.SceneObject> 7d38e26c-8057-4165-94fe-51fcbe6e8b56
       cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
       distanceCm: !<float> 600.000000
-      hologramScale: 1.300000
+      hologramScale: 1.150000
       rotationDegPerSec: !<float> 8.000000
       enableTransitions: true
       wipeSec: 0.550000

@@ -93,6 +93,19 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 > into the EXISTING nine stage RenderMeshVisuals at OnStart (hard rule 1 —
 > populate, never instantiate). Stages are cumulative: S3 contains S1+S2+S3.
 > All dimensions are @inputs on that component.
+>
+> **The tent is a DOME on two crossed poles, not an A-frame** (corrected
+> 2026-08-21 against a real pitching diagram). The A-frame first written was
+> the wrong tent typology and its assembly order did not match how anyone
+> actually pitches one. Order now follows the reference exactly:
+> S1 footprint down · S2 poles crossed corner-to-corner and raised ·
+> S3 body clipped onto the poles · **S4 fly draped with the vestibule** ·
+> S5 pegged out at 45° with guy lines and the D-door. Note S4 changed meaning
+> (it used to be the stakes) — you cannot peg a fly you have not draped. The
+> OBJECT names are unchanged, because they are the contract. Poles are half-
+> sine arcs that also bow outward (`poleBow`); the body reads as a dome because
+> of the horizontal rings through the four points where the two arcs share a
+> height (`bodyRings`), not because of any extra geometry.
 
 > **Props are pre-made disabled children of `WorldRoot/PropsContainer`:**
 > `Prop_Log_1..6`, `Prop_Kindling`, `Prop_Stake` — instantiated from the GLB
@@ -427,18 +440,21 @@ MeshBuilder output, so editor-side bounds report only the placeholder mesh and
 the measurement has to be taken from inside the Lens). The display is a
 RECTANGLE, so the test is per-axis against ±16-18°, not a Euclidean cone.
 
-| Stage (tent) | AABB at scale 1.3 | yaw | pitch | verdict at 6.05 m |
+| Stage (tent) | AABB at scale 1.15 | yaw | pitch | verdict at ~6.1 m |
 |---|---|---|---|---|
-| S1 footprint | 117 x 1 x 143 cm | ±7.0° | −13.0..−10.0° | fits |
-| S3 canopy | 173 x 81 x 157 cm | ±9.4° | −13.0..−3.3° | fits |
-| **S4 stakes (widest)** | **232 x 81 x 244 cm** | **±13.6°** | **−14.1..−3.1°** | **fits — the binding case** |
-| S5 complete | 224 x 92 x 205 cm | ±12.7° | −13.6..−2.3° | fits |
+| S2 poles crossed | 125 x 72 x 144 cm | ±6.8° | −12.8..−4.1° | fits |
+| S3 body on poles | 163 x 72 x 159 cm | ±8.9° | −13.0..−4.0° | fits |
+| S4 fly + vestibule | 174 x 72 x 118 cm | ±11.1° | −12.5..−4.2° | fits |
+| **S5 complete (widest)** | **226 x 72 x 201 cm** | **±13.5°** | **−13.4..−3.9°** | **fits — the binding case** |
 
-The first pair tried (550 cm / scale 1.4) FAILED on S4 at ±18.0° yaw. Pushing
-the distance out beats shrinking, because distance improves the yaw **and** the
-ground-plane pitch, while shrinking at a fixed distance leaves the pitch where
-it was. Shipping pair: **600 cm, scale 1.3**, worst axis ~14° with ~2° of
-margin, confirmed in `hologram-tent-stage1/3/5.jpg` at level gaze.
+The first pair tried (550 cm / scale 1.4) FAILED on the old A-frame's S4 at
+±18.0° yaw. Pushing the distance out beats shrinking, because distance improves
+the yaw **and** the ground-plane pitch, while shrinking at a fixed distance
+leaves the pitch where it was. Shipping pair: **600 cm, scale 1.15** — the
+dome-with-vestibule is wider than the A-frame it replaced and hit ±15.9° at
+scale 1.3 (inside the window but with no margin left), so the scale came down;
+worst axis is now ~13.5° with ~2.5° of margin, confirmed in
+`hologram-tent-stage1/3/4-fly/5.jpg` at level gaze.
 
 **The anchored case deliberately breaks that budget.** A lesson started from a
 site marker anchors to the surveyed position (~3.6 m in the fixtures), which at

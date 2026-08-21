@@ -3453,3 +3453,49 @@ card carrying a next line is the previous batch's
 `completion-card-next-step.jpg` (identical rendering, sourced from the
 doctored fixture); the live path is evidenced by the COORD/ENGINE/CARD log
 lines quoted above.
+
+## Prompt — tent hologram rebuilt as a DOME, against a real pitching diagram
+
+> вот референс на анимацию сборки палатки, твоя генерация плохо отображает как
+> должно быть [assembly diagram: 1 footprint, 2 poles crossed over it, 3 dome
+> standing on crossed poles, 5 fly with vestibule, 6/7 peg detail at an angle]
+
+**The reference was right and the geometry was wrong at the typology level.**
+I had built an **A-frame ridge tent** — two A-shaped ends and a ridge pole —
+while the diagram shows a **dome pitched on two poles crossing corner to
+corner**. Not a detail: it is a different tent, and its assembly order differs
+too, so the staged blueprint was teaching the wrong sequence.
+
+**Rebuilt `HologramGeometry`'s tent stages to the reference's own order:**
+
+| stage | was (A-frame) | now (dome) |
+|---|---|---|
+| S1 | rect + dashed ridge hint | footprint sheet; the diagonals ARE the pole lines, corner tabs where pegs land |
+| S2 | two A-legs + ridge pole | **two poles crossed corner-to-corner**, half-sine arcs that bow outward (`poleBow`) |
+| S3 | flat panel seams | body clipped onto the poles — horizontal rings through the four points where the arcs share a height (`bodyRings`); that is what makes it read as a dome |
+| S4 | stakes | **fly draped, with the vestibule reaching past the door** (reference step 5) |
+| S5 | door V + pennant | pegged out at 45° with guy lines (reference 6/7) + a D-shaped door |
+
+S4 changed MEANING — it used to be the stakes — because you cannot peg a fly
+you have not draped. The object names (`S4_Stakes` etc.) are unchanged: they
+are the SCENE-MAP contract and code looks them up by name.
+
+**Re-measured, and the dome needed a smaller scale.** It is wider than the
+A-frame it replaced (the vestibule adds depth, the crossed poles add width),
+and at the old scale 1.3 stage 5 measured **±15.9° yaw** — inside the ±16-18°
+window but with the margin gone. Scale is now **1.15** at the same 600 cm:
+
+| stage | AABB | yaw | pitch |
+|---|---|---|---|
+| S2 | 125 x 72 x 144 | ±6.8° | −12.8..−4.1° |
+| S3 | 163 x 72 x 159 | ±8.9° | −13.0..−4.0° |
+| S4 | 174 x 72 x 118 | ±11.1° | −12.5..−4.2° |
+| **S5** | **226 x 72 x 201** | **±13.5°** | **−13.4..−3.9°** |
+
+~2.5° of margin on the binding stage. Captures re-shot at the final scale:
+`hologram-tent-stage1/3/5.jpg` plus a new `hologram-tent-stage4-fly.jpg` for
+the vestibule, which is the stage the reference makes the most of.
+
+Also updated the staging fixture's step TEXT to match the new order (it still
+said "drive the stakes" on the stage that now drapes the fly) — test input
+only, no product copy touched. Fire stages untouched.

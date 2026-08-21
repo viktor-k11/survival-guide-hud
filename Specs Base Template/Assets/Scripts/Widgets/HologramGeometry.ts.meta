@@ -28,6 +28,7 @@
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
+    bodyRings: false
     clearRadius: false
     enableLogging: false
     fireS1: false
@@ -38,6 +39,8 @@
     groundLift: false
     logLength: false
     logThickness: false
+    poleBow: false
+    poleSegments: false
     stakeOffset: false
     tentDepth: false
     tentHeight: false
@@ -49,6 +52,7 @@
     tentWidth: false
     tinderHeight: false
     tinderRadius: false
+    vestibuleDepth: false
   ScriptTypesHidden:
     {}
   ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
@@ -71,6 +75,10 @@
       tentDepth: !<float> 110.000000
       tentHeight: !<float> 62.000000
       stakeOffset: !<float> 16.000000
+      poleSegments: !<float> 14.000000
+      bodyRings: !<float> 3.000000
+      vestibuleDepth: !<float> 34.000000
+      poleBow: 0.180000
       clearRadius: !<float> 40.000000
       tinderRadius: !<float> 9.000000
       tinderHeight: !<float> 14.000000
@@ -97,11 +105,16 @@
     - '// @input SceneObject fireS3 {"hint":"HologramFire/S3_LogCabin"}'
     - '// @input SceneObject fireS4 {"hint":"HologramFire/S4_Flame"}'
     - '// @ui {"widget":"separator"}'
-    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Tent dimensions (cm)</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Tent dimensions (cm) — DOME, crossed poles</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">A dome pitched on two poles crossing corner-to-corner, per the assembly reference: footprint, poles crossed over it, body clipped up, fly with a vestibule, then pegged out. NOT an A-frame ridge tent.</span>"}'
     - '// @input float tentWidth = 90 {"hint":"Footprint width (X).", "widget":"slider", "min":40, "max":200, "step":1}'
     - '// @input float tentDepth = 110 {"hint":"Footprint depth (Z). Door faces +Z.", "widget":"slider", "min":40, "max":240, "step":1}'
-    - '// @input float tentHeight = 62 {"hint":"Ridge height.", "widget":"slider", "min":30, "max":160, "step":1}'
+    - '// @input float tentHeight = 62 {"hint":"Apex height where the two poles cross.", "widget":"slider", "min":30, "max":160, "step":1}'
     - '// @input float stakeOffset = 16 {"hint":"How far outside the corners the stakes sit.", "widget":"slider", "min":4, "max":40, "step":1}'
+    - '// @input float poleSegments = 14 {"hint":"Segments per pole arc. More = smoother dome, more line segments.", "widget":"slider", "min":6, "max":32, "step":1}'
+    - '// @input float bodyRings = 3 {"hint":"Horizontal body rings between ground and apex. These are what make the wireframe read as a DOME rather than as two loose arcs.", "widget":"slider", "min":1, "max":5, "step":1}'
+    - "// @input float vestibuleDepth = 34 {\"hint\":\"How far the fly's vestibule/porch reaches beyond the front edge (+Z). 0 = no vestibule.\", \"widget\":\"slider\", \"min\":0, \"max\":90, \"step\":1}"
+    - '// @input float poleBow = 0.18 {"hint":"How far the poles bow OUTWARD from the straight corner-to-corner line, as a fraction of half-width. Real dome poles bow; 0 gives flat vertical arches.", "widget":"slider", "min":0, "max":0.6, "step":0.02}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Fire-lay dimensions (cm)</span>"}'
     - '// @input float clearRadius = 40 {"hint":"Cleared-spot radius.", "widget":"slider", "min":15, "max":100, "step":1}'
