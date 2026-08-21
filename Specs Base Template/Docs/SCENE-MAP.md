@@ -39,7 +39,8 @@ advance so a counting-down timer does not jitter. Both fonts are in the project;
 |---|---|
 | `HUDRoot` + ALL descendants (incl. `MainMenu`, `BootIntro`) | **disabled** |
 | `WorldRoot` + all 34 descendants | **disabled** |
-| `Headlock` component on `HUDRoot` | **ENABLED** since the camp/trail batch. Tuned lazy: `_distance` 120, easings 0.25, buffers 6 cm / 3° / 3° (7° buffers left a permanent ~15 cm dead-zone offset at 120 cm — measured). ONLY HUDRoot; WorldRoot stays world-anchored. **The yaw question is CLOSED (probed with `YawProbe` [TEMP], keyboard Shift+A/D AND the MCP tool):** the tracked camera's rotation DOES change under both input paths, and Headlock DOES follow yaw while healthy — the earlier "no follow" readings were all one root cause: **SIK Headlock numerically DIVERGES in Preview** (position multiplies ~x30/s off to 1e19 cm; preview frame-time spikes tip its smoothing unstable). Every "HUD vanished / did not follow" symptom was this. Guard: `HudRecenter` auto-recenters when the HUD strays beyond `autoRecenterBeyondCm` (400) or goes NaN — verified live catching a 4.9 m and an 8.2 m runaway. Manual recenter: voice "recenter" / key 5. On device frame times are even; verify divergence never fires there. |
+| `Headlock` component on `HUDRoot` | **DISABLED 2026-08-21 — replaced by `Systems/HudFollower`. Kept in the scene so rollback is a checkbox** (disable HudFollower's object, tick Headlock). Why replaced: SIK Headlock's smoothing step is `pos += (target−pos) · easing · dt/0.033` — a dt-scaled lerp that DIVERGES once `easing·dt/0.033 > 2`, i.e. any frame over ~0.26 s at our tuned easing 0.25. Preview tool calls produce such frames routinely (measured runaway: ×30/s off to 1e19 cm; this one bug was every "HUD vanished / did not follow yaw / boot intro invisible / HUD lost after teleport" symptom). Also: Headlock only ever wrote POSITION — HUDRoot's rotation was whatever the last recenter left, so the panel went edge-on after a large yaw. |
+| `HudFollower` component (on `Systems/HudFollower`) | **ENABLED — the follow.** Same tuned feel (distance 120, buffers 6 cm / 3° / 3°; a buffer leaves up to its own width of rest offset, ~6 cm at 3°/120 cm — same as Headlock, measured), but unconditionally stable: per-axis `alpha = 1 − exp(−dt/tau)` ∈ (0,1) for ANY dt (tau 0.13 s ≈ the old easing at 60 fps), dt clamped at 0.1 s, non-finite camera poses held-and-logged, and rotation derived from the same smoothed angles so the panel keeps facing the wearer. Verified 2026-08-21: 10.3 m walk (tether held, max 7 cm lag), 93° keyboard yaw (settled 1.5 s), −30° pitch with ground content at 3 m in frame, and a soak with provoked frame times of 0.8 s / 3.3 s / 7.3 s / **30.4 s** — excursion 0 cm at every 1 Hz sample, drift-guard NEVER fired (a fire is a maths bug, not a tuning knob — see the component header). |
 | `VisualConfig` | **enabled** — config holder, draws nothing |
 | `RSG Smoke Test [TEMP]` | **enabled** — throwaway diagnostic, untouched |
 | `Camera Object`, `Lighting`, `SpectaclesInteractionKit` | enabled — stock |
@@ -132,10 +133,13 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 
 ## HUDRoot — head-locked, lazy-follow
 
-`HUDRoot` carries SIK's `Headlock` component (disabled). Its easing inputs are
-the lazy-follow behaviour; enable the component and tune
-`xzEasing` / `yEasing` / `pitchEasing` / `yawEasing` in the Inspector.
-Local origin sits 60 cm in front of the user.
+`HUDRoot` is placed every frame by **`Systems/HudFollower`** (our own
+component — see the enabled/disabled table above for why SIK's `Headlock`,
+still on HUDRoot as the rollback, was retired). All follow behaviour is
+Inspector-tunable on HudFollower: `distanceCm`, per-axis `tau*` (seconds to
+close ~63% of the gap — NOT a raw lerp coefficient), the dead-zone buffers,
+the dt clamp and the drift-guard threshold. Local origin sits 120 cm in front
+of the user.
 
 | Path | What it is | Driven by |
 |---|---|---|
@@ -245,7 +249,8 @@ placed against real terrain, not the head.
 | `Systems/NavigationController` | `Engine/NavigationController.ts` — owns the camp point, the trail recorder (explicit "LEAVING CAMP" start; marks auto-drop per spacing; decimation on pool overflow) and the navigation loop. Pure maths in `NavMath.ts`. `useFixtureTrail` + `Assets/Survey/fixtures/camp-trail-demo.json` (regenerate: `python3 Tools/make-trail-fixture.py`) is the deterministic path — SHIPS OFF. Debug keys **7** set camp / **8** start trail / **9** follow trail / **0** simulate tracking loss. |
 | `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
 | `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
-| `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. |
+| `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. Its 400 cm drift guard stays as the OUTER belt-and-braces; with HudFollower's stable maths it should never fire. |
+| `Systems/HudFollower` | `Engine/HudFollower.ts` — **owns HUDRoot's transform every frame** (replaced SIK Headlock 2026-08-21 — see the enabled/disabled table). Unconditionally stable smoothing (`1 − exp(−dt/tau)`), dt clamp, NaN rejection, Headlock-feel dead-zones, own inner drift guard against its own target, `settled N s` log lines. On `recenterRequested` it drops state and re-seeds from the live camera so it never fights HudRecenter. `logIntervalSec` > 0 turns on a 1 Hz distance-from-target diagnostic (ships 0). |
 | `Systems/BootIntroPresenter` | `Widgets/BootIntroPresenter.ts` — the boot intro: CRT scanline wipe + two typed lines (~3.9 s), skippable by pinch (the same pinch that starts a capture, observed via `voiceStateChanged`). `runIntro` @input off = no intro and the done edge fires immediately. Emits `introStateChanged`; NO audio calls of its own (SfxService plays the power-on cue), no narration — no baked track exists and live TTS at boot is forbidden (6.5-18.6 s of opening silence). |
 | `Systems/MainMenuPresenter` | `Widgets/MainMenuPresenter.ts` — drives `HUDRoot/MainMenu`: row copy/state, the moving highlight, description + status panels, the ask widget's caret/interim/example ticker, row 6's live distance. Emits `menuSelected` on pinch. Debug keys J (cycle highlight) / L (activate). |
 | `Systems/SurveyGridPresenter` | `Widgets/SurveyGridPresenter.ts` — drives `WorldRoot/SurveyGrid` from `surveyProgress`: follows the sampled bounds, grows, spins, rides a brightness wave. |
@@ -307,10 +312,16 @@ found" is a worse answer than "here, but watch the slope". A selected site
 still overlapping a hazard is surfaced through the EXISTING `distanceWarning`
 strip plus a spoken line, not a new mechanism.
 
-Regression contract (the demo depends on it, re-verified with the penalty on):
-`survey-open-clearing` → 3 sites, fire clear ≥ 3 m, no warning, 0 hazards;
-`survey-cramped-camp` → `distanceWarning` at **1.03 m** (bit-identical to the
-pre-penalty baseline) plus 3 steep hazards (64-70°) off the rubble ring.
+Regression contract (the demo depends on it, re-verified with the penalty on).
+**The invariants are exactly these, and nothing more:** `survey-open-clearing`
+→ 3 sites (2 tents + 1 fire), fire clear of the nearest tent by ≥ 3 m, no
+warning, 0 hazards; `survey-cramped-camp` → `distanceWarning` raised (measured
+at 1.03 m, bit-identical to the pre-penalty baseline) plus 3 steep hazards
+(64-70°) off the rubble ring. **Point counts are NOT an invariant**: the
+fixture's time-based reveal makes the accepted-point tally vary with frame
+timing — measured 344-387 across sessions (the "381 points" in older log
+entries is one session's reading, not a contract). Never assert an exact
+count in a test; assert the site/warning/hazard outcomes above.
 
 ### NAVIGATE — a mode, not a companion
 
@@ -518,11 +529,12 @@ doing. Two things follow, and they matter more than a fixed anchor distance:
   a wearer at level gaze sees nothing and has no way to know content exists.
   Silence is the failure mode, not the placement.
 
-> `HUDRoot`'s `Headlock` component ships **disabled**, so the HUD does not
-> follow a pitch change: in the −30 ° capture the head-locked chrome has left
-> the view entirely while the world-locked footprint is centred. On device with
-> Headlock enabled the HUD would follow the head. Do not read those captures as
-> evidence about HUD placement.
+> Those captures were taken while nothing followed the head (Headlock was
+> disabled at the time). Since `Systems/HudFollower` (2026-08-21) the HUD DOES
+> follow a pitch change: `hudfollower-pitch-level.jpg` /
+> `hudfollower-pitch-down-30.jpg` show the menu staying in frame at level gaze
+> AND at −30 °, with the 3 m footprint visible in the second. The frustum
+> numbers above are unchanged — only the HUD's behaviour differs.
 
 ## Where the fixed ~7 s per call goes
 
@@ -697,7 +709,7 @@ pitched camp tent. Meshes come from `GenerateFast3DAssets` into
 
 | Path | What it is |
 |---|---|
-| `DEMO_ENV [PREVIEW ONLY]` | Master switch. **Ships enabled only while a demo is being shot.** |
+| `DEMO_ENV [PREVIEW ONLY]` | Master switch. **Always committed DISABLED** (guard-enforced); tick it on transiently while shooting a demo, untick before committing. |
 | `…/Terrain/Ground` | 240 x 240 m plane at y = -120 — the same floor level as `WorldRoot`, so stakes, zones and markers stand on visible grass instead of void |
 | `…/Terrain/River` | 160 m x 4.2 m water band at z = -19 m, yawed 8°. Context for the water lesson |
 | `…/Terrain/Clearing` | 9 m dirt disc under the user — the camp clearing |
@@ -706,8 +718,14 @@ pitched camp tent. Meshes come from `GenerateFast3DAssets` into
 | `…/CampProps/CampTent` | Pitched tent at 16 m, 25° yaw — reads as "camp is set" for the navigation scenario |
 
 > **THIS IS NOT LENS CONTENT AND CANNOT BECOME LENS CONTENT.** It must be
-> disabled before any device run or publish. It is in the scene-roots allowlist
-> with that note; the guard checks the root exists, not whether you left it on.
+> disabled before any device run or publish — and NOTHING structural keeps it
+> out of a build: an enabled DEMO_ENV ships. Since 2026-08-21 the scene-roots
+> guard enforces this (`must_be_disabled_roots` in the allowlist): a commit
+> with the root enabled fails the pre-commit check. Only the ROOT's flag is
+> checked — its children stay enabled on purpose, so showing the diorama for a
+> capture stays a one-checkbox act. It also costs real frame time in Preview
+> (measured 2026-08-21: disabling it took idle frames from ~400 ms to
+> ~150-250 ms), so leave it off unless a capture needs it.
 
 ### Why a demo diorama exists at all, and what it cannot do
 

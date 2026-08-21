@@ -1389,6 +1389,21 @@
     []
   Components:
     - !<own> b7c34c2c-56d5-443f-a824-a5d66cbbff98
+- !<SceneObject/0cb2ba09-61ca-4ad2-8770-3e0de5cdfcac>
+  PrefabRemaps:
+    []
+  Name: HudFollower
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 5c969bcb-ac69-4903-a362-278a0e57d740
 - !<RenderMeshVisual/0ccb6eb8-584f-4c82-b9f3-d26d2598c2bc>
   PrefabRemaps:
     []
@@ -6399,6 +6414,7 @@
     - !<own> d42906c6-644f-4769-898c-995674556db7
     - !<own> c7f67a3f-cc8b-4db2-9727-99aeb1acfdf5
     - !<own> f4c30358-77db-4ce9-b72c-ad3284f5bf7d
+    - !<own> 0cb2ba09-61ca-4ad2-8770-3e0de5cdfcac
   Components:
     []
 - !<Text/5608a90a-af26-49e0-8d63-6fdf1eecb7d3>
@@ -7142,6 +7158,46 @@
     []
   Components:
     - !<own> 44eec705-22d1-4ac6-b8de-726e0c01db34
+- !<ScriptComponent/5c969bcb-ac69-4903-a362-278a0e57d740>
+  PrefabRemaps:
+    []
+  Name: HudFollower
+  Enabled: true
+  ScriptAsset: !<reference> 2eccbd40-84a6-442e-bfd9-447c8ad9fb74
+  ScriptInputsDefault:
+    distanceCm: true
+    tauXZ: true
+    tauY: true
+    tauPitch: true
+    tauYaw: true
+    bufferTranslationCm: true
+    bufferPitchDeg: true
+    bufferYawDeg: true
+    dtClampSec: true
+    driftSnapCm: true
+    logIntervalSec: true
+    enableLogging: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      hudRoot: !<reference.SceneObject> 7900773a-f725-480b-b9c2-013b043f3fe1
+      cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
+      distanceCm: !<float> 120.000000
+      tauXZ: 0.130000
+      tauY: 0.130000
+      tauPitch: 0.130000
+      tauYaw: 0.130000
+      bufferTranslationCm: !<float> 6.000000
+      bufferPitchDeg: !<float> 3.000000
+      bufferYawDeg: !<float> 3.000000
+      dtClampSec: 0.100000
+      driftSnapCm: !<float> 400.000000
+      logIntervalSec: !<float> 0.000000
+      enableLogging: true
+  ScriptTypes:
+    "":
+      {}
 - !<SceneObject/5d0029f7-110f-4e5e-b85a-66e032076248>
   PrefabRemaps:
     []
@@ -7551,7 +7607,7 @@
   PrefabRemaps:
     []
   Name: Headlock
-  Enabled: true
+  Enabled: false
   ScriptAsset: !<reference> 2a92f85a-a814-4f5d-bd73-4a2710147d01
   ScriptInputsDefault:
     _xzEnabled: true
@@ -17142,7 +17198,7 @@
   PrefabRemaps:
     []
   Name: "DEMO_ENV [PREVIEW ONLY]"
-  Enabled: true
+  Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
     Position: {x: 0.000000, y: 0.000000, z: 0.000000}

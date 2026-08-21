@@ -3141,3 +3141,77 @@ like the green site markers. `survey-sites-and-hazards.jpg`: red X, green
 FLATNESS 83% tent label and amber FLATNESS 93% fire label standing together
 from one scan, with the FIRE TOO CLOSE strip up top in the same frame's twin
 capture. Pool ships disabled; `hazardsDetected` clears on `surveyStarted`.
+
+## Prompt — own HUD follower with unconditionally stable smoothing
+
+> Replace SIK's Headlock with our own follower. Small, and it removes the last
+> unstable thing from the HUD, which is in every frame of the demo. [Why:] the
+> signature is frame-rate-dependent smoothing going unstable: pos += (target −
+> pos) * k * dt diverges once k*dt exceeds 2 — exactly what a preview hitch
+> produces; one bug, three faces (no yaw follow / boot intro invisible / HUD
+> lost after teleport). [Build:] Systems/HudFollower on HUDRoot's behalf —
+> disable Headlock, do NOT delete it. (1) alpha = 1 − exp(−dt/tau) per axis,
+> tau as @input; (2) clamp dt (0.1 s); (3) reject non-finite input; (4) keep
+> the tuned dead-zone feel — buffers 6 cm/3°/3°, distance 120; (5) keep the
+> drift-guard, and if it EVER fires the maths is wrong — say so, don't raise
+> the threshold. Verify: walk 10 m / yaw 90° by keyboard (settle time) /
+> pitch −30° with ground content at 3 m / NEW 60 s+ soak under provoked dt
+> spikes logging distance-from-target at 1 Hz. Hygiene: DEMO_ENV allowlist
+> note + confirm it cannot ship; fix "381 points" stated as an invariant.
+
+**Built.** `Engine/HudFollower.ts` on new `Systems/HudFollower` (engine-side:
+root placement, same rule as ModeRouter/HudRecenter). Headlock component on
+HUDRoot DISABLED, kept — rollback is a checkbox. Cause confirmed in SIK
+source before writing a line: `HeadlockTranslationCalculator` does
+`vec3.lerp(a, b, easing · dt/0.033)` — at our easing 0.25 that lerp factor
+passes 1 at dt ≈ 132 ms and the overshoot compounds; preview frames here
+measured 150-600 ms ROUTINELY, so Preview was running Headlock inside its
+divergence region the whole time. Follower model reproduces Headlock's
+measured feel (sphere centre + per-axis dead-zones easing to the buffer
+edge, ≤ ~6 cm rest offset at 3°/120 cm) with alpha = 1 − exp(−dt/tau)
+(tau 0.13 s ≈ old easing at 60 fps), dt clamped 0.1 s, non-finite poses
+held-and-logged, pitch clamped ±80°. One deliberate delta: Headlock never
+wrote rotation (panel went edge-on after a big yaw); the follower derives
+rotation from the SAME smoothed angles — no extra motion, panel always faces
+the wearer. On `recenterRequested` it drops state and re-seeds, so it never
+fights HudRecenter; HudRecenter's 400 cm outer guard kept unchanged.
+
+**Verified (all four):**
+- (a) 10.26 m walk (held W; this preview maps W to −X strafe — direction
+  noted, maths is isotropic): tether 120 cm held the whole way, chase lag
+  ≤ 7.1 cm, never intersected. `hudfollower-walk-mid.jpg`.
+- (b) 93° yaw via keyboard Shift+D: HUD followed, ended 1.6° inside the 3°
+  dead-zone, panel re-facing the wearer. **Settle 1.50 s** after the final
+  chase left the dead-zone (logged by the component itself); small steps
+  settle in 0.24-0.31 s.
+- (c) pitch −30° with `S1_Footprint` temporarily at 3 m: HUD followed AND
+  the footprint is in the same frame (`hudfollower-pitch-down-30.jpg`;
+  level-gaze control `hudfollower-pitch-level.jpg` shows no footprint —
+  matches the ±17° frustum numbers). Scene edits reverted after.
+- (d) soak > 4 min under provoked spikes (screenshots, VirtualScene reads,
+  runtime queries, a REAL lesson compile, two violent pose steps incl. a
+  −27°→+90° gimbal flip): 1 Hz distance-from-target read **0.0 cm at every
+  idle sample**; max excursion 122.4 cm and that was the deliberate ~107°
+  pitch flip easing along the sphere, settled 0.31 s. Frames of 0.8 s,
+  3.3 s, 7.3 s and one **30.4 s** hitch produced ZERO excursion.
+  **The drift-guard never fired.** (Old maths at dt = 30.4 s: error ×229 in
+  one frame.)
+
+**Hygiene.** (1) DEMO_ENV: was ENABLED in the committed scene — i.e. the only
+thing keeping it off a device was nobody making a build. Now disabled;
+allowlist note extended with origin/owner; checker grew
+`must_be_disabled_roots` (root's OWN flag only — children stay enabled on
+purpose) so the pre-commit hook is a real tripwire. Bonus: disabling it took
+idle preview frames from ~400 ms to ~150-250 ms. (2) "381 points": lives
+only in this log's history (kept — rule 4); SCENE-MAP's regression contract
+now states the actual invariants (2 tents + 1 fire, fire clear ≥ 3 m on
+open-clearing, distanceWarning on cramped-camp) and says point counts
+(344-387 measured) are NOT one.
+
+**Discovered along the way.** InjectPreviewGesture modifier state is
+fragile: injecting another key while Shift is held drops the modifier and
+can leave the movement key latched (a stray D strafed the camera for ~90 s).
+Release every key explicitly (`state:"end"` for D/W/S/A/Shift) before
+trusting the pose. Also: preview key-drive rates are PER-FRAME, so at low
+fps a "walk" is slow — budget minutes, not seconds, for keyboard-driven
+checks.

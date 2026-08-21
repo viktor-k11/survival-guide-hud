@@ -1,0 +1,85 @@
+- !<AssetImportMetadata/923850b6-3ab6-4ab4-b54b-7356f9208051>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 2eccbd40-84a6-442e-bfd9-447c8ad9fb74
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 2eccbd40-84a6-442e-bfd9-447c8ad9fb74
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 124f221a-1864-4ddd-b21e-6465fe98de03
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/124f221a-1864-4ddd-b21e-6465fe98de03>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 988044cb-bee5-4a35-b1fe-ecbdd07fa2bf
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    bufferPitchDeg: false
+    bufferTranslationCm: false
+    bufferYawDeg: false
+    cameraObject: false
+    distanceCm: false
+    driftSnapCm: false
+    dtClampSec: false
+    enableLogging: false
+    hudRoot: false
+    logIntervalSec: false
+    tauPitch: false
+    tauXZ: false
+    tauY: false
+    tauYaw: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - hudRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      distanceCm: !<float> 120.000000
+      tauXZ: 0.130000
+      tauY: 0.130000
+      tauPitch: 0.130000
+      tauYaw: 0.130000
+      bufferTranslationCm: !<float> 6.000000
+      bufferPitchDeg: !<float> 3.000000
+      bufferYawDeg: !<float> 3.000000
+      dtClampSec: 0.100000
+      driftSnapCm: !<float> 400.000000
+      logIntervalSec: !<float> 0.000000
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input SceneObject hudRoot {"hint":"HUDRoot."}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object."}'
+    - '// @input float distanceCm = 120 {"hint":"How far in front of the user the HUD sits, centimetres. Matches the authored z = -120."}'
+    - '// @input float tauXZ = 0.13 {"hint":"Seconds to close ~63% of the horizontal (XZ) position gap. 0.13 reproduces the tuned Headlock feel (easing 0.25 at 60 fps).", "widget":"slider", "min":0.05, "max":1, "step":0.01}'
+    - '// @input float tauY = 0.13 {"hint":"Seconds to close ~63% of the vertical (Y) position gap.", "widget":"slider", "min":0.05, "max":1, "step":0.01}'
+    - '// @input float tauPitch = 0.13 {"hint":"Seconds to close ~63% of the pitch gap.", "widget":"slider", "min":0.05, "max":1, "step":0.01}'
+    - '// @input float tauYaw = 0.13 {"hint":"Seconds to close ~63% of the yaw gap.", "widget":"slider", "min":0.05, "max":1, "step":0.01}'
+    - '// @input float bufferTranslationCm = 6 {"hint":"Head translation, centimetres, before the HUD starts to follow. Tuned value 6."}'
+    - '// @input float bufferPitchDeg = 3 {"hint":"Degrees of pitch dead-zone in each direction. Tuned value 3."}'
+    - '// @input float bufferYawDeg = 3 {"hint":"Degrees of yaw dead-zone in each direction. Tuned value 3."}'
+    - '// @input float dtClampSec = 0.1 {"hint":"Ceiling on the dt fed to the smoothing, seconds. A hitch longer than this advances the ease by exactly this much — the HUD can never jump further than one clamped step.", "widget":"slider", "min":0.02, "max":0.5, "step":0.01}'
+    - '// @input float driftSnapCm = 400 {"hint":"Belt-and-braces: if the HUD is ever further than this from its own computed target, snap the follow state to the camera and log. With stable maths this should NEVER fire; if it does, the maths is wrong — report it, do not raise the threshold.", "widget":"slider", "min":150, "max":2000, "step":50}'
+    - '// @input float logIntervalSec {"hint":"Log distance-from-target every N seconds (0 = off). Diagnostics for soak tests.", "widget":"slider", "min":0, "max":10, "step":1}'
+    - // @input bool enableLogging = true

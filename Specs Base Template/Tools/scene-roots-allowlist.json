@@ -36,7 +36,7 @@
     "VisualConfig": "Theme @input holder. Enabled on purpose; draws nothing.",
     "RSG Smoke Test [TEMP]": "TEMPORARY diagnostic - remove this entry when RsgSmokeTest.ts is deleted.",
     "Systems": "Always-enabled container for runtime controllers (VoiceInput, StatusBarPresenter). Must stay ENABLED: HUDRoot/WorldRoot ship disabled per hard rule 1, so something enabled has to turn them on.",
-    "DEMO_ENV [PREVIEW ONLY]": "PREVIEW-ONLY demo diorama (ground, river, treeline, camp tent). Not part of the Lens: the SPECS waveguide is additive, so this geometry can only ever read as a ghost overlay on device. It exists so desk captures and the demo video show an outdoor setting instead of the grey Plane void. MUST BE DISABLED before any device run or publish - see Docs/SCENE-MAP.md."
+    "DEMO_ENV [PREVIEW ONLY]": "PREVIEW-ONLY demo diorama (ground, river, treeline, camp tent). Origin: built in an earlier session's uncommitted work, adopted into the scene 2026-08-21; owned by whoever is shooting desk captures / the demo video - it is scenery for the Preview panel, nothing subscribes to it. Not part of the Lens: the SPECS waveguide is additive, so this geometry can only ever read as a ghost overlay on device. MUST BE DISABLED before any device run or publish; nothing structural prevents it shipping, so 'must_be_disabled_roots' below makes the pre-commit check the tripwire. Children stay enabled on purpose - the root is the one switch. See Docs/SCENE-MAP.md."
   },
   "known_offenders": {
     "RemoteServiceGatewayExamples": "Auto-added by InstallLensStudioPackage for RemoteServiceGateway. Delete it; it carries placeholder credential fields.",
@@ -47,5 +47,8 @@
   "must_be_disabled_trees": [
     "HUDRoot",
     "WorldRoot"
+  ],
+  "must_be_disabled_roots": [
+    "DEMO_ENV [PREVIEW ONLY]"
   ]
 }

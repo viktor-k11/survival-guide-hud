@@ -136,6 +136,7 @@ def main():
         config = json.load(fh)
     allowed = set(config["allowed"])
     must_be_disabled = config.get("must_be_disabled_trees", [])
+    must_be_disabled_roots = config.get("must_be_disabled_roots", [])
 
     roots, objects = parse_scene(SCENE)
     if not roots:
@@ -174,8 +175,35 @@ def main():
         for p in left_enabled:
             print(f"  BAD  {p}")
 
+    # Roots whose own Enabled flag must be off at commit time (children may stay
+    # enabled — the root is the one switch). This exists for preview-only
+    # content like DEMO_ENV: nothing structural keeps it out of a Lens build,
+    # so the pre-commit hook is the tripwire.
+    roots_left_enabled = []
+    for tree_name in must_be_disabled_roots:
+        for uid in roots:
+            entry = objects.get(uid)
+            if entry and entry[0] == tree_name and entry[1]:
+                roots_left_enabled.append(tree_name)
+
+    if roots_left_enabled:
+        print(f"\nPreview-only roots left ENABLED ({len(roots_left_enabled)}):")
+        for p in roots_left_enabled:
+            print(f"  BAD  {p}")
+
     if list_only:
         return 0
+
+    if roots_left_enabled:
+        print(
+            "\nFAIL: the root(s) above are preview-only content and must be\n"
+            "DISABLED before a commit (they would ship enabled in a Lens build\n"
+            "made from this commit - nothing else keeps them off a device).\n"
+            "Untick the root object in the Objects panel, save, and re-run.\n"
+            "Roots enforced: " + ", ".join(must_be_disabled_roots),
+            file=sys.stderr,
+        )
+        return 1
 
     if left_enabled:
         print(
