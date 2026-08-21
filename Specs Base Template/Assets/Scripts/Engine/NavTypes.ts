@@ -12,7 +12,8 @@ import { XYZ } from "./SurveyTypes";
 
 /** A footer chip (or its voice twin) was activated. */
 export interface MenuChipPayload {
-  chip: "setCamp" | "trailStart" | "followTrail";
+  /** "journal" toggles the session log — owned by JournalPresenter (a view, not engine state). */
+  chip: "setCamp" | "trailStart" | "followTrail" | "journal";
   /** "pinch" | "voice" | "debugKey" — diagnostics only. */
   source: string;
 }

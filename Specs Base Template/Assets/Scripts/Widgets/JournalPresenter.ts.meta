@@ -1,0 +1,69 @@
+- !<AssetImportMetadata/04a8e035-bbd5-45f6-8a78-37e2bcd5af0e>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> f62ac618-b760-401d-983e-2e2e1577ff2a
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> f62ac618-b760-401d-983e-2e2e1577ff2a
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 9e85bbe4-0d45-4193-9f34-99012e09c1ea
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/9e85bbe4-0d45-4193-9f34-99012e09c1ea>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 9e6c174c-c02c-4c25-93cb-484a0929e169
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    closeLabel: false
+    emptyText: false
+    enableDebugKeys: false
+    enableLogging: false
+    journal: false
+    keyToggle: false
+    theme: false
+    titleText: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      journal: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      titleText: SESSION LOG
+      emptyText: NO ACTIVITY RECORDED THIS SESSION
+      closeLabel: "[ CLOSE ]"
+      enableDebugKeys: true
+      keyToggle: V
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject journal {"hint":"HUDRoot/Journal"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Copy</span>"}'
+    - '// @input string titleText = "SESSION LOG" {"hint":"Header line."}'
+    - '// @input string emptyText = "NO ACTIVITY RECORDED THIS SESSION" {"hint":"Shown in row 1 while the log is empty."}'
+    - '// @input string closeLabel = "[ CLOSE ]" {"hint":"Close chip label."}'
+    - // @input bool enableDebugKeys = true
+    - '// @input string keyToggle = "V" {"hint":"Toggle the journal — emits the SAME menuChipSelected the LOG chip and voice use. Right-hand cluster, off the movement keys."}'
+    - // @input bool enableLogging = true

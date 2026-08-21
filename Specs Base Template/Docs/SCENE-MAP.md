@@ -176,6 +176,10 @@ of the user.
 | `HUDRoot/BootIntro/Line1` | "SURVIVAL GUIDE — FIELD TERMINAL v1.0", typed with the typewriter machinery | — |
 | `HUDRoot/BootIntro/Line2` | "VOICE INTERFACE ONLINE — PINCH AND HOLD TO ASK" (amber) — the product's thesis, in the first thing the user ever sees | — |
 | `HUDRoot/MainMenu/FooterChips/Chip_SetCamp,Chip_Trail,Chip_FollowTrail` | The camp/trail footer chips (collider + SIK Interactable each) — pinch twins of "set camp" / "leaving camp" / "follow the trail". FOLLOW TRAIL shows only once a trail exists; Chip_Trail flips to "● REC" while recording | `menuChipSelected` (emit), `trailStateChanged` |
+| `HUDRoot/MainMenu/FooterChips/Chip_Log` | "[ LOG ]" — opens the session journal. Pinch twin of "show the log" / "log" / debug key **V**; all three emit `menuChipSelected {chip:"journal"}` | `menuChipSelected` (emit) |
+| `HUDRoot/CompletionCard` | **The end-of-lesson card** — shown in COMPLETE, retired on ANY exit from it. `TitleLine` ("TASK COMPLETE · <TITLE>"), `NextLine` (the next-step suggestion as ONE amber chevron line, collider + SIK Interactable — pinch = accept), `HintLine` (dim). A plan without a suggestion simply has no next line and holds the shorter dwell. **Nothing auto-starts**: accept is voice ("yes"/"do it"/"next", matched locally in the engine) or pinch; declining ("no"/"not now") or the dwell ending returns to IDLE | `lessonCompleted`, `modeChanged`; emits `suggestionAccepted` |
+| `HUDRoot/Journal` | **The session log** — `Title`, `Row_1..8` (hard cap 8, same pattern as Checklist; most recent kept, newest at top), `CloseChip` (collider + Interactable). A VIEW over bus events that already exist — no new engine state. The menu yields the screen while it is open (`journalStateChanged`, boot-intro pattern); any mode change away from IDLE closes it. Timestamps are wall-clock HH:MM from the runtime `Date` when the clock claims a plausible present (year ≥ 2024 — preview and device both do), else honest session-relative `T+MM:SS`; the source in use is logged at boot | `surveyComplete`, `hazardsDetected`, `lessonCompleted`, `campChanged`, `trailStateChanged` (edges), `distanceWarning`, `menuChipSelected` |
+| `HUDRoot/GuidePanel/DegradationNote` | **Honest degradation, on screen**: "STEP N · WIDGET UNAVAILABLE", shown when the validator dropped this step's companion (carried on the step as `companionDegraded`, emitted in `stepChanged`). DIM (`dimColor`), never warning colour — the step still works; this is information, not an error | `stepChanged` |
 | `HUDRoot/AssemblingLesson` | **Placeholder VFX** shown only while a lesson is compiling. Swap the contents, keep the path | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Ring` | Spinning amber torus | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Core` | Counter-pulsing green disc | `requestStateChanged` |
@@ -250,6 +254,8 @@ placed against real terrain, not the head.
 | `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
 | `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
 | `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. Its 400 cm drift guard stays as the OUTER belt-and-braces; with HudFollower's stable maths it should never fire. |
+| `Systems/CompletionCardPresenter` | `Widgets/CompletionCardPresenter.ts` — the completion card (see the CompletionCard row). Relays a pinch on the next line as `suggestionAccepted`; the ENGINE owns what acceptance means. |
+| `Systems/JournalPresenter` | `Widgets/JournalPresenter.ts` — the session log (see the Journal row). Debug key **V** toggles via the same `menuChipSelected` the chip and voice use. |
 | `Systems/HudFollower` | `Engine/HudFollower.ts` — **owns HUDRoot's transform every frame** (replaced SIK Headlock 2026-08-21 — see the enabled/disabled table). Unconditionally stable smoothing (`1 − exp(−dt/tau)`), dt clamp, NaN rejection, Headlock-feel dead-zones, own inner drift guard against its own target, `settled N s` log lines. On `recenterRequested` it drops state and re-seeds from the live camera so it never fights HudRecenter. `logIntervalSec` > 0 turns on a 1 Hz distance-from-target diagnostic (ships 0). |
 | `Systems/BootIntroPresenter` | `Widgets/BootIntroPresenter.ts` — the boot intro: CRT scanline wipe + two typed lines (~3.9 s), skippable by pinch (the same pinch that starts a capture, observed via `voiceStateChanged`). `runIntro` @input off = no intro and the done edge fires immediately. Emits `introStateChanged`; NO audio calls of its own (SfxService plays the power-on cue), no narration — no baked track exists and live TTS at boot is forbidden (6.5-18.6 s of opening silence). |
 | `Systems/MainMenuPresenter` | `Widgets/MainMenuPresenter.ts` — drives `HUDRoot/MainMenu`: row copy/state, the moving highlight, description + status panels, the ask widget's caret/interim/example ticker, row 6's live distance. Emits `menuSelected` on pinch. Debug keys J (cycle highlight) / L (activate). |
@@ -296,7 +302,38 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `narrationStateChanged` · `qaAnswered` · `keyboardRequested` ·
 `menuSelected` · `campChanged` · `introStateChanged` · `menuChipSelected` ·
 `trailStateChanged` · `navigateRequested` · `navigateUpdated` · `campReached` ·
-`recenterRequested` · `hazardsDetected`
+`recenterRequested` · `hazardsDetected` · `suggestionAccepted` ·
+`journalStateChanged`
+
+### next_suggestion — built, gated, REVERTED at the wire (2026-08-21)
+
+The plan-level `next_suggestion` field (a short phrase that reads as a
+suggestion AND works verbatim as a request) was added to the schema + prompt +
+both few-shots, and the five-phrase regression gate was run against the
+recorded baseline. **It failed**: "help me purify water" lost its final
+checklist step (5→4) and "how do I treat a burn" grew a step and dropped every
+companion (1→3 degradations). A CONTROL run with the untouched prompt
+reproduced the baseline **byte-for-byte** on both phrases in the same session,
+so the shift is attributable to the change, not to model drift — and the
+prompt/schema were reverted per the gate's own rule. (The control also showed
+"how do I signal for rescue" drifting from baseline with NO change at all —
+that phrase is unstable upstream and cannot gate anything.)
+
+What ships: the ENTIRE downstream pipeline — validator parse, engine COMPLETE
+handling with local accept/decline phrases, the completion card, the
+`suggestionAccepted` seam — live but DORMANT, because the structured-output
+filter strips fields the schema does not declare. It is exercised end-to-end by
+`Assets/AI/fixtures/lesson-campfire-DOCTORED-next-suggestion.json` (the
+campfire envelope with the field hand-injected — clearly named, wired to debug
+key C), and accepting the fixture's suggestion fires a REAL Gemini lesson for
+the suggested phrase. Re-enabling for live lessons is one schema line + prompt
+rule 7 + few-shot tails (see the note in `LessonSchema.ts`) — and the SAME
+five-phrase gate must pass first.
+
+Fixture note, same batch: debug key H now loads
+`lesson-help-me-purify-water-DEGRADES-step1-checklist.raw.json` (the
+deterministic degradation) instead of the clean water fixture, so the
+DegradationNote is one keypress to demo.
 
 ### Two scorers, one cloud — the hazard split
 

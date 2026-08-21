@@ -288,7 +288,7 @@ export class LessonCoordinator extends BaseScriptComponent {
         this.retryTimer.reset(this.retryDelaySec);
         return;
       }
-      this.fail("network", "NO ANSWER FROM THE GUIDE — CHECK CONNECTION");
+      this.fail("network", "GUIDE LINK DOWN — CHECK CONNECTION");
       return;
     }
 
@@ -301,7 +301,7 @@ export class LessonCoordinator extends BaseScriptComponent {
       this.dumpFixture(outcome, "invalid");
       // No retry: the model produced a real answer, it is just the wrong shape.
       // Another 12 s at temperature 0 buys the same answer again.
-      this.fail("validation", "THE GUIDE'S ANSWER WAS UNREADABLE");
+      this.fail("validation", "GUIDE RESPONSE UNREADABLE — SAY IT AGAIN");
       return;
     }
 
@@ -345,7 +345,7 @@ export class LessonCoordinator extends BaseScriptComponent {
       return;
     }
     this.requestId++;
-    this.fail("timeout", "THE GUIDE DID NOT ANSWER IN TIME");
+    this.fail("timeout", "GUIDE LINK TIMED OUT — SAY IT AGAIN");
   }
 
   /** Cancel whatever is in flight. The in-flight promise is orphaned by the id bump. */

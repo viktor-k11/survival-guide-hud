@@ -133,7 +133,7 @@ const MENU_PHRASES: { row: number; phrase: string; anywhere: boolean }[] = [
  * trailStart are executed by NavigationController; followTrail enters NAVIGATE
  * here (a mode change is the engine's job).
  */
-const CHIP_PHRASES: { chip: "setCamp" | "trailStart" | "followTrail"; phrase: string; anywhere: boolean }[] = [
+const CHIP_PHRASES: { chip: "setCamp" | "trailStart" | "followTrail" | "journal"; phrase: string; anywhere: boolean }[] = [
   { chip: "setCamp", phrase: "set camp", anywhere: true },
   { chip: "setCamp", phrase: "mark camp", anywhere: true },
   { chip: "setCamp", phrase: "camp here", anywhere: true },
@@ -143,6 +143,37 @@ const CHIP_PHRASES: { chip: "setCamp" | "trailStart" | "followTrail"; phrase: st
   { chip: "followTrail", phrase: "follow the trail", anywhere: true },
   { chip: "followTrail", phrase: "follow trail", anywhere: true },
   { chip: "followTrail", phrase: "trail", anywhere: false },
+
+  { chip: "journal", phrase: "show the log", anywhere: true },
+  { chip: "journal", phrase: "open the log", anywhere: true },
+  { chip: "journal", phrase: "close the log", anywhere: true },
+  { chip: "journal", phrase: "session log", anywhere: true },
+  { chip: "journal", phrase: "journal", anywhere: false },
+  { chip: "journal", phrase: "log", anywhere: false },
+];
+
+/**
+ * Completion-card responses — matched ONLY in COMPLETE mode while a next-step
+ * suggestion is pending, before anything else. Without this pre-check, "do it"
+ * would fall through to `lessonRequested` and fire a Gemini call with the
+ * words "do it", which is the guide mishearing its own suggestion.
+ */
+const SUGGESTION_PHRASES: { verdict: "accept" | "decline"; phrase: string; anywhere: boolean }[] = [
+  { verdict: "accept", phrase: "do it", anywhere: true },
+  { verdict: "accept", phrase: "lets do it", anywhere: true },
+  { verdict: "accept", phrase: "go ahead", anywhere: true },
+  { verdict: "accept", phrase: "yes please", anywhere: true },
+  { verdict: "accept", phrase: "yes", anywhere: false },
+  { verdict: "accept", phrase: "yeah", anywhere: false },
+  { verdict: "accept", phrase: "sure", anywhere: false },
+  { verdict: "accept", phrase: "okay", anywhere: false },
+  { verdict: "accept", phrase: "ok", anywhere: false },
+  { verdict: "accept", phrase: "next", anywhere: false },
+
+  { verdict: "decline", phrase: "not now", anywhere: true },
+  { verdict: "decline", phrase: "no thanks", anywhere: true },
+  { verdict: "decline", phrase: "no", anywhere: false },
+  { verdict: "decline", phrase: "later", anywhere: false },
 ];
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -155,6 +186,10 @@ export class LessonEngine extends BaseScriptComponent {
   @input
   @hint("Seconds to sit in COMPLETE before returning to IDLE.")
   private completeReturnDelaySec: number = 4;
+
+  @input
+  @hint("Seconds to sit in COMPLETE when the plan carries a next-step suggestion — the user needs time to read it and answer. It NEVER auto-starts; the dwell ending just returns to IDLE.")
+  private suggestionDwellSec: number = 14;
 
   @input
   @hint("A bare command word ('next', 'check') only counts as navigation in an utterance this short. Longer ones are treated as questions.")
@@ -231,6 +266,14 @@ export class LessonEngine extends BaseScriptComponent {
   private campPosition: XYZ | null = null;
   private trailMarkCount: number = 0;
 
+  /**
+   * The completion card's pending next-step phrase. Set on complete(), cleared
+   * on ANY exit from COMPLETE. While set, "yes" / "do it" / "next" (and pinch,
+   * via suggestionAccepted) feed it VERBATIM into lessonRequested — the same
+   * generative path the menu rows use. Nothing here auto-starts.
+   */
+  private pendingSuggestion: string = "";
+
   private completeDelay: DelayedCallbackEvent;
 
   // ---------------------------------------------------------------- lifecycle
@@ -286,6 +329,12 @@ export class LessonEngine extends BaseScriptComponent {
       if (this.mode === "NAVIGATE") this.setMode("IDLE");
     });
 
+    // Pinch on the completion card's next line. Voice lands in
+    // handleTranscript; both funnel through acceptSuggestion.
+    eventBus.subscribe(Events.suggestionAccepted, (p: { source: string }) => {
+      this.acceptSuggestion(p ? p.source : "pinch");
+    });
+
     if (this.enableDebugKeys) this.bindDebugKeys();
 
     this.log(
@@ -322,6 +371,23 @@ export class LessonEngine extends BaseScriptComponent {
     if (text.length === 0) return;
 
     this.log('transcript "' + raw + '" -> normalized "' + text + '"');
+
+    // Completion card first: while a suggestion is pending, yes/no words are
+    // answers to the card, not navigation — and "do it" must never fall
+    // through to Gemini as the literal request "do it".
+    if (this.mode === "COMPLETE" && this.pendingSuggestion.length > 0) {
+      const verdict = this.matchSuggestion(text);
+      if (verdict === "accept") {
+        this.log("routed: suggestion/accept (no AI call)");
+        this.acceptSuggestion("voice");
+        return;
+      }
+      if (verdict === "decline") {
+        this.log("routed: suggestion/decline (no AI call)");
+        this.declineSuggestion("voice");
+        return;
+      }
+    }
 
     const intent = this.matchNavIntent(text);
     if (intent) {
@@ -392,6 +458,10 @@ export class LessonEngine extends BaseScriptComponent {
   public classify(raw: string): string {
     const text = this.normalize(raw);
     if (text.length === 0) return "ignored/empty";
+    if (this.mode === "COMPLETE" && this.pendingSuggestion.length > 0) {
+      const verdict = this.matchSuggestion(text);
+      if (verdict) return "suggestion/" + verdict;
+    }
     const intent = this.matchNavIntent(text);
     if (intent) return "navigation/" + intent;
     if (this.mode === "IDLE") {
@@ -442,8 +512,45 @@ export class LessonEngine extends BaseScriptComponent {
     return 0;
   }
 
+  /** Suggestion twin of matchNavIntent — COMPLETE mode only. */
+  private matchSuggestion(text: string): "accept" | "decline" | null {
+    const wordCount = text.split(" ").length;
+    const isShort = wordCount <= this.shortUtteranceMaxWords;
+    for (let i = 0; i < SUGGESTION_PHRASES.length; i++) {
+      const entry = SUGGESTION_PHRASES[i];
+      if (!entry.anywhere && !isShort) continue;
+      if (this.containsPhrase(text, entry.phrase)) return entry.verdict;
+    }
+    return null;
+  }
+
+  /**
+   * Feed the pending suggestion VERBATIM into the same generative path a menu
+   * row uses. The one rule that matters: this runs only on an explicit user
+   * act (voice here, pinch via suggestionAccepted) — never on a timer.
+   */
+  public acceptSuggestion(source: string): void {
+    if (this.mode !== "COMPLETE" || this.pendingSuggestion.length === 0) {
+      this.log("acceptSuggestion(" + source + ") ignored — nothing pending");
+      return;
+    }
+    const text = this.pendingSuggestion;
+    this.log('suggestion accepted (' + source + ') -> "' + text + '"');
+    this.completeDelay.enabled = false;
+    this.setMode("IDLE"); // clears the pending suggestion (see setMode)
+    this.emit(Events.lessonRequested, { text: text });
+  }
+
+  /** "No" is an answer too: retire the card now instead of at the dwell's end. */
+  public declineSuggestion(source: string): void {
+    if (this.mode !== "COMPLETE") return;
+    this.log("suggestion declined (" + source + ")");
+    this.completeDelay.enabled = false;
+    this.setMode("IDLE");
+  }
+
   /** Chip twin of matchMenuRow. */
-  private matchChip(text: string): "setCamp" | "trailStart" | "followTrail" | null {
+  private matchChip(text: string): "setCamp" | "trailStart" | "followTrail" | "journal" | null {
     const wordCount = text.split(" ").length;
     const isShort = wordCount <= this.shortUtteranceMaxWords;
     for (let i = 0; i < CHIP_PHRASES.length; i++) {
@@ -762,6 +869,9 @@ export class LessonEngine extends BaseScriptComponent {
       total: this.plan.steps.length,
       instruction: step.instruction,
       reason: reason,
+      // The validator's own record that this step asked for a widget it could
+      // not have. The panel says so — honest degradation, on screen.
+      companionDegraded: step.companionDegraded === true,
     });
 
     // --- narration seam: request now, warm the next one immediately after.
@@ -814,19 +924,28 @@ export class LessonEngine extends BaseScriptComponent {
 
   private complete(): void {
     this.stopTimer();
+    const suggestion = this.plan && this.plan.nextSuggestion ? this.plan.nextSuggestion : "";
+    this.pendingSuggestion = suggestion;
     this.emit(Events.lessonCompleted, {
       title: this.plan ? this.plan.title : "",
       steps: this.plan ? this.plan.steps.length : 0,
+      nextSuggestion: suggestion,
     });
     this.setMode("COMPLETE");
     this.completeDelay.enabled = true;
-    this.completeDelay.reset(this.completeReturnDelaySec);
+    // A card with a question on it needs reading-and-answering time; a plain
+    // "complete" needs only a beat. Either way the dwell ends in IDLE — the
+    // suggestion never fires on its own.
+    this.completeDelay.reset(suggestion.length > 0 ? this.suggestionDwellSec : this.completeReturnDelaySec);
   }
 
   private setMode(next: EngineMode): void {
     if (this.mode === next) return;
     const from = this.mode;
     this.mode = next;
+    // Leaving COMPLETE retires the card's offer, whatever the exit path —
+    // dwell timeout, stop, accept, or a new lesson landing.
+    if (from === "COMPLETE") this.pendingSuggestion = "";
     this.emit(Events.modeChanged, { from: from, to: next });
   }
 

@@ -1,0 +1,66 @@
+- !<AssetImportMetadata/9a8b348a-b7cd-49df-96af-7bb232af2d64>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 82fc35b3-9cfd-47b0-b8ac-53a79c76fd75
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 82fc35b3-9cfd-47b0-b8ac-53a79c76fd75
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 5f8d0b99-a031-4c26-bd20-2d10a53ab5ae
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/5f8d0b99-a031-4c26-bd20-2d10a53ab5ae>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: cd312666-fc17-40fb-9b2a-1ec0d0523988
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    card: false
+    enableLogging: false
+    hintPlain: false
+    hintWithNext: false
+    nextPrefix: false
+    theme: false
+    titleFormat: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      card: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      titleFormat: "TASK COMPLETE · {T}"
+      nextPrefix: "> NEXT: "
+      hintWithNext: 'SAY "YES" OR PINCH THE LINE — OR JUST WALK AWAY'
+      hintPlain: RETURNING TO TERMINAL
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject card {"hint":"HUDRoot/CompletionCard"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Copy</span>"}'
+    - '// @input string titleFormat = "TASK COMPLETE · {T}" {"hint":"Title line. {T} = the lesson title, uppercased."}'
+    - "// @input string nextPrefix = \"> NEXT: \" {\"hint\":\"Chevron prefix on the suggestion line. ASCII on purpose — the same '>' the prompt line uses, guaranteed present in the font.\"}"
+    - '// @input string hintWithNext = "SAY \"YES\" OR PINCH THE LINE — OR JUST WALK AWAY" {"hint":"Hint under the suggestion."}'
+    - '// @input string hintPlain = "RETURNING TO TERMINAL" {"hint":"Hint when the lesson offered no next step."}'
+    - // @input bool enableLogging = true

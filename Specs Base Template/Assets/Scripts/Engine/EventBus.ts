@@ -27,8 +27,26 @@ export const Events = {
   safetyPending: "safetyPending",
   /** A training prop was placed in the world. */
   propPlaced: "propPlaced",
-  /** Final step done. */
+  /**
+   * Final step done. Payload: { title, steps, nextSuggestion }.
+   * `nextSuggestion` is the OPTIONAL next-task phrase from the plan ("" when
+   * the model offered none) — the completion card renders it; nothing may
+   * auto-start it. The user chooses.
+   */
   lessonCompleted: "lessonCompleted",
+  /**
+   * The user ACCEPTED the completion card's next-step suggestion (pinch on the
+   * card; voice goes straight to the engine). Payload: { source }. The engine
+   * owns what acceptance means: it emits `lessonRequested` with the suggestion
+   * text — the same generative path a menu row uses. Never auto-fired.
+   */
+  suggestionAccepted: "suggestionAccepted",
+  /**
+   * The session journal opened or closed. Payload: { open: boolean }.
+   * Emitted by JournalPresenter; the main menu yields the screen while open —
+   * same pattern as introStateChanged.
+   */
+  journalStateChanged: "journalStateChanged",
   /** Terrain survey has begun. Payload: { durationSec }. */
   surveyStarted: "surveyStarted",
   /** Terrain survey progress, 0..1. Payload: SurveyProgressPayload. */

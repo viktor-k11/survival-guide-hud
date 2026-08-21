@@ -49,6 +49,19 @@ export const LESSON_RESPONSE_SCHEMA = {
   type: "OBJECT",
   properties: {
     title: { type: "STRING" },
+    // NOTE — next_suggestion is deliberately NOT in the wire schema.
+    // It was added (with prompt rule 7 + extended few-shots) on 2026-08-21 and
+    // REVERTED the same day: the five-phrase regression gate showed the change
+    // shifting lesson STRUCTURE at temperature 0 — "purify water" lost its
+    // final checklist step (5→4) and "treat a burn" grew a step and dropped
+    // every companion (1→3 degradations), while a control run with the old
+    // prompt reproduced the recorded baseline byte-for-byte on both. The
+    // structured-output filter strips undeclared fields, so without the schema
+    // entry the model can never deliver a suggestion — the downstream pipeline
+    // (validator parse, engine COMPLETE handling, completion card) is built,
+    // tested against a doctored fixture, and DORMANT. Re-enabling is:
+    //   next_suggestion: { type: "STRING", nullable: true },  here (+required)
+    //   + prompt rule 7 + few-shot tails — and the SAME gate must pass first.
     steps: {
       type: "ARRAY",
       // Constrain the model rather than only asking it in the prompt. The
@@ -112,9 +125,23 @@ export interface LessonStep {
    * together.
    */
   props_required?: number;
+  /**
+   * True when this step ASKED for a companion widget and the validator had to
+   * drop it. NOT in the schema (the model never emits it) — it is the
+   * validator's own record, carried on the step so the guide panel can say
+   * "WIDGET UNAVAILABLE" instead of degrading silently. Distinct from a step
+   * whose companion was null all along, which is not a degradation.
+   */
+  companionDegraded?: boolean;
 }
 
 export interface LessonPlan {
   title: string;
   steps: LessonStep[];
+  /**
+   * The natural next task, ready to render on the completion card AND to feed
+   * verbatim into the lesson-request path if the user accepts it. Absent when
+   * the model said null — which is never an error.
+   */
+  nextSuggestion?: string;
 }

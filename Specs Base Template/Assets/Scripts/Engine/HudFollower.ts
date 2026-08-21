@@ -143,7 +143,22 @@ export class HudFollower extends BaseScriptComponent {
 
     const camYaw = Math.atan2(fwd.x, fwd.z);
     const camPitch = Math.atan2(fwd.y, Math.sqrt(fwd.x * fwd.x + fwd.z * fwd.z));
-    if (!this.haveState) this.snapTo(camPos, camYaw, camPitch);
+    if (!this.haveState) {
+      // Seed frame: place the HUD outright and skip the drift guard. A Lens
+      // reset leaves HUDRoot at its authored pose while the camera may be
+      // anywhere (measured: 14 m away after a desk-test walk) — that gap is
+      // boot PLACEMENT, not drift, and must not count as a guard firing.
+      this.snapTo(camPos, camYaw, camPitch);
+      const seeded = this.targetFromState();
+      if (this.finite3(seeded)) {
+        const t = this.hudRoot.getTransform();
+        t.setWorldPosition(seeded);
+        t.setWorldRotation(
+          quat.angleAxis(this.yaw + Math.PI, vec3.up()).multiply(quat.angleAxis(this.pitch, vec3.right()))
+        );
+      }
+      return;
+    }
 
     // Yaw: chase only past the dead-zone, and only as far as the buffer edge.
     const yawBuf = this.bufferYawDeg * HudFollower.DEG2RAD;

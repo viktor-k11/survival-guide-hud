@@ -131,6 +131,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
   @input @hint("Chip_Trail label.") private chipTrailLabel: string = "[ LEAVING CAMP ]";
   @input @hint("Chip_Trail label while recording.") private chipTrailRecLabel: string = "[ ● REC ]";
   @input @hint("Chip_FollowTrail label.") private chipFollowLabel: string = "[ FOLLOW TRAIL ]";
+  @input @hint("Chip_Log label — opens the session journal.") private chipLogLabel: string = "[ LOG ]";
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Ask widget</span>')
@@ -192,7 +193,10 @@ export class MainMenuPresenter extends BaseScriptComponent {
   private chipSetCamp: Text | null = null;
   private chipTrail: Text | null = null;
   private chipFollow: Text | null = null;
+  private chipLog: Text | null = null;
   private chipFollowRoot: SceneObject | null = null;
+  /** The journal owns the screen while open — boot-intro pattern. */
+  private journalOpen: boolean = false;
   private trail: TrailStatePayload | null = null;
   private voiceState: string = "idle";
   private interimText: string = "";
@@ -241,6 +245,10 @@ export class MainMenuPresenter extends BaseScriptComponent {
     });
     eventBus.subscribe(Events.introStateChanged, (p: { active: boolean }) => {
       this.introActive = !!(p && p.active);
+      this.applyVisibility();
+    });
+    eventBus.subscribe(Events.journalStateChanged, (p: { open: boolean }) => {
+      this.journalOpen = !!(p && p.open);
       this.applyVisibility();
     });
     eventBus.subscribe(Events.trailStateChanged, (p: TrailStatePayload) => {
@@ -322,7 +330,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
 
     // Footer chips — pinch twins of the setCamp / leavingCamp / followTrail
     // voice commands. Relaying a pinch is not logic.
-    const wireChip = (name: string, chip: "setCamp" | "trailStart" | "followTrail"): Text | null => {
+    const wireChip = (name: string, chip: "setCamp" | "trailStart" | "followTrail" | "journal"): Text | null => {
       const obj = findChildDeep(this.mainMenu, name);
       if (!obj) {
         this.log(name + " missing from the scene");
@@ -342,6 +350,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
     this.chipSetCamp = wireChip("Chip_SetCamp", "setCamp");
     this.chipTrail = wireChip("Chip_Trail", "trailStart");
     this.chipFollow = wireChip("Chip_FollowTrail", "followTrail");
+    this.chipLog = wireChip("Chip_Log", "journal");
 
     const ask = findChildDeep(this.mainMenu, "AskWidget");
     if (ask) {
@@ -370,7 +379,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
   // -------------------------------------------------------------- visibility
 
   private isVisible(): boolean {
-    return this.mode === "IDLE" && this.requestState !== "COMPILING" && !this.introActive;
+    return this.mode === "IDLE" && this.requestState !== "COMPILING" && !this.introActive && !this.journalOpen;
   }
 
   /**
@@ -398,12 +407,14 @@ export class MainMenuPresenter extends BaseScriptComponent {
     setText(this.chipSetCamp, this.chipSetCampLabel);
     setText(this.chipTrail, recording ? this.chipTrailRecLabel : this.chipTrailLabel);
     setText(this.chipFollow, this.chipFollowLabel);
+    setText(this.chipLog, this.chipLogLabel);
     // FOLLOW TRAIL exists only when there is a trail to follow.
     setEnabled(this.chipFollowRoot, !!(this.trail && this.trail.markCount > 0));
     if (theme) {
       setTextColor(this.chipSetCamp, theme.primaryPhosphor, theme.glowIntensity * 0.8);
       setTextColor(this.chipTrail, recording ? theme.accentAmber : theme.primaryPhosphor, theme.glowIntensity * (recording ? 1.0 : 0.8));
       setTextColor(this.chipFollow, theme.primaryPhosphor, theme.glowIntensity * 0.8);
+      setTextColor(this.chipLog, theme.primaryPhosphor, theme.glowIntensity * 0.8);
     }
   }
 

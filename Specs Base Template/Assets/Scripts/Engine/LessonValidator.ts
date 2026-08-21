@@ -61,7 +61,8 @@ export type LessonErrorCode =
   | "BAD_COMPANION_FIELDS"
   | "CHECKLIST_TOO_LONG"
   | "HOLOGRAM_OUT_OF_RANGE"
-  | "HOLOGRAM_NOT_AVAILABLE";
+  | "HOLOGRAM_NOT_AVAILABLE"
+  | "BAD_SUGGESTION";
 
 export interface LessonValidationIssue {
   code: LessonErrorCode;
@@ -219,18 +220,41 @@ export function validateLesson(rawText: string, kind: LessonKind): LessonValidat
       );
     }
 
+    // A companion that came in non-null and left null was DROPPED — record it
+    // on the step itself so the panel can say so, instead of degrading
+    // silently. A step that never asked for a widget is not a degradation.
+    const hadCompanion = s.companion !== null && s.companion !== undefined;
+    const companion = sanitizeCompanion(s.companion, at, i, kind, degrade);
+
     steps.push({
       instruction: s.instruction,
-      companion: sanitizeCompanion(s.companion, at, i, kind, degrade),
+      companion: companion,
       safety: safety,
       warning: warning,
       props_required: typeof s.props_required === "number" ? s.props_required : undefined,
+      companionDegraded: hadCompanion && companion === null ? true : undefined,
     });
+  }
+
+  // --- next_suggestion: OPTIONAL — absence is not an error, ever -----------
+  // A present-but-unusable value is dropped WITH a degradation record (model
+  // sloppiness should be visible in the logs); null/missing is simply absent.
+  let nextSuggestion: string | undefined = undefined;
+  const rawSuggestion = parsed.next_suggestion;
+  if (typeof rawSuggestion === "string") {
+    const trimmed = rawSuggestion.trim();
+    if (trimmed.length > 0 && trimmed.length <= 120) {
+      nextSuggestion = trimmed;
+    } else if (trimmed.length > 120) {
+      degrade("BAD_SUGGESTION", "next_suggestion", "Next-step suggestion is too long to render.", "suggestion dropped");
+    }
+  } else if (rawSuggestion !== null && rawSuggestion !== undefined) {
+    degrade("BAD_SUGGESTION", "next_suggestion", "Next-step suggestion is not text.", "suggestion dropped");
   }
 
   return {
     ok: true,
-    plan: { title: title, steps: steps } as LessonPlan,
+    plan: { title: title, steps: steps, nextSuggestion: nextSuggestion } as LessonPlan,
     issues: [],
     degradations: degradations,
     summary:

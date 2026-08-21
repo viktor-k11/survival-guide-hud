@@ -24,6 +24,15 @@ export class GuidePanelPresenter extends BaseScriptComponent {
 
   @input
   @allowUndefined
+  @hint("HUDRoot/GuidePanel/DegradationNote — the honest-degradation line, shown when this step's companion widget was dropped by the validator. Dim, not warning colour: the step still works; this is information.")
+  private degradationNote: Text;
+
+  @input
+  @hint("Degradation line copy. {N} = step number.")
+  private degradationFormat: string = "STEP {N} · WIDGET UNAVAILABLE";
+
+  @input
+  @allowUndefined
   @hint("PH_Plane.mesh — the IconSlot placeholder is a box; swapping to a quad makes the icon read as an icon.")
   private quadMesh: RenderMesh;
 
@@ -63,14 +72,18 @@ export class GuidePanelPresenter extends BaseScriptComponent {
     const font = this.theme ? this.theme.font : null;
     setFont(this.stepCounter, font);
     setFont(this.instruction, font);
+    setFont(this.degradationNote, font);
 
     eventBus.subscribe(Events.lessonStarted, (p: { title: string }) => {
       this.lessonIcon = this.theme ? this.theme.iconForLessonTitle(p ? p.title : "") : "question";
     });
 
-    eventBus.subscribe(Events.stepChanged, (p: { stepIndex: number; total: number; instruction: string }) => {
-      this.showStep(p);
-    });
+    eventBus.subscribe(
+      Events.stepChanged,
+      (p: { stepIndex: number; total: number; instruction: string; companionDegraded?: boolean }) => {
+        this.showStep(p);
+      }
+    );
 
     eventBus.subscribe(Events.companionChanged, (p: { type: string | null }) => {
       // Prefer the step's companion icon; fall back to the lesson's own icon
@@ -95,7 +108,7 @@ export class GuidePanelPresenter extends BaseScriptComponent {
     setTextColor(this.instruction, this.theme.primaryPhosphor, this.theme.glowIntensity);
   }
 
-  private showStep(p: { stepIndex: number; total: number; instruction: string }): void {
+  private showStep(p: { stepIndex: number; total: number; instruction: string; companionDegraded?: boolean }): void {
     if (!p) return;
     setEnabled(this.panel, true);
     setEnabled(this.backingPlate, true);
@@ -105,6 +118,17 @@ export class GuidePanelPresenter extends BaseScriptComponent {
 
     setText(this.stepCounter, formatCounter(p.stepIndex, p.total));
     setText(this.instruction, wrapText(p.instruction, this.instructionWrapChars));
+
+    // Honest degradation, on screen: the validator dropped this step's widget,
+    // and the system says so instead of pretending nothing was asked for.
+    // Dim on purpose — the step still works; this is information, not an error.
+    const degraded = p.companionDegraded === true;
+    setEnabled(this.degradationNote ? this.degradationNote.sceneObject : null, degraded);
+    if (degraded) {
+      setText(this.degradationNote, this.degradationFormat.replace("{N}", "" + (p.stepIndex + 1)));
+      if (this.theme) setTextColor(this.degradationNote, this.theme.dimColor, this.theme.glowIntensity * 0.6);
+    }
+
     this.applyTheme();
   }
 

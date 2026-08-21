@@ -29,6 +29,8 @@
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
     backingPlate: false
+    degradationFormat: false
+    degradationNote: false
     iconMaterial: false
     iconSlot: false
     instruction: false
@@ -52,6 +54,8 @@
       iconSlot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
       stepCounter: !<reference.Text> 00000000-0000-0000-0000-000000000000
       instruction: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      degradationNote: !<reference.Text> 00000000-0000-0000-0000-000000000000
+      degradationFormat: "STEP {N} · WIDGET UNAVAILABLE"
       quadMesh: !<reference.RenderMesh> 00000000-0000-0000-0000-000000000000
       iconMaterial: !<reference.Material> 00000000-0000-0000-0000-000000000000
       instructionWrapChars: !<float> 26.000000
@@ -65,6 +69,8 @@
     - '// @input SceneObject iconSlot {"hint":"HUDRoot/GuidePanel/IconSlot"}'
     - '// @input Component.Text stepCounter {"hint":"HUDRoot/GuidePanel/StepCounter"}'
     - '// @input Component.Text instruction {"hint":"HUDRoot/GuidePanel/InstructionText"}'
+    - "// @input Component.Text degradationNote {\"hint\":\"HUDRoot/GuidePanel/DegradationNote — the honest-degradation line, shown when this step's companion widget was dropped by the validator. Dim, not warning colour: the step still works; this is information.\"}"
+    - '// @input string degradationFormat = "STEP {N} · WIDGET UNAVAILABLE" {"hint":"Degradation line copy. {N} = step number."}'
     - '// @input Asset.RenderMesh quadMesh {"hint":"PH_Plane.mesh — the IconSlot placeholder is a box; swapping to a quad makes the icon read as an icon."}'
     - '// @input Asset.Material iconMaterial {"hint":"PH_Icon.mat — unlit additive with ENABLE_BASE_TEX baked on. Assigning baseTex to the other PH_ materials is a silent no-op."}'
     - '// @input float instructionWrapChars = 26 {"hint":"Characters per line before the instruction wraps. World-space Text has no width to wrap against, so the presenter does it.", "widget":"slider", "min":12, "max":48, "step":1}'

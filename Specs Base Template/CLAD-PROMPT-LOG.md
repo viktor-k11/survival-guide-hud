@@ -3215,3 +3215,96 @@ Release every key explicitly (`state:"end"` for D/W/S/A/Shift) before
 trusting the pose. Also: preview key-drive rates are PER-FRAME, so at low
 fps a "walk" is slow — budget minutes, not seconds, for keyboard-driven
 checks.
+
+## Prompt — next-step suggestions, session journal, visible degradation, tone pass
+
+> Four small additions, the last engine-side work before the Saturday freeze.
+> [1] next_suggestion — one OPTIONAL schema field, a phrase that reads as a
+> suggestion AND works verbatim as a request; rendered on the completion card
+> with a chevron; accepted by voice/pinch; MUST NOT auto-start. Extend BOTH
+> few-shots. HARD REGRESSION GATE: re-run the five phrases against baseline
+> (9802/8188/11087/14550/10457 ms, 4/6/5/5/4 steps, 2 degradations); if
+> structure shifts, REVERT the prompt change and say so. [2] Session journal —
+> 8 design-time rows, a view over existing bus events, LOG chip + voice; wall
+> clock only if genuinely available. [3] Honest degradation on screen — dim
+> "STEP 2 · WIDGET UNAVAILABLE" in the guide panel. [4] Tone pass, chrome
+> only — no lesson text, no Bethesda marks.
+
+**[1] Built end-to-end, then REVERTED AT THE WIRE — the gate caught a real
+regression.** Schema (`next_suggestion` required-but-nullable) + prompt rule 7
++ both few-shot tails went in; the five phrases were re-run live:
+
+| phrase | baseline | with change | verdict |
+|---|---|---|---|
+| help me pitch a tent | 9802ms · 4 · zone,compass,holo,timer · 0 degr | 12910ms · 4 · SAME · 0 | PASS |
+| help me build a campfire | 8188ms · 6 · zone,checklist,holo,holo,compass,holo · 0 | 9900ms · 6 · SAME · 0 | PASS |
+| help me purify water | 11087ms · 5 · none,checklist,none,timer,checklist · 1 | 10851ms · **4** · none,checklist,timer,none · 1 | **FAIL — step lost** |
+| how do I signal for rescue | 14550ms · 5 · zone,checklist,zone,timer,compass · 0 | 13001ms · 5 · …timer,**none** · 0 | shifted (see below) |
+| how do I treat a burn | 10457ms · 4 · none,none,checklist,checklist · 1 | 13451ms · **5** · none×5 · **3** | **FAIL — step gained, 2 NEW degradations** |
+
+Before reverting, a CONTROL run (old prompt + old schema, same session) on the
+three shifted phrases: **water and burn reproduced the baseline
+byte-for-byte** — structure, companions, the exact same single degradation
+each — so those shifts are attributable to the change, and the revert
+restores them. **Rescue did NOT match baseline even under the old prompt**
+(none,zone,timer,zone,timer + a new degradation): that phrase drifts
+upstream at temperature 0 and cannot gate anything. Verdict per the stated
+rule: prompt + schema reverted (byte-identical to HEAD, verified by git
+diff); the tent/campfire few-shot anchoring held (their structures never
+moved, and their suggestions came back word-for-word from the few-shots —
+which is also the tell: the anchoring works ON the few-shot tasks and
+perturbs the tasks that have no example).
+
+What ships anyway: the whole downstream pipeline, dormant — validator parse,
+`LessonPlan.nextSuggestion`, engine COMPLETE handling (local accept/decline
+phrases, 14 s suggestion dwell vs 4 s plain, "do it" can never leak to Gemini
+as a literal request), `suggestionAccepted` pinch seam, the CompletionCard.
+Proven live with `lesson-campfire-DOCTORED-next-suggestion.json` (hand-edited
+envelope, clearly named, wired to key C): card shows "> NEXT: GATHER FIREWOOD
+FOR THE NIGHT", keyboard-submitted "yes" routed `suggestion/accept (no AI
+call)` and fed the phrase verbatim into the coordinator, which produced a
+real "Gather Firewood for the Night" lesson (5 steps, 0 degraded, 14.4 s) —
+whose own completion card correctly showed NO next line (live responses are
+schema-filtered). A "yes" spoken in IDLE routes to confirm/ignored — the
+accept vocabulary cannot fire a request outside COMPLETE. Screenshot:
+`completion-card-next-step.jpg`.
+
+**[2] Journal.** `HUDRoot/Journal` (Title + Row_1..8 + CloseChip, hard cap 8,
+newest first), `Widgets/JournalPresenter.ts` — a view over existing events
+only (surveyComplete, hazardsDetected, lessonCompleted, campChanged,
+trailStateChanged edges, distanceWarning). Entry points: [ LOG ] footer chip,
+voice "show the log"/"log", debug key V — all one `menuChipSelected
+{chip:"journal"}`. Menu yields while open (`journalStateChanged`, boot-intro
+pattern). **Timestamps: WALL CLOCK** — runtime `Date` gives real local time in
+preview (verified on screen: 22:06-22:09 matched the actual session clock);
+guarded by a year-≥2024 plausibility check that falls back to honest
+`T+MM:SS` if a device RTC is dead, and the source in use is logged at boot.
+Screenshot: `journal-entries.jpg` (5 entries incl. both TASK COMPLETE lines,
+CAMP POINT, TRAIL RECORDING).
+
+**[3] Visible degradation.** Validator marks dropped companions on the step
+(`companionDegraded`), engine carries it in `stepChanged`, guide panel shows
+"STEP N · WIDGET UNAVAILABLE" in dimColor under the instruction. Wired and
+verified with the deterministic purify-water DEGRADES fixture (now on key H —
+the clean water fixture demoed nothing). Screenshot:
+`degradation-line-step1.jpg`. One wiring stumble: the new Text input existed
+in code but not in the scene component until wired — a silent null, caught by
+querying the runtime object.
+
+**[4] Tone pass — deliberately light.** The chrome was already in register;
+what changed: coordinator failure strips ("GUIDE LINK DOWN — CHECK
+CONNECTION" / "GUIDE RESPONSE UNREADABLE — SAY IT AGAIN" / "GUIDE LINK TIMED
+OUT — SAY IT AGAIN") and all new-surface copy (card, journal, hints) written
+in the same voice. NOT changed, on purpose: boot lines and menu header
+(already the register's anchor), "THINKING…" (honest, short), the ticker/ask
+examples (user-voice quotes, deliberately lowercase — they must NOT sound
+like the terminal). No franchise marks anywhere; the name stays "SURVIVAL
+GUIDE — FIELD TERMINAL". Uncertainty worth flagging: the error strips now say
+"GUIDE LINK" rather than "THE GUIDE" — chose the terminal speaking about its
+uplink over the persona speaking about itself; revisit if the demo script
+leans on the persona.
+
+Also: journal/card ship disabled per hard rule 1 (checker clean, DEMO_ENV
+back to disabled after an unexplained editor-side re-enable — disk was never
+dirty), `AiPreviewAgent Handler` re-injected by the runtime query tool and
+deleted AGAIN before commit.

@@ -130,7 +130,8 @@ export class LessonProbe extends BaseScriptComponent {
         this.log(
           'title="' + plan.title + '" steps=' + plan.steps.length +
             " companions=[" + companions.join(", ") + "]" +
-            " safetyGatedSteps=" + safetyCount
+            " safetyGatedSteps=" + safetyCount +
+            " nextSuggestion=" + (plan.nextSuggestion ? '"' + plan.nextSuggestion + '"' : "none")
         );
       }
 
