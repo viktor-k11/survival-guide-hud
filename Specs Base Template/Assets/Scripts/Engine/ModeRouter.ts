@@ -60,6 +60,11 @@ export class ModeRouter extends BaseScriptComponent {
     } else if (mode === "SURVEY") {
       hud = true;
       world = true;
+    } else if (mode === "NAVIGATE") {
+      // The compass rose, the trail stakes and the camp stake all live under
+      // WorldRoot; the HUD carries the bearing/distance line.
+      hud = true;
+      world = true;
     } else if (mode === "SOS") {
       hud = true;
       world = false;

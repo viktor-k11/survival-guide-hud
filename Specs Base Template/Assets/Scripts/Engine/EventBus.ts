@@ -129,6 +129,36 @@ export const Events = {
    */
   campChanged: "campChanged",
 
+  // --- Camp / trail / navigation (NavigationController.ts) ----------------
+  /**
+   * A menu footer chip (or its voice twin) was activated. Payload:
+   * MenuChipPayload. Emitted by MainMenuPresenter (pinch) and LessonEngine
+   * (voice) — same two-emitter pattern as menuSelected. Owners: the
+   * NavigationController takes setCamp and trailStart; the engine takes
+   * followTrail (entering a mode is the engine's job).
+   */
+  menuChipSelected: "menuChipSelected",
+  /** Trail recorder state. Payload: TrailStatePayload. */
+  trailStateChanged: "trailStateChanged",
+  /**
+   * The engine entered NAVIGATE and names the return mode. Payload:
+   * NavigateRequestPayload. The two modes are NOT redundant: a straight line
+   * to camp is not always walkable — the compass says "that way", the trail
+   * says "this way, you have already walked it".
+   */
+  navigateRequested: "navigateRequested",
+  /** Live bearing/distance while navigating. Payload: NavigateUpdatePayload. */
+  navigateUpdated: "navigateUpdated",
+  /** Arrived back at camp. Payload: CampReachedPayload. */
+  campReached: "campReached",
+  /**
+   * Snap the HUD back in front of the user NOW. Payload: { source }.
+   * The escape hatch for a tracking hiccup mid-demo: voice "recenter", or the
+   * debug key. Consumed by HudRecenter, which force-places HUDRoot; the
+   * Headlock component resumes its lazy follow from there.
+   */
+  recenterRequested: "recenterRequested",
+
   // --- Boot intro (BootIntroPresenter.ts) ---------------------------------
   /**
    * The boot intro started or ended. Payload: { active: boolean }.

@@ -12,13 +12,14 @@
 import { eventBus, Events } from "./EventBus";
 import { LessonCompanion, LessonPlan, LessonStep } from "./LessonSchema";
 import { describeDegradations, inferLessonKind, validateLesson } from "./LessonValidator";
+import { MenuChipPayload, TrailStatePayload } from "./NavTypes";
 import { CampChangedPayload, MenuSelectedPayload } from "./RequestTypes";
-import { SiteSelectedPayload, XYZ } from "./SurveyTypes";
+import { XYZ } from "./SurveyTypes";
 
-export type EngineMode = "IDLE" | "SURVEY" | "LESSON" | "SOS" | "COMPLETE";
+export type EngineMode = "IDLE" | "SURVEY" | "LESSON" | "NAVIGATE" | "SOS" | "COMPLETE";
 
 /** Local navigation intents. Matched with NO AI call — hard rule 6. */
-type NavIntent = "next" | "back" | "repeat" | "done" | "confirm" | "stop" | "check" | "sos";
+type NavIntent = "next" | "back" | "repeat" | "done" | "confirm" | "stop" | "check" | "sos" | "recenter";
 
 /**
  * Multi-word phrases are specific enough to match anywhere in a transcript.
@@ -76,6 +77,11 @@ const NAV_PHRASES: { intent: NavIntent; phrase: string; anywhere: boolean }[] = 
   { intent: "check", phrase: "check it off", anywhere: true },
   { intent: "check", phrase: "tick it", anywhere: true },
   { intent: "check", phrase: "check", anywhere: false },
+
+  { intent: "recenter", phrase: "recenter the hud", anywhere: true },
+  { intent: "recenter", phrase: "re center", anywhere: true },
+  { intent: "recenter", phrase: "recenter", anywhere: false },
+  { intent: "recenter", phrase: "center the menu", anywhere: true },
 ];
 
 /**
@@ -122,6 +128,23 @@ const MENU_PHRASES: { row: number; phrase: string; anywhere: boolean }[] = [
   { row: 6, phrase: "camp", anywhere: false },
 ];
 
+/**
+ * Footer-chip voice twins — matched locally like everything else. setCamp and
+ * trailStart are executed by NavigationController; followTrail enters NAVIGATE
+ * here (a mode change is the engine's job).
+ */
+const CHIP_PHRASES: { chip: "setCamp" | "trailStart" | "followTrail"; phrase: string; anywhere: boolean }[] = [
+  { chip: "setCamp", phrase: "set camp", anywhere: true },
+  { chip: "setCamp", phrase: "mark camp", anywhere: true },
+  { chip: "setCamp", phrase: "camp here", anywhere: true },
+  { chip: "trailStart", phrase: "leaving camp", anywhere: true },
+  { chip: "trailStart", phrase: "start the trail", anywhere: true },
+  { chip: "trailStart", phrase: "record my trail", anywhere: true },
+  { chip: "followTrail", phrase: "follow the trail", anywhere: true },
+  { chip: "followTrail", phrase: "follow trail", anywhere: true },
+  { chip: "followTrail", phrase: "trail", anywhere: false },
+];
+
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
 @component
@@ -138,8 +161,12 @@ export class LessonEngine extends BaseScriptComponent {
   private shortUtteranceMaxWords: number = 4;
 
   @input
-  @hint("Spoken when the user asks to be taken back to camp (menu row 6). The distance readout on the row is the visual half of the cue.")
-  private navigateLine: string = "HEAD FOR CAMP — WATCH THE DISTANCE READOUT ON ROW SIX";
+  @hint("Spoken on entering NAVIGATE in bearing mode (menu row 6 / voice).")
+  private navigateLine: string = "Head for camp. Follow the arrow.";
+
+  @input
+  @hint("Spoken on entering NAVIGATE in trail mode.")
+  private followTrailLine: string = "Follow the stakes back. They are your own footsteps.";
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Debug — preview iteration</span>')
@@ -195,8 +222,14 @@ export class LessonEngine extends BaseScriptComponent {
   private timerRunning: boolean = false;
   private lastTickWholeSec: number = -1;
 
-  /** Camp point, CENTIMETRES world. null until a site marker is chosen. */
+  /**
+   * Camp / trail state MIRRORED off the bus (campChanged / trailStateChanged).
+   * NavigationController owns the truth; the engine only needs enough to gate
+   * NAVIGATE entry and to stamp row 6's payload. Still deterministic — this is
+   * bus state, not scene state.
+   */
   private campPosition: XYZ | null = null;
+  private trailMarkCount: number = 0;
 
   private completeDelay: DelayedCallbackEvent;
 
@@ -227,27 +260,30 @@ export class LessonEngine extends BaseScriptComponent {
     eventBus.subscribe(Events.surveyComplete, () => {
       if (this.mode === "SURVEY") this.setMode("IDLE");
     });
-    // A chosen site is where the user is setting up — that IS the camp point.
-    // The coordinator starts the lesson; this only records the place, so menu
-    // row 6 ("take me back to camp") has somewhere to point.
-    eventBus.subscribe(Events.siteSelected, (p: SiteSelectedPayload) => {
-      if (!p || !p.position) return;
-      this.campPosition = p.position;
-      const camp: CampChangedPayload = { position: p.position, kind: p.kind };
-      this.log("siteSelected " + p.slot + " (" + p.kind + ") — camp point set");
-      this.emit(Events.campChanged, camp);
+    // Camp and trail truth lives in NavigationController; the engine mirrors
+    // just enough off the bus to gate NAVIGATE entry (see the fields above).
+    eventBus.subscribe(Events.campChanged, (p: CampChangedPayload) => {
+      this.campPosition = p ? p.position : null;
+    });
+    eventBus.subscribe(Events.trailStateChanged, (p: TrailStatePayload) => {
+      this.trailMarkCount = p ? p.markCount : 0;
     });
 
-    // Row 6 is the engine's row: a navigation cue, not a lesson and not a mode.
-    // Rows 1-5 have other owners (SurveyController, LessonCoordinator).
+    // Row 6 enters NAVIGATE in bearing mode. Rows 1-5 have other owners
+    // (SurveyController, LessonCoordinator).
     eventBus.subscribe(Events.menuSelected, (p: MenuSelectedPayload) => {
       if (!p || p.row !== 6) return;
-      if (!this.campPosition) {
-        this.log("menu row 6 ignored — no camp point set");
-        return;
-      }
-      this.log("menu row 6 (" + p.source + ") — navigation cue");
-      this.emit(Events.speakRequested, { text: this.navigateLine, source: "menu" });
+      this.navigate("bearing", p.source);
+    });
+    // followTrail is the one chip the engine takes — it is a mode change.
+    eventBus.subscribe(Events.menuChipSelected, (p: MenuChipPayload) => {
+      if (!p || p.chip !== "followTrail") return;
+      this.navigate("trail", p.source);
+    });
+    // Arrival is a fact reported by the controller; the engine decides it
+    // means IDLE — the same single-owner rule as the survey.
+    eventBus.subscribe(Events.campReached, () => {
+      if (this.mode === "NAVIGATE") this.setMode("IDLE");
     });
 
     if (this.enableDebugKeys) this.bindDebugKeys();
@@ -305,6 +341,17 @@ export class LessonEngine extends BaseScriptComponent {
       }
     }
 
+    // Camp/trail chips are voice targets in IDLE and NAVIGATE ("follow the
+    // trail" spoken mid-bearing switches modes without leaving NAVIGATE).
+    if (this.mode === "IDLE" || this.mode === "NAVIGATE") {
+      const chip = this.matchChip(text);
+      if (chip) {
+        this.log("routed: chip/" + chip + " (no AI call)");
+        this.emit(Events.menuChipSelected, { chip: chip, source: "voice" });
+        return;
+      }
+    }
+
     if (this.mode === "LESSON") {
       const step = this.currentStep();
       this.log("routed: qaRequested (unmatched during LESSON)");
@@ -351,6 +398,10 @@ export class LessonEngine extends BaseScriptComponent {
       const row = this.matchMenuRow(text);
       if (row > 0) return "menu/row" + row;
     }
+    if (this.mode === "IDLE" || this.mode === "NAVIGATE") {
+      const chip = this.matchChip(text);
+      if (chip) return "chip/" + chip;
+    }
     return this.mode === "LESSON" ? "qaRequested" : "lessonRequested";
   }
 
@@ -389,6 +440,44 @@ export class LessonEngine extends BaseScriptComponent {
       if (this.containsPhrase(text, entry.phrase)) return entry.row;
     }
     return 0;
+  }
+
+  /** Chip twin of matchMenuRow. */
+  private matchChip(text: string): "setCamp" | "trailStart" | "followTrail" | null {
+    const wordCount = text.split(" ").length;
+    const isShort = wordCount <= this.shortUtteranceMaxWords;
+    for (let i = 0; i < CHIP_PHRASES.length; i++) {
+      const entry = CHIP_PHRASES[i];
+      if (!entry.anywhere && !isShort) continue;
+      if (this.containsPhrase(text, entry.phrase)) return entry.chip;
+    }
+    return null;
+  }
+
+  /**
+   * Enter NAVIGATE — not a companion, not a lesson: a mode of its own. The
+   * gates are the mirrored bus state; a refused entry is a log line, and the
+   * chips/rows that could ask for it are hidden by the presenters anyway.
+   */
+  public navigate(navMode: "bearing" | "trail", source: string): void {
+    if (navMode === "bearing" && !this.campPosition) {
+      this.log("navigate(bearing, " + source + ") refused — no camp set");
+      return;
+    }
+    if (navMode === "trail" && this.trailMarkCount === 0) {
+      this.log("navigate(trail, " + source + ") refused — no trail recorded");
+      return;
+    }
+    if (this.mode === "LESSON" || this.mode === "SOS") {
+      this.log("navigate refused — mode is " + this.mode);
+      return;
+    }
+    this.setMode("NAVIGATE");
+    this.emit(Events.navigateRequested, { navMode: navMode });
+    this.emit(Events.speakRequested, {
+      text: navMode === "trail" ? this.followTrailLine : this.navigateLine,
+      source: "nav",
+    });
   }
 
   /**
@@ -435,6 +524,7 @@ export class LessonEngine extends BaseScriptComponent {
     else if (intent === "confirm") this.confirm();
     else if (intent === "stop") this.stop();
     else if (intent === "sos") this.sos();
+    else if (intent === "recenter") this.emit(Events.recenterRequested, { source: "voice" });
   }
 
   // ------------------------------------------------------------ lesson load

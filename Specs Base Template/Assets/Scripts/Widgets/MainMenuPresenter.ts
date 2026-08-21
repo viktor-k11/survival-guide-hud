@@ -34,6 +34,7 @@
  */
 import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
 import { eventBus, Events } from "../Engine/EventBus";
+import { TrailStatePayload } from "../Engine/NavTypes";
 import { CampChangedPayload, MenuSelectedPayload, RequestStatePayload } from "../Engine/RequestTypes";
 import { XYZ } from "../Engine/SurveyTypes";
 import { VisualConfig } from "../Engine/VisualConfig";
@@ -120,7 +121,16 @@ export class MainMenuPresenter extends BaseScriptComponent {
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Status block</span>')
 
-  @input @hint("Third status line. A trail system does not exist yet; this is its reserved line.") private trailLine: string = "TRAIL OFF";
+  @input @hint("Third status line while no trail is recording.") private trailLine: string = "TRAIL OFF";
+
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">Footer chips</span>')
+  @ui.label('<span style="color: #94A3B8; font-size: 11px;">Children of MainMenu/FooterChips, found by name. FOLLOW TRAIL shows only once a trail exists; the chips are the pinch twins of the voice commands.</span>')
+
+  @input @hint("Chip_SetCamp label.") private chipSetCampLabel: string = "[ SET CAMP ]";
+  @input @hint("Chip_Trail label.") private chipTrailLabel: string = "[ LEAVING CAMP ]";
+  @input @hint("Chip_Trail label while recording.") private chipTrailRecLabel: string = "[ ● REC ]";
+  @input @hint("Chip_FollowTrail label.") private chipFollowLabel: string = "[ FOLLOW TRAIL ]";
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Ask widget</span>')
@@ -179,6 +189,11 @@ export class MainMenuPresenter extends BaseScriptComponent {
   private requestState: string = "IDLE";
   /** The boot intro holds the screen; the menu waits for its done edge. */
   private introActive: boolean = false;
+  private chipSetCamp: Text | null = null;
+  private chipTrail: Text | null = null;
+  private chipFollow: Text | null = null;
+  private chipFollowRoot: SceneObject | null = null;
+  private trail: TrailStatePayload | null = null;
   private voiceState: string = "idle";
   private interimText: string = "";
   private highlightIndex: number = 0;
@@ -227,6 +242,11 @@ export class MainMenuPresenter extends BaseScriptComponent {
     eventBus.subscribe(Events.introStateChanged, (p: { active: boolean }) => {
       this.introActive = !!(p && p.active);
       this.applyVisibility();
+    });
+    eventBus.subscribe(Events.trailStateChanged, (p: TrailStatePayload) => {
+      this.trail = p;
+      this.renderStatus();
+      this.renderChips();
     });
     eventBus.subscribe(Events.campChanged, (p: CampChangedPayload) => {
       const had = this.camp !== null;
@@ -300,6 +320,29 @@ export class MainMenuPresenter extends BaseScriptComponent {
     const descriptionBlock = findChildDeep(this.mainMenu, "DescriptionBlock");
     this.descriptionBody = bodyText(descriptionBlock);
 
+    // Footer chips — pinch twins of the setCamp / leavingCamp / followTrail
+    // voice commands. Relaying a pinch is not logic.
+    const wireChip = (name: string, chip: "setCamp" | "trailStart" | "followTrail"): Text | null => {
+      const obj = findChildDeep(this.mainMenu, name);
+      if (!obj) {
+        this.log(name + " missing from the scene");
+        return null;
+      }
+      if (chip === "followTrail") this.chipFollowRoot = obj;
+      const interactable = obj.getComponent(Interactable.getTypeName()) as Interactable;
+      if (interactable) {
+        interactable.onTriggerEnd.add(() => {
+          if (!this.isVisible()) return;
+          this.log("menuChipSelected " + chip + " via pinch");
+          eventBus.emit(Events.menuChipSelected, { chip: chip, source: "pinch" });
+        });
+      }
+      return obj.getComponent("Component.Text") as Text;
+    };
+    this.chipSetCamp = wireChip("Chip_SetCamp", "setCamp");
+    this.chipTrail = wireChip("Chip_Trail", "trailStart");
+    this.chipFollow = wireChip("Chip_FollowTrail", "followTrail");
+
     const ask = findChildDeep(this.mainMenu, "AskWidget");
     if (ask) {
       this.askMicGlyph = findChildDeep(ask, "MicGlyph");
@@ -345,6 +388,23 @@ export class MainMenuPresenter extends BaseScriptComponent {
     this.renderRows();
     this.setHighlight(this.highlightIndex);
     this.renderStatus();
+    this.renderChips();
+  }
+
+  private renderChips(): void {
+    if (!this.isVisible()) return;
+    const theme = this.theme;
+    const recording = !!(this.trail && this.trail.recording);
+    setText(this.chipSetCamp, this.chipSetCampLabel);
+    setText(this.chipTrail, recording ? this.chipTrailRecLabel : this.chipTrailLabel);
+    setText(this.chipFollow, this.chipFollowLabel);
+    // FOLLOW TRAIL exists only when there is a trail to follow.
+    setEnabled(this.chipFollowRoot, !!(this.trail && this.trail.markCount > 0));
+    if (theme) {
+      setTextColor(this.chipSetCamp, theme.primaryPhosphor, theme.glowIntensity * 0.8);
+      setTextColor(this.chipTrail, recording ? theme.accentAmber : theme.primaryPhosphor, theme.glowIntensity * (recording ? 1.0 : 0.8));
+      setTextColor(this.chipFollow, theme.primaryPhosphor, theme.glowIntensity * 0.8);
+    }
   }
 
   // ------------------------------------------------------------------- rows
@@ -444,7 +504,14 @@ export class MainMenuPresenter extends BaseScriptComponent {
       this.voiceState === "listening" ? "MIC LISTENING" :
       this.voiceState === "finalizing" ? "MIC THINKING" : "MIC READY";
     const camp = "CAMP " + (this.camp ? "SET" : "UNSET");
-    setText(this.statusBody, mic + "\n" + camp + "\n" + this.trailLine);
+    // The terminal line the trail recorder owns: TRAIL ● REC · 12 MARKS · 47 M
+    const t = this.trail;
+    const trailLine = t && t.recording
+      ? "TRAIL ● REC · " + t.markCount + " MARKS · " + t.pathM + " M"
+      : t && t.markCount > 0
+      ? "TRAIL SAVED · " + t.markCount + " MARKS"
+      : this.trailLine;
+    setText(this.statusBody, mic + "\n" + camp + "\n" + trailLine);
     if (this.theme) {
       const warm = this.voiceState !== "idle";
       setTextColor(this.statusBody, warm ? this.theme.accentAmber : this.theme.primaryPhosphor, this.theme.glowIntensity * 0.85);

@@ -2887,3 +2887,102 @@ does not. Lesson recorded here because it is the same mistake class as the
 frustum saga: an invisible HUD in a capture is a statement about the CAMERA
 POSE first and the scene second. Check `MovePreviewCamera getPose` before
 debugging the render.
+
+---
+
+## Prompt — camp point, trail recording, bearing and trail-following return (+ head-lock, ASR-blackout probe, intro-pinch edge case)
+
+> New capability: the guide remembers where camp is and gets the user back to it.
+> [product framing, TO THE LOG: a straight line to camp is not always walkable —
+> there may be a ravine or a stream between you and it. So there are TWO return
+> modes and they are not redundant. The compass says "that way". The trail says
+> "this way, you have already walked it." Camp: auto on tent flow + manual SET
+> CAMP; manual always overwrites, auto never overwrites a hand-set camp (follow-up
+> corrected: keep the 9cffd4f siteSelected wiring as the auto path). Trail:
+> explicit LEAVING CAMP toggle, marks every N metres, VERTICAL ~1.5 m stakes
+> (angular frustum: discs at the feet do not exist for a walker), fixed pool
+> Crumb_01..24, DECIMATE never truncate. NAVIGATE engine mode; reuse the compass
+> presenter whole — one presenter, N bearing sources. NO GPS — pure maths in a
+> pure function for LEAF. Honest degradation: last-known bearing, said out loud.
+> Deterministic fixture, ships OFF. Verify end-to-end yourself, report numbers.
+> Follow-ups in the same batch: enable+tune HUDRoot's Headlock (ONLY HUDRoot),
+> recenter path; 20-min timebox on the ASR passthrough blackout — diagnose, do
+> not fix; confirm the intro-skipping pinch cannot raise COMPILING.]
+
+**Built.** `Engine/NavMath.ts` (pure: bearingDeg/distanceXZ/nearestMarkIndex/
+advanceTrailCursor/decimate — LEAF-ready, no scene), `Engine/NavTypes.ts`,
+`Engine/NavigationController.ts` (camp + recorder + nav loop; impure boundary),
+`Widgets/TrailPresenter.ts` (Crumb pool + camp stake), `Widgets/
+CompassRosePresenter.ts` (bearing source = `navigateUpdated` event — SOS later
+feeds the same payload; presenter never forked), `Engine/HudRecenter.ts`.
+Engine: mode `NAVIGATE`, chip voice-phrases ("set camp"/"leaving camp"/"follow
+the trail"), row 6 -> bearing, `campReached` -> IDLE (controller reports facts,
+engine owns mode — the survey rule again). Menu footer chips wired by pinch;
+SfxService: blip on chips/campChanged, sting on campReached. Scene: 24-stake
+pool + CampStake + compass Disc/Arrow/DistanceLabel + FooterChips, all shipped
+disabled. Camp rule as corrected: auto = siteSelected (unchanged from 9cffd4f)
+but refuses to touch a camp whose source is manual; manual (chip/voice/key 7)
+always overwrites.
+
+**Measured, live (Sunlit Outdoor):**
+- Trail recording on a 44 m walk: pool filled at the 25th mark, **decimated to
+  13 marks / 300 cm spacing (x1)** — coverage complete, exactly the unlimited-
+  range-on-a-finite-pool behaviour specified.
+- Bearing return: readout **CAMP 8.1 M** on entry -> walked in ->
+  **CAMP REACHED at 1.1 m** -> completion sting -> IDLE.
+- Trail return: cursor started at the nearest mark ("trail from mark #0"),
+  live readout rose honestly to 15 M when I walked the wrong way, converged ->
+  **CAMP REACHED at 0.8 m**, recording stops on arrival.
+- The distance readout is live on menu row 6, in the StatusBar NAVIGATE line
+  and on the compass label; "LAST KNOWN" copy + warning tint wired to the
+  lastKnown flag (simulate with debug key 0).
+- Preview-driving gotchas burned into SCENE-MAP: W-hold accelerates slowly and
+  any `MovePreviewCamera` call cancels a held key; walking >~20 m leaves the
+  scene geometry; `lookAt`/±180° yaw produce flipped camera states that cull
+  one-sided Text and corrupt Headlock — rotate in 90° steps.
+
+**Head-lock.** Headlock component on HUDRoot ENABLED (only HUDRoot — WorldRoot
+untouched), tuned lazy: distance 120, easings 0.25, buffers 6 cm / 3° / 3°.
+First tune used 7° buffers and the HUD settled ~13-15 cm off-centre permanently
+— the buffer is a dead zone the easing never closes; measured, halved.
+Verified: positional follow works (walk captures, HUD never intersected);
+**angular (yaw/pitch) follow did not respond to MovePreviewCamera.rotate in
+Preview under either locked-flag state** — recorded as a tool-vs-platform
+open question (the SCENE-MAP mistake class — measure a tool, do not conclude
+the platform), to be checked on device with a real head. The recenter path
+covers the gap meanwhile: voice "recenter" / key 5 force-places the HUD
+in front of the user — verified live after a 90° yaw (full menu back in view,
+`hud-yaw-90.jpg`). Pinch-while-easing: chose DAMP-not-GATE — the buffers make
+the HUD stationary precisely when users pinch (small head motion), and gating
+interaction during catch-up would punish the common case; noted that true
+pinch-during-easing cannot be exercised in Preview.
+
+**ASR blackout probe (timeboxed, no workaround built).** Clean repro attempt:
+SPACE-hold with ASR confirmed started (`startTranscribing() called`) —
+**passthrough did NOT black out**: street, stakes, HUD all rendered
+(92k HUD pixels in the capture). The 11:09 black frame was NOT reproducible;
+that incident coincided with `say` playing system audio during the first ASR
+start of the session, and the preview stayed broken until a scene reload — a
+preview-pipeline crash, not a deterministic mic=blackout property. Demo risk
+downgraded: the continuous live-voice shot looks feasible in Preview; do one
+warm-up pinch before the take. STOP per the brief — no workaround.
+
+**Intro-pinch edge case: already guarded, now proven twice.** `deliverFinal`
+drops an empty transcript (`clean.length === 0 -> log, return`) — nothing
+reaches `userRequest`, COMPILING cannot rise. Observed live in this session's
+log: "release [debug:SPACE] — interim so far: \"\" … no speech captured
+(fallback-on-stop, 0ms) — nothing emitted."
+
+**Screenshots** (PreviewPanelTool only): `nav-camp-marked.jpg` (CAMP SET, row
+6 live at 4 M), `nav-trail-recording.jpg` (12 fixture stakes + camp stake +
+TRAIL SAVED · 12 MARKS + all three chips), `nav-bearing.jpg` (compass disc +
+amber arrow + "CAMP 8.1 M", FOLLOW-THE-ARROW hint), `nav-arrival.jpg`,
+`hud-walk-10m.jpg` (HUD in view mid-walk), `hud-yaw-90.jpg` (post-yaw
+recenter), `hud-pitch-30.jpg` (looking 30° down: ground stakes AND the HUD
+footer chips visible AT THE SAME TIME — the (c) requirement holds).
+
+**Deviations, stated:** trail-mode convergence was finished with stepped
+camera teleports after W-hold kept cancelling (numbers above are real reads);
+the mid-REC HUD line was verified in the menu status block from the live run
+log rather than a dedicated screenshot (recording state shown as
+TRAIL ● REC · N MARKS · D M by MainMenuPresenter).

@@ -1,0 +1,61 @@
+- !<AssetImportMetadata/7618a26c-b0fb-4eb2-8bc9-72117af683c6>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 4a8ec3eb-48dd-4ec2-b42f-e138b85a1cbc
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 4a8ec3eb-48dd-4ec2-b42f-e138b85a1cbc
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 7291dd3b-c2bb-4d2c-9493-32da2446caea
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/7291dd3b-c2bb-4d2c-9493-32da2446caea>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 35236d42-355a-403b-abb5-7b107c4177af
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    cameraObject: false
+    distanceCm: false
+    enableDebugKeys: false
+    enableLogging: false
+    hudRoot: false
+    keyRecenter: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - hudRoot: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      distanceCm: !<float> 120.000000
+      enableDebugKeys: true
+      keyRecenter: !<string> 5
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input SceneObject hudRoot {"hint":"HUDRoot."}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object."}'
+    - '// @input float distanceCm = 120 {"hint":"How far in front of the user the HUD snaps to, centimetres. Matches the authored z = -120."}'
+    - // @input bool enableDebugKeys = true
+    - '// @input string keyRecenter = "5" {"hint":"Debug key — a digit, off the movement keys."}'
+    - // @input bool enableLogging = true

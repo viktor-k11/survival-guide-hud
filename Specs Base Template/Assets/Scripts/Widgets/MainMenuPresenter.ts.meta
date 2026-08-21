@@ -33,6 +33,10 @@
     askTitle: false
     cameraObject: false
     caretHz: false
+    chipFollowLabel: false
+    chipSetCampLabel: false
+    chipTrailLabel: false
+    chipTrailRecLabel: false
     descriptionWrapChars: false
     enableDebugKeys: false
     enableLogging: false
@@ -80,6 +84,10 @@
       scanDoneValue: DONE
       descriptionWrapChars: !<float> 26.000000
       trailLine: TRAIL OFF
+      chipSetCampLabel: "[ SET CAMP ]"
+      chipTrailLabel: "[ LEAVING CAMP ]"
+      chipTrailRecLabel: "[ ● REC ]"
+      chipFollowLabel: "[ FOLLOW TRAIL ]"
       askTitle: ASK ME ANYTHING
       askExamples: !<string[]>
         - 'try: "how do I splint a broken wrist"'
@@ -115,7 +123,14 @@
     - '// @input float descriptionWrapChars = 26 {"hint":"Characters per line for the description panel."}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Status block</span>"}'
-    - '// @input string trailLine = "TRAIL OFF" {"hint":"Third status line. A trail system does not exist yet; this is its reserved line."}'
+    - '// @input string trailLine = "TRAIL OFF" {"hint":"Third status line while no trail is recording."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Footer chips</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Children of MainMenu/FooterChips, found by name. FOLLOW TRAIL shows only once a trail exists; the chips are the pinch twins of the voice commands.</span>"}'
+    - '// @input string chipSetCampLabel = "[ SET CAMP ]" {"hint":"Chip_SetCamp label."}'
+    - '// @input string chipTrailLabel = "[ LEAVING CAMP ]" {"hint":"Chip_Trail label."}'
+    - '// @input string chipTrailRecLabel = "[ ● REC ]" {"hint":"Chip_Trail label while recording."}'
+    - '// @input string chipFollowLabel = "[ FOLLOW TRAIL ]" {"hint":"Chip_FollowTrail label."}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Ask widget</span>"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">These examples MUST stay outside the six menu rows — they are the proof the menu is a suggestion list, not a limit.</span>"}'

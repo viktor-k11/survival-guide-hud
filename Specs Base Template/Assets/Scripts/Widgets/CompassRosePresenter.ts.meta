@@ -1,0 +1,72 @@
+- !<AssetImportMetadata/50d80389-362f-4135-873a-862a3d5feb97>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 38c9124b-2a60-49be-9314-4724cf408809
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 38c9124b-2a60-49be-9314-4724cf408809
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> fa669c96-a4ff-49bf-877d-dff746d1b29a
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/fa669c96-a4ff-49bf-877d-dff746d1b29a>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 09b20ba4-c890-4efd-8990-9e29a3dd1c17
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    aheadCm: false
+    belowEyeCm: false
+    cameraObject: false
+    compassRose: false
+    enableLogging: false
+    labelFormat: false
+    lastKnownSuffix: false
+    theme: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      compassRose: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      aheadCm: !<float> 160.000000
+      belowEyeCm: !<float> 55.000000
+      labelFormat: "CAMP {D} M"
+      lastKnownSuffix: |2-
+         · LAST KNOWN
+      enableLogging: false
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - // @input AssignableType_1 theme
+    - '// @input SceneObject compassRose {"hint":"WorldRoot/CompassRose — children Arrow (Shaft/Tip) and DistanceLabel found by name."}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object — the rose floats ahead of the user."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Placement</span>"}'
+    - '// @input float aheadCm = 160 {"hint":"How far ahead of the user the rose floats, centimetres.", "widget":"slider", "min":60, "max":400, "step":10}'
+    - '// @input float belowEyeCm = 55 {"hint":"How far below eye level, centimetres. Low enough to not block the view, high enough to stay in the angular frustum.", "widget":"slider", "min":40, "max":200, "step":5}'
+    - '// @input string labelFormat = "CAMP {D} M" {"hint":"Label text. {D} is replaced by the distance in metres."}'
+    - '// @input string lastKnownSuffix = " · LAST KNOWN" {"hint":"Suffix appended while tracking is lost."}'
+    - // @input bool enableLogging

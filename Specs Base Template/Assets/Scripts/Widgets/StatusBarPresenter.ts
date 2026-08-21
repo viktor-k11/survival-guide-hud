@@ -29,6 +29,7 @@
  */
 import { Interactable } from "SpectaclesInteractionKit.lspkg/Components/Interaction/Interactable/Interactable";
 import { eventBus, Events } from "../Engine/EventBus";
+import { NavigateUpdatePayload } from "../Engine/NavTypes";
 import { RequestStatePayload } from "../Engine/RequestTypes";
 import { VisualConfig } from "../Engine/VisualConfig";
 import {
@@ -157,6 +158,14 @@ export class StatusBarPresenter extends BaseScriptComponent {
   @hint("Shown in a lesson while the current step's audio is still being synthesized. Cleared the moment it speaks.")
   private voicePendingHint: string = "VOICE INCOMING";
 
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">Navigate</span>')
+
+  @input @hint("Hint line in NAVIGATE, bearing mode.") private navBearingHint: string = "FOLLOW THE ARROW — SAY STOP TO EXIT";
+  @input @hint("Hint line in NAVIGATE, trail mode.") private navTrailHint: string = "FOLLOW THE STAKES — SAY STOP TO EXIT";
+  @input @hint("Distance readout. {D} = metres.") private navLineFormat: string = "CAMP {D} M";
+  @input @hint("Appended while tracking is lost — the readout must SAY it is last known.") private navLastKnownSuffix: string = " · LAST KNOWN BEARING";
+
   private micVisual: RenderMeshVisual;
   private micMat: Material;
   private stripVisual: RenderMeshVisual;
@@ -178,6 +187,7 @@ export class StatusBarPresenter extends BaseScriptComponent {
   private pendingElapsed: number = 0;
   private tickerIndex: number = 0;
   private tickerElapsed: number = 0;
+  private nav: NavigateUpdatePayload | null = null;
   private safetyWarning: string = "";
   /**
    * Range warnings (currently: the survey's fire-too-close guard) live in their
@@ -268,6 +278,20 @@ export class StatusBarPresenter extends BaseScriptComponent {
     eventBus.subscribe(Events.introStateChanged, (p: { active: boolean }) => {
       setEnabled(this.statusBar, !(p && p.active));
     });
+    // NAVIGATE: the ticker line becomes the distance readout. Honest
+    // degradation is part of the copy — a lost pose SAYS "last known".
+    eventBus.subscribe(Events.navigateUpdated, (p: NavigateUpdatePayload) => {
+      this.nav = p && p.active ? p : null;
+      if (this.mode !== "NAVIGATE") return;
+      this.applyVoice();
+      if (this.nav && this.activeWarning().length === 0) {
+        const d = this.nav.distanceM >= 10 ? Math.round(this.nav.distanceM) : this.nav.distanceM;
+        setText(this.tickerText, this.navLineFormat.replace("{D}", "" + d) + (this.nav.lastKnown ? this.navLastKnownSuffix : ""));
+        if (this.theme) {
+          setTextColor(this.tickerText, this.nav.lastKnown ? this.theme.warningColor : this.theme.accentAmber, this.theme.glowIntensity);
+        }
+      }
+    });
 
     this.wireKeyboardToggle();
     this.applyFace();
@@ -328,6 +352,8 @@ export class StatusBarPresenter extends BaseScriptComponent {
 
     if (this.voiceState === "listening") setText(this.hintText, this.listeningHint);
     else if (this.voiceState === "finalizing") setText(this.hintText, this.finalizingHint);
+    else if (this.mode === "NAVIGATE")
+      setText(this.hintText, this.nav && this.nav.navMode === "trail" ? this.navTrailHint : this.navBearingHint);
     else if (this.mode === "IDLE") setText(this.hintText, this.idleHint);
     // In a lesson the hint line is otherwise empty, so it is free to carry the
     // one thing the user cannot see for themselves: that the voice is coming.

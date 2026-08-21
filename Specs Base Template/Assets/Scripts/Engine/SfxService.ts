@@ -99,6 +99,13 @@ export class SfxService extends BaseScriptComponent {
     eventBus.subscribe(Events.menuSelected, (_p: MenuSelectedPayload) => {
       this.play(this.cueConfirm, "confirm-blip");
     });
+    eventBus.subscribe(Events.menuChipSelected, () => {
+      this.play(this.cueConfirm, "confirm-blip");
+    });
+    // The camp point landing gets its own blip — voice/auto sets have no chip.
+    eventBus.subscribe(Events.campChanged, (p: { source: string }) => {
+      if (p && p.source !== "fixture") this.play(this.cueConfirm, "confirm-blip");
+    });
     eventBus.subscribe(Events.checklistUpdated, (p: { justChecked: number }) => {
       if (p && p.justChecked >= 0) this.play(this.cueConfirm, "confirm-blip");
     });
@@ -128,6 +135,10 @@ export class SfxService extends BaseScriptComponent {
 
     // --- completion ------------------------------------------------------
     eventBus.subscribe(Events.lessonCompleted, () => {
+      this.play(this.cueCompletion, "completion-sting");
+    });
+    // Making it back to camp earns the same sting as finishing a lesson.
+    eventBus.subscribe(Events.campReached, () => {
       this.play(this.cueCompletion, "completion-sting");
     });
 

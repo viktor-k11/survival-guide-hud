@@ -1,0 +1,107 @@
+- !<AssetImportMetadata/a7dd5664-e077-4de7-a222-95f834e8d170>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> cf444381-86fe-4b2a-a12d-d4fc3bf63ddd
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> cf444381-86fe-4b2a-a12d-d4fc3bf63ddd
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> be2510dd-bca8-46d5-b843-be417764773c
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/be2510dd-bca8-46d5-b843-be417764773c>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: b6f95286-0827-469e-8c19-bb61fe559f10
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    arriveRadiusCm: false
+    cameraObject: false
+    campMarkedLine: false
+    campReachedLine: false
+    enableDebugKeys: false
+    enableLogging: false
+    eyeHeightCm: false
+    keyFollowTrail: false
+    keySetCamp: false
+    keySimTrackingLoss: false
+    keyStartTrail: false
+    markSpacingCm: false
+    poolSize: false
+    reachRadiusCm: false
+    trailFixture: false
+    updateIntervalSec: false
+    useFixtureTrail: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      eyeHeightCm: !<float> 170.000000
+      markSpacingCm: !<float> 150.000000
+      poolSize: !<float> 24.000000
+      reachRadiusCm: !<float> 120.000000
+      arriveRadiusCm: !<float> 150.000000
+      updateIntervalSec: 0.150000
+      campMarkedLine: Camp marked.
+      campReachedLine: Camp reached. Welcome back.
+      useFixtureTrail: false
+      trailFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      enableDebugKeys: true
+      keySetCamp: !<string> 7
+      keyStartTrail: !<string> 8
+      keyFollowTrail: !<string> 9
+      keySimTrackingLoss: !<string> 0
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Wiring</span>"}'
+    - "// @input SceneObject cameraObject {\"hint\":\"Camera Object — the user's position. Camp and marks are placed at ground level: camera y minus eyeHeightCm.\"}"
+    - '// @input float eyeHeightCm = 170 {"hint":"Eye height above the ground, centimetres."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Trail recorder</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Sized from the measured walk: Sunlit Outdoor gives ~20 m of usable radius, so 24 marks at 1.5 m covers ~36 m and decimation will not fire in a demo. It stays as the correctness path.</span>"}'
+    - '// @input float markSpacingCm = 150 {"hint":"Drop a mark every this many centimetres of travel. Doubles on every decimation.", "widget":"slider", "min":50, "max":600, "step":10}'
+    - '// @input float poolSize = 24 {"hint":"Size of the design-time Crumb pool under WorldRoot/TrailContainer. Hard rule 1: this many exist, none are created."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Navigation</span>"}'
+    - '// @input float reachRadiusCm = 120 {"hint":"A trail mark within this range counts as passed, centimetres.", "widget":"slider", "min":30, "max":400, "step":10}'
+    - '// @input float arriveRadiusCm = 150 {"hint":"Within this range of camp the return is DONE, centimetres.", "widget":"slider", "min":50, "max":500, "step":10}'
+    - '// @input float updateIntervalSec = 0.15 {"hint":"How often the navigation loop samples the camera, seconds.", "widget":"slider", "min":0.05, "max":1, "step":0.05}'
+    - '// @input string campMarkedLine = "Camp marked." {"hint":"Spoken when a camp point is set."}'
+    - '// @input string campReachedLine = "Camp reached. Welcome back." {"hint":"Spoken on arrival."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Deterministic fixture — hard rule 5</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">A stored camp + trail, the way useFixtureCloud works: everything downstream — stakes, chips, FOLLOW TRAIL, bearing — runs identically off stored state. For LEAF and desk demos. SHIPS OFF.</span>"}'
+    - '// @input bool useFixtureTrail {"hint":"Load camp + trail from trailFixture at start instead of waiting for the user to create them."}'
+    - '// @input Asset.JsonAsset trailFixture {"hint":"Assets/Survey/fixtures/camp-trail-demo.json — { campCm:[x,y,z], marksCm:[[x,y,z],…], spacingCm }. CENTIMETRES, ground level."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug — preview iteration</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Digits, because every free right-hand LETTER is taken and W/A/S/D/Q/E/arrows are preview movement. These call the SAME methods chips and voice call.</span>"}'
+    - // @input bool enableDebugKeys = true
+    - '// @input string keySetCamp = "7" {"hint":"Set camp at the current position (manual — overwrites)."}'
+    - "// @input string keyStartTrail = \"8\" {\"hint\":\"Start trail recording ('LEAVING CAMP').\"}"
+    - '// @input string keyFollowTrail = "9" {"hint":"Ask the engine for FOLLOW TRAIL (same event as the chip)."}'
+    - '// @input string keySimTrackingLoss = "0" {"hint":"Toggle SIMULATED tracking loss, to verify the last-known-bearing behaviour on a desk."}'
+    - // @input bool enableLogging = true

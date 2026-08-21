@@ -69,9 +69,15 @@ export interface MenuSelectedPayload {
   position: XYZ | null;
 }
 
-/** A camp point exists from now on: the user chose a site marker. */
+/**
+ * A camp point exists (or moved). Ownership rule that matters: MANUAL ALWAYS
+ * OVERWRITES; AUTOMATIC ONLY FIRES IF CAMP IS UNSET — replaying a tent lesson
+ * on a second demo take must never silently relocate the user's camp. The
+ * guide does not move your camp on its own initiative.
+ */
 export interface CampChangedPayload {
-  /** Centimetres, world. */
+  /** Centimetres, world, GROUND level (eye height already subtracted). */
   position: XYZ;
-  kind: "tent" | "fire";
+  /** "manual" (chip/voice — overwrites) | "auto" (tent lesson completed at a chosen site — only if unset) | "fixture". */
+  source: string;
 }

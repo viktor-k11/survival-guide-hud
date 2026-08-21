@@ -39,7 +39,7 @@ advance so a counting-down timer does not jitter. Both fonts are in the project;
 |---|---|
 | `HUDRoot` + ALL descendants (incl. `MainMenu`, `BootIntro`) | **disabled** |
 | `WorldRoot` + all 34 descendants | **disabled** |
-| `Headlock` component on `HUDRoot` | **disabled** (component, not object) |
+| `Headlock` component on `HUDRoot` | **ENABLED** since the camp/trail batch (walking is part of the product; a world-locked HUD gets walked through — the intro-debug session experienced that bug from the inside). Tuned lazy: `_distance` 120, easings 0.25, buffers 6 cm / 3° / 3° (7° buffers left a permanent ~15 cm dead-zone offset at 120 cm — measured). ONLY HUDRoot; WorldRoot stays world-anchored. **Preview findings:** positional follow works (walk captures); yaw/pitch follow did NOT respond to `MovePreviewCamera rotate` with locked flags in either state — verify angular follow on device with a real head, do not conclude about the platform from this tool. Preview-camera FLIP states (`lookAt`/±180 yaw produce rotation x=180/z=180) corrupt Headlock beyond recovery — avoid them; rotate in 90° steps. `recenterRequested` (voice "recenter" / key 5) is the way back. |
 | `VisualConfig` | **enabled** — config holder, draws nothing |
 | `RSG Smoke Test [TEMP]` | **enabled** — throwaway diagnostic, untouched |
 | `Camera Object`, `Lighting`, `SpectaclesInteractionKit` | enabled — stock |
@@ -171,6 +171,7 @@ Local origin sits 60 cm in front of the user.
 | `HUDRoot/BootIntro/Wipe` | Full-menu-sized plate carrying a clone of `CRT_PanelGlow`; the presenter animates the shader's own `wipeProgress` 0→1 — the scanline wipe is a material property, not new geometry | — |
 | `HUDRoot/BootIntro/Line1` | "SURVIVAL GUIDE — FIELD TERMINAL v1.0", typed with the typewriter machinery | — |
 | `HUDRoot/BootIntro/Line2` | "VOICE INTERFACE ONLINE — PINCH AND HOLD TO ASK" (amber) — the product's thesis, in the first thing the user ever sees | — |
+| `HUDRoot/MainMenu/FooterChips/Chip_SetCamp,Chip_Trail,Chip_FollowTrail` | The camp/trail footer chips (collider + SIK Interactable each) — pinch twins of "set camp" / "leaving camp" / "follow the trail". FOLLOW TRAIL shows only once a trail exists; Chip_Trail flips to "● REC" while recording | `menuChipSelected` (emit), `trailStateChanged` |
 | `HUDRoot/AssemblingLesson` | **Placeholder VFX** shown only while a lesson is compiling. Swap the contents, keep the path | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Ring` | Spinning amber torus | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Core` | Counter-pulsing green disc | `requestStateChanged` |
@@ -214,6 +215,9 @@ placed against real terrain, not the head.
 | `…/HologramFire/S3_LogCabin` | Stage 3 — log-cabin stack | `hologramStage` |
 | `…/HologramFire/S4_Flame` | Stage 4 — lit flame | `hologramStage`, `lessonCompleted` |
 | `WorldRoot/PropsContainer` | Empty container for training props. **The only object here with no visual** — props get parented under it, but they must be pre-made children, never runtime-instantiated | `propPlaced` |
+| `WorldRoot/TrailContainer/Crumb_01..24` | **The trail stake pool, hard cap 24** — vertical ~1.5 m stakes, not ground discs (the frustum limit is ANGULAR: floor content is invisible to a wearer facing the horizon, and a walker looks ahead, not down). When the pool fills, the controller DECIMATES (every second mark, spacing doubled) — coverage stays complete on a finite pool; measured live: 25th mark → 13 marks @ 300 cm | `trailStateChanged`, `navigateUpdated` (passed marks dim) |
+| `WorldRoot/CampStake` | The camp point marker: `Pole` (2 m, amber — same visual language as the crumbs, larger and distinct) + yaw-billboarded `Label` ("CAMP") | `campChanged` |
+| `WorldRoot/CompassRose/Disc,Arrow(Shaft/Tip),DistanceLabel` | The ONE bearing display, floated ahead of the user below eye level while navigating. Bearing SOURCE is the `navigateUpdated` event — SOS will later feed the same payload at the most open direction. **Do not fork this presenter.** `lastKnown` recolours everything warning-red | `navigateUpdated` |
 
 ## Outside the two roots
 
@@ -237,6 +241,10 @@ placed against real terrain, not the head.
 | `Systems/AssemblingLessonPresenter` | `Widgets/AssemblingLessonPresenter.ts` — enables and animates `HUDRoot/AssemblingLesson` while `requestStateChanged.state === "COMPILING"`. |
 | `Systems/SurveyController` | `Engine/SurveyController.ts` — the **on-demand** survey (menu row 1; boot auto-start removed). Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys P (restart) / G (finish now). |
 | `Systems/SfxService` | `Engine/SfxService.ts` — **the ONE owner of non-speech audio cues.** One AudioComponent, subscribes to the bus, maps events to the six GeneratedSFX WAVs (power-on / confirm / error / survey-ping / geiger / completion-sting). Separate from NarrationService (speech). A cue that cannot play is silence + a log line; cues skip while narration has the air. |
+| `Systems/NavigationController` | `Engine/NavigationController.ts` — owns the camp point, the trail recorder (explicit "LEAVING CAMP" start; marks auto-drop per spacing; decimation on pool overflow) and the navigation loop. Pure maths in `NavMath.ts`. `useFixtureTrail` + `Assets/Survey/fixtures/camp-trail-demo.json` (regenerate: `python3 Tools/make-trail-fixture.py`) is the deterministic path — SHIPS OFF. Debug keys **7** set camp / **8** start trail / **9** follow trail / **0** simulate tracking loss. |
+| `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
+| `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
+| `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. |
 | `Systems/BootIntroPresenter` | `Widgets/BootIntroPresenter.ts` — the boot intro: CRT scanline wipe + two typed lines (~3.9 s), skippable by pinch (the same pinch that starts a capture, observed via `voiceStateChanged`). `runIntro` @input off = no intro and the done edge fires immediately. Emits `introStateChanged`; NO audio calls of its own (SfxService plays the power-on cue), no narration — no baked track exists and live TTS at boot is forbidden (6.5-18.6 s of opening silence). |
 | `Systems/MainMenuPresenter` | `Widgets/MainMenuPresenter.ts` — drives `HUDRoot/MainMenu`: row copy/state, the moving highlight, description + status panels, the ask widget's caret/interim/example ticker, row 6's live distance. Emits `menuSelected` on pinch. Debug keys J (cycle highlight) / L (activate). |
 | `Systems/SurveyGridPresenter` | `Widgets/SurveyGridPresenter.ts` — drives `WorldRoot/SurveyGrid` from `surveyProgress`: follows the sampled bounds, grows, spins, rides a brightness wave. |
@@ -280,7 +288,29 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `surveyComplete` · `siteSelected` · `distanceWarning` · `stopRequested` ·
 `requestStateChanged` · `lessonAnchorChanged` · `speakRequested` ·
 `narrationStateChanged` · `qaAnswered` · `keyboardRequested` ·
-`menuSelected` · `campChanged` · `introStateChanged`
+`menuSelected` · `campChanged` · `introStateChanged` · `menuChipSelected` ·
+`trailStateChanged` · `navigateRequested` · `navigateUpdated` · `campReached` ·
+`recenterRequested`
+
+### NAVIGATE — a mode, not a companion
+
+Two return modes, and they are NOT redundant: a straight line to camp is not
+always walkable (a ravine or a stream may sit between you and it). **BEARING
+TO CAMP** says "that way" — bearing + distance, available whenever camp is
+set. **FOLLOW TRAIL** says "this way, you have already walked it" — mark by
+mark, only if a trail exists. Entry: menu row 6 (bearing), the FOLLOW TRAIL
+chip / "follow the trail" (trail). Exit: "stop", or arrival (`campReached` →
+the engine decides IDLE, same single-owner rule as the survey). There is NO
+GPS anywhere in this: geolocation does not work in Preview and there is no
+device here to test it on — camp is a world position in the same centimetre
+space the site markers use, and bearing/distance are pure maths in
+`Engine/NavMath.ts` (LEAF exercises them without Lens Studio).
+
+Camp ownership: the automatic path (siteSelected, as shipped in 9cffd4f) may
+move an automatic camp but NEVER overwrites a camp set BY HAND; manual SET
+CAMP always overwrites. Honest degradation: drift leaves bearing/distance
+coarser but valid; a lost pose (NaN, or debug key 0 to simulate) freezes the
+readout at the LAST KNOWN bearing and every surface SAYS so.
 
 ### `menuSelected` is the siteSelected trick generalised
 
