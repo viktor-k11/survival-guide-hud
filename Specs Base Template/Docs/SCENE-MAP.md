@@ -121,9 +121,13 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 > `InteractableManipulation` (rotation/scale disabled — a held log stays
 > axis-aligned; the snap sets the slot's rotation anyway). Each log's AUTHORED
 > local transform is its REST POSE — the horseshoe arc the controller returns
-> missed releases to — so the arc is Inspector-editable. `Prop_Kindling` /
-> `Prop_Stake` remain inert props with no interaction components.
-> `SnapSlot_1..6` are the pattern (see the table row above).
+> missed releases to — so the arc is Inspector-editable. `Prop_Kindling` is
+> grabbable too since the reference rebuild (2026-08-22) — box collider
+> 0.4 × 0.5 × 0.4 (generous on purpose: the bundle's visual is thin sticks),
+> same Interactable/Manipulation pair, rest pose right of the horseshoe —
+> and it is the LAST piece: its slot crowns the stack. `Prop_Stake` remains
+> inert. `SnapSlot_1..6` + `SnapSlot_Kindling` are the pattern (see the
+> table rows above).
 
 > **GLB-reimport gotcha, cost a debugging loop:** replacing a GLB's content on
 > disk keeps the prefab id (instances survive) but the OLD subresource ids
@@ -247,8 +251,9 @@ placed against real terrain, not the head.
 | `…/HologramFire/S3_LogCabin` | Stage 3 — log-cabin stack | `hologramStage` |
 | `…/HologramFire/S4_Flame` | Stage 4 — lit flame | `hologramStage`, `lessonCompleted` |
 | `WorldRoot/PropsContainer` | Container for training props AND the snap pattern. `Systems/PropsController` positions it WITHIN REACH of the user (default 55 cm, `reachCm`) when a prop step opens, yawed so local +Z faces the user — never at a distant surveyed site: a pinch reaches ~0.6 m | `propsStateChanged` (emitter), `propSnapped` (emitter) |
-| `WorldRoot/PropsContainer/SnapSlot_1..6` | **The log-cabin pattern, as design-time transforms** — two logs along X at y 0, two along Z at y 20, two along X at y 40, ±14 cm off centre. The pattern IS the required count: `propPlaced.required` = live slot tally, because the plan's `props_required` is never produced (and must stay un-produced — the last prompt extension failed its gate). Edit the pattern in the Inspector; the code counts and snaps, nothing more | `PropsController` |
-| `WorldRoot/PropsContainer/SnapSlot_N/Ghost` | Empty-slot target marker: `PH_Plane` quad (46 × 26 cm, log footprint) with a shared dim-cyan `PH_Cyan` clone, breathing at the theme pulse. Hidden the moment its slot fills | `PropsController` |
+| `WorldRoot/PropsContainer/SnapSlot_1..6` | **The fire-lay pattern, as design-time transforms — REBUILT 2026-08-22 against a real "long-lasting campfire" reference** (same correction class as the tent dome): solid base pair along X at y 0 (±14), then a TIGHT CRISSCROSS taper — cross pair along Z at y 19 (±12.5), top pair along X at y 38 (±11). The pattern IS the required count: `propPlaced.required` = live slot tally, because the plan's `props_required` is never produced (and must stay un-produced — the last prompt extension failed its gate). Edit the pattern in the Inspector; the code counts and snaps, nothing more | `PropsController` |
+| `WorldRoot/PropsContainer/SnapSlot_Kindling` | **Tinder/kindling NEAR THE TOP** — the reference's step 3, seated in the summit hollow at y 48. Slots are TYPED by name ("Kindling" in the name = kindling only, else logs only): the kindling slot sits within snap radius of the top log slots, and without typing a log dropped on the summit would seat where the kindling belongs and teach the lay wrong. The reference's rock ring (step 4) is played by the ZONE circle — there are no rock props | `PropsController` |
+| `WorldRoot/PropsContainer/SnapSlot_N/Ghost` | Empty-slot target marker: `PH_Plane` quad (46 × 26 cm log footprint; 14 × 14 for the kindling) with a shared dim-cyan `PH_Cyan` clone, breathing at the theme pulse. Hidden the moment its slot fills | `PropsController` |
 | `WorldRoot/HazardMarker_1..3` | **The "do NOT camp here" pool, hard cap 3** — warning-coloured X of two crossed stakes (`Cross_A`/`Cross_B`) + a `Label` carrying the REASON with its number ("STEEP 31°", "COLLECTS WATER", "BROKEN GROUND"), deliberately not the site-marker language so the two verdicts separate at a glance. A hazard the user cannot interpret is decoration | `hazardsDetected`, `surveyStarted` (clear) |
 | `WorldRoot/TrailContainer/Crumb_01..24` | **The trail stake pool, hard cap 24** — vertical ~1.5 m stakes, not ground discs (the frustum limit is ANGULAR: floor content is invisible to a wearer facing the horizon, and a walker looks ahead, not down). When the pool fills, the controller DECIMATES (every second mark, spacing doubled) — coverage stays complete on a finite pool; measured live: 25th mark → 13 marks @ 300 cm | `trailStateChanged`, `navigateUpdated` (passed marks dim) |
 | `WorldRoot/CampStake` | The camp point marker: `Pole` (2 m, amber — same visual language as the crumbs, larger and distinct) + yaw-billboarded `Label` ("CAMP") | `campChanged` |
@@ -280,7 +285,7 @@ placed against real terrain, not the head.
 | `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
 | `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
 | `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. Its 400 cm drift guard stays as the OUTER belt-and-braces; with HudFollower's stable maths it should never fire. |
-| `Systems/PropsController` | `Widgets/PropsController.ts` — **pinch-placed training props** (P14). Owns the grab interaction (SIK hover highlight / manipulation), the SnapSlot pattern, and the release verdict: within `snapRadiusCm` (35) of an EMPTY slot = snap + flash + `propSnapped`; anywhere else = eased return to the authored rest pose (free-fall physics CUT per the cut list — a floating or jittering log reads as a bug). Grabbable ONLY while a zone companion is active in a FIRE lesson; the family comes from `lessonKindInferred` (HologramPresenter's own verdict — never re-inferred here). Reports FACTS, never advances a step — the SurveyController seam. Debug key **X** forces the window open/closed. |
+| `Systems/PropsController` | `Widgets/PropsController.ts` — **pinch-placed training props** (P14). Owns the grab interaction (SIK hover highlight / manipulation), the SnapSlot pattern, and the release verdict: within `snapRadiusCm` (35) of an EMPTY slot = snap + flash + `propSnapped`; anywhere else = eased return to the authored rest pose (free-fall physics CUT per the cut list — a floating or jittering log reads as a bug). Grabbable ONLY while a zone companion is active in a FIRE lesson; the family comes from `lessonKindInferred` (HologramPresenter's own verdict — never re-inferred here). Reports FACTS, never advances a step — the SurveyController seam. Slots and props are TYPED by name (log vs kindling) and a release only snaps to a matching slot. Debug key **X** forces the window open/closed; **Z** auto-places the next free prop through the SAME release path (exists because the synthetic hand cannot pinch every prop; a real hand can). |
 | `Systems/HologramPresenter` | `Widgets/HologramPresenter.ts` — **the subscriber `hologramStage` never had.** Enables exactly one stage group (whole ancestor chain), anchors it, spins it slowly, runs the stage transition, and announces the first appearance. See the hologram section below for the family rule and the measured placement. |
 | `Systems/CompletionCardPresenter` | `Widgets/CompletionCardPresenter.ts` — the completion card (see the CompletionCard row). Relays a pinch on the next line as `suggestionAccepted`; the ENGINE owns what acceptance means. |
 | `Systems/JournalPresenter` | `Widgets/JournalPresenter.ts` — the session log (see the Journal row). Debug key **V** toggles via the same `menuChipSelected` the chip and voice use. |
@@ -503,6 +508,28 @@ moment the lesson succeeds (`hologram-complete-standing.jpg`).
 > hand-built STAGING TEST INPUT, not demo content, and not wired to a debug key
 > by default. Campfire plans use three (stages 2, 3, 4), so a live fire lesson
 > does reach the flame on its own.
+
+### Training props — rebuilt against the campfire reference (2026-08-22)
+
+The user supplied a "long-lasting campfire" reference (base of large logs →
+tight crisscross layers → tinder and kindling near the TOP → rock ring), and
+the pattern now follows it: the slot pyramid TAPERS (±14 → ±12.5 → ±11 cm),
+`SnapSlot_Kindling` crowns the stack, and `Prop_Kindling` — inert since P12 —
+is the seventh grabbable prop. `required` rose from 6 to 7 by AUTHORING A
+SLOT, no code change: the count comes from the scene, which is the whole
+point of the seam. Slots and props are typed by name so a log can never seat
+where the kindling belongs (the summit slots overlap within snap radius).
+The rock ring is played by the zone circle; no rock props exist. The lesson
+TEXT still narrates whatever the plan says (tinder-first in the current
+fixture) — prompt and schema stay frozen; the reference reshapes the SCENE,
+not the plan. `snapRadiusCm` default is now 50 (generous drops seat in the
+next open layer; device pinch precision is coarse). Verified live 7/7:
+placements 1–5 by synthetic-hand drags, the full ordered build by debug key
+Z through the same release path, `propPlaced {placed:7, required:7}` →
+auto-advance → retired (`props-pattern-part-built.jpg`,
+`props-cabin-ready-for-kindling.jpg`). The synthetic hand could never PINCH
+the kindling (hover fired, trigger did not — tool quirk, not Lens code; a
+real SIK hand sends ordinary trigger events), which is why key Z exists.
 
 ### Training props — the snap pattern (P14, 2026-08-22)
 

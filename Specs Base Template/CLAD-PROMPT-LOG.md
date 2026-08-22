@@ -3605,3 +3605,50 @@ clean), package left untracked like its Inspect sibling. (5) One SIK quirk:
 `Prop_Log_6` twice timed out on `onTriggerStart` via uniqueId-targeting; a
 Hover first, then Pinch-hold, worked — matches the known SIK
 timing issue in the preview-interaction notes, not a Lens bug.
+
+## Prompt — the campfire pattern rebuilt against a reference
+
+> возьми за основу эту схему костра [reference infographic "How to build a
+> long-lasting campfire": 1 start with a solid base of large logs · 2 stack
+> layers in a tight crisscross pattern · 3 add tinder and kindling near the
+> top · 4 surround the fire with a ring of rocks]
+
+**The same correction class as the tent dome: measure the built thing against
+the real reference.** The P14 pattern was a straight 2-2-2 cabin; the
+reference is a TAPERED tight crisscross with the kindling ON TOP. Rebuilt:
+
+- Slot pyramid tapers: base pair ±14 (y 0), cross pair ±12.5 (y 19), top
+  pair ±11 (y 38) — reference steps 1–2.
+- **`SnapSlot_Kindling` crowns the stack (y 48) and `Prop_Kindling` — inert
+  since P12 — became the seventh grabbable prop** (collider 0.4×0.5×0.4,
+  Interactable + Manipulation, rest pose in the horseshoe) — reference
+  step 3. `required` rose 6 → 7 by authoring a slot, zero code changes to
+  the count: it comes from the scene, which is the seam's whole point.
+- **Slots and props are typed by name** (log vs kindling): the summit slots
+  overlap within snap radius, and without typing a log dropped on top would
+  seat where the kindling belongs and teach the lay wrong.
+- The rock ring (step 4) is played by the existing ZONE circle — no rock
+  props exist and none were generated.
+- `snapRadiusCm` default 35 → 50: generous drops seat in the next open
+  layer, and pinch precision on device is coarse.
+- Prompt/schema untouched: the reference reshapes the SCENE; the lesson text
+  still narrates whatever the plan says.
+
+**Verified live on the campfire fixture, 7/7:** five logs placed by
+synthetic-hand drags (`SNAPPED … 1/7 … 5/7`, `propPlaced {required:7}`), then
+the full ordered build via the new debug key **Z** — auto-place the next free
+prop through the SAME release path — ending `Prop_Kindling SNAPPED into
+SnapSlot_Kindling — 7/7 PATTERN COMPLETE` → `prop pattern complete (7/7) —
+auto-advancing` → step 2 checklist up, `PROPS retired (7/7)`. Captures:
+`props-pattern-part-built.jpg` (tapered crisscross mid-build),
+`props-cabin-ready-for-kindling.jpg` (full cabin, kindling waiting).
+
+**Why key Z exists — a tool finding, not a Lens bug:** the synthetic hand
+could HOVER the kindling but never PINCH it (onTriggerStart never fired, all
+angles, both hands, enlarged collider), and this session the puppet-hand
+degraded repeatedly (first-interaction timeouts after every reset; a
+preview pause/resume sometimes healed it; targets behind the camera or
+under the HUD's KeyboardToggle fail with obstructed). A real SIK hand sends
+ordinary trigger events — the on-device path is the ordinary one. Z drives
+the identical release/snap/count code, so what it bypasses is only the grab
+gesture itself.

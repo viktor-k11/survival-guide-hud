@@ -54,9 +54,24 @@ import { isolateMaterial, pulse01, setEnabled } from "./WidgetUtils";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
+/**
+ * What a prop IS and what a slot ACCEPTS, read from the object names —
+ * "Kindling" anywhere in the name means kindling, everything else is a log.
+ * The reference fire lay (tight crisscross taper, tinder and kindling NEAR
+ * THE TOP) puts the kindling slot above the stack, well inside snap radius
+ * of the top log slots; without typing, a log dropped on the summit would
+ * seat itself where the kindling belongs and teach the lay wrong.
+ */
+type PropKind = "log" | "kindling";
+
+function kindOf(name: string): PropKind {
+  return name.indexOf("Kindling") >= 0 ? "kindling" : "log";
+}
+
 /** One grabbable prop, resolved once at start. */
 interface PropParts {
   root: SceneObject;
+  kind: PropKind;
   interactable: Interactable | null;
   manipulation: InteractableManipulation | null;
   visual: RenderMeshVisual | null;
@@ -78,6 +93,7 @@ interface PropParts {
 
 interface SlotParts {
   root: SceneObject;
+  kind: PropKind;
   ghost: SceneObject | null;
   filled: boolean;
 }
@@ -108,8 +124,8 @@ export class PropsController extends BaseScriptComponent {
 
   @input
   @widget(new SliderWidget(10, 80, 1))
-  @hint("Release closer than this to an EMPTY slot snaps the prop in; anything further returns it to rest. Centimetres, world.")
-  private snapRadiusCm: number = 35;
+  @hint("Release closer than this to an EMPTY slot (of the matching kind) snaps the prop in; anything further returns it to rest. Centimetres, world. Generous on purpose: pinch precision is coarse on device, and typed slots + nearest-empty keep a sloppy drop honest — a log dropped onto the stack simply seats in the next open layer.")
+  private snapRadiusCm: number = 50;
 
   @input
   @widget(new SliderWidget(0, 1, 0.05))
@@ -144,6 +160,10 @@ export class PropsController extends BaseScriptComponent {
   @input
   @hint("Force the prop step open/closed without a lesson — the interaction is testable on a desk. Same right-hand-cluster rule as every debug key: never W/A/S/D, Q/E or the arrows.")
   private keyForceProps: string = "X";
+
+  @input
+  @hint("Auto-place the next free prop into its nearest empty matching slot, through the SAME release path a real drop takes (kind gating, snap, flash, propSnapped). Exists because the synthetic hand cannot pinch every prop reliably; a real hand can. Never ships doing anything — it is a no-op unless the window is open.")
+  private keyAutoPlace: string = "Z";
 
   @input private enableDebugKeys: boolean = true;
   @input private enableLogging: boolean = true;
@@ -222,7 +242,7 @@ export class PropsController extends BaseScriptComponent {
       const child = this.propsContainer.getChild(i);
       if (child.name.indexOf("SnapSlot") === 0) {
         const ghost = findChild(child, "Ghost");
-        this.slots.push({ root: child, ghost: ghost, filled: false });
+        this.slots.push({ root: child, kind: kindOf(child.name), ghost: ghost, filled: false });
         const ghostVisual = ghost ? (ghost.getComponent("Component.RenderMeshVisual") as RenderMeshVisual) : null;
         if (ghostVisual) {
           if (!this.ghostMat) {
@@ -235,7 +255,7 @@ export class PropsController extends BaseScriptComponent {
             ghostVisual.mainMaterial = this.ghostMat;
           }
         }
-      } else if (child.name.indexOf("Prop_Log") === 0) {
+      } else if (child.name.indexOf("Prop_Log") === 0 || child.name === "Prop_Kindling") {
         const visual = findVisual(child);
         const mat = visual ? isolateMaterial(visual) : null;
         let baseColor: vec4 | null = null;
@@ -248,6 +268,7 @@ export class PropsController extends BaseScriptComponent {
         const t = child.getTransform();
         const prop: PropParts = {
           root: child,
+          kind: kindOf(child.name),
           interactable: child.getComponent(Interactable.getTypeName()) as Interactable,
           manipulation: child.getComponent(InteractableManipulation.getTypeName()) as InteractableManipulation,
           visual: visual,
@@ -411,6 +432,7 @@ export class PropsController extends BaseScriptComponent {
     for (let i = 0; i < this.slots.length; i++) {
       const slot = this.slots[i];
       if (slot.filled || !slot.root) continue;
+      if (slot.kind !== prop.kind) continue; // a log never seats where the kindling belongs
       const sp = slot.root.getTransform().getWorldPosition();
       const dx = sp.x - propPos.x, dy = sp.y - propPos.y, dz = sp.z - propPos.z;
       const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
@@ -522,12 +544,46 @@ export class PropsController extends BaseScriptComponent {
 
   private bindDebugKeys(): void {
     const forceK = this.keyFromLetter(this.keyForceProps);
+    const placeK = this.keyFromLetter(this.keyAutoPlace);
     this.createEvent("KeyPressEvent").bind((e: KeyPressEvent) => {
-      if (e.key !== forceK) return;
-      this.forced = !this.forced;
-      this.log("debug key: force props " + (this.forced ? "ON" : "OFF"));
-      this.evaluate();
+      if (e.key === forceK) {
+        this.forced = !this.forced;
+        this.log("debug key: force props " + (this.forced ? "ON" : "OFF"));
+        this.evaluate();
+      } else if (e.key === placeK) {
+        this.autoPlaceNext();
+      }
     });
+  }
+
+  /**
+   * Debug: drop the next free prop right on its nearest empty MATCHING slot
+   * and run the normal release path. No parallel snap logic — the one thing
+   * this fakes is where the hand let go.
+   */
+  private autoPlaceNext(): void {
+    if (!this.active) {
+      this.log("debug key: auto-place ignored — window closed");
+      return;
+    }
+    for (let i = 0; i < this.props.length; i++) {
+      const prop = this.props[i];
+      if (prop.held || prop.slotIndex >= 0) continue;
+      let target: SlotParts | null = null;
+      for (let s = 0; s < this.slots.length; s++) {
+        if (!this.slots[s].filled && this.slots[s].kind === prop.kind) {
+          target = this.slots[s];
+          break;
+        }
+      }
+      if (!target) continue; // this prop's slots are full; try another kind
+      const sp = target.root.getTransform().getWorldPosition();
+      prop.root.getTransform().setWorldPosition(new vec3(sp.x, sp.y + 5, sp.z));
+      this.log("debug key: auto-place " + prop.root.name);
+      this.release(prop);
+      return;
+    }
+    this.log("debug key: auto-place — nothing left to place");
   }
 }
 

@@ -2009,6 +2009,26 @@
     - !<own> d07c5b28-82f7-49aa-aa3d-22f06fd90b02
   Components:
     []
+- !<RenderMeshVisual/1365111d-6080-4cd4-b837-29e8446893d2>
+  PrefabRemaps:
+    []
+  Name: Render Mesh Visual
+  Enabled: true
+  RenderOrder: 0
+  StretchMode: Stretch
+  VerticalAlignment: Center
+  HorizontalAlignment: Center
+  MeshShadowMode: None
+  ShadowColor: {x: 1.000000, y: 1.000000, z: 1.000000, w: 1.000000}
+  ShadowDensity: 1.000000
+  Materials:
+    - !<reference> 44033335-4657-428f-9007-1364a0721a31
+  Mesh: !<reference> 9c7cf554-730c-4975-a208-a19a01740f30
+  Skin: !<reference> 00000000-0000-0000-0000-000000000000
+  BlendShapesEnabled: true
+  BlendNormals: false
+  BlendShapes:
+    {}
 - !<RenderMeshVisual/137d2642-59c1-4774-afcc-dea2dd241cb0>
   PrefabRemaps:
     []
@@ -3028,7 +3048,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 14.000000, y: 20.000000, z: 0.000000}
+    Position: {x: 12.500000, y: 19.000000, z: 0.000000}
     Rotation: {x: 0.000000, y: 90.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -3400,6 +3420,50 @@
     - !<own> 33c3b818-8a2f-4298-8659-2ea691615666
   Components:
     []
+- !<ScriptComponent/23a88812-cdfc-401e-a133-8861b965c881>
+  PrefabRemaps:
+    []
+  Name: InteractableManipulation
+  Enabled: true
+  ScriptAsset: !<reference> 664b556b-1946-4c2c-866a-e675b4e86006
+  ScriptInputsDefault:
+    manipulateRootSceneObject: true
+    enableTranslation: true
+    minimumScaleFactor: true
+    maximumScaleFactor: true
+    enableStretchZ: true
+    zStretchFactorMin: true
+    zStretchFactorMax: true
+    useFilter: true
+    showTranslationProperties: true
+    _enableXTranslation: true
+    _enableYTranslation: true
+    _enableZTranslation: true
+    showRotationProperties: true
+    _rotationAxis: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      manipulateRootSceneObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      enableTranslation: true
+      enableRotation: false
+      enableScale: false
+      minimumScaleFactor: 0.250000
+      maximumScaleFactor: !<float> 20.000000
+      enableStretchZ: true
+      zStretchFactorMin: !<float> 1.000000
+      zStretchFactorMax: !<float> 12.000000
+      useFilter: true
+      showTranslationProperties: false
+      _enableXTranslation: true
+      _enableYTranslation: true
+      _enableZTranslation: true
+      showRotationProperties: false
+      _rotationAxis: All
+  ScriptTypes:
+    "":
+      {}
 - !<Text/23dd4ca9-4727-4eb9-8715-02b6408ff407>
   PrefabRemaps:
     []
@@ -5281,7 +5345,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 40.000000, z: -14.000000}
+    Position: {x: 0.000000, y: 38.000000, z: -11.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -6766,7 +6830,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: 0.000000, y: 40.000000, z: 14.000000}
+    Position: {x: 0.000000, y: 38.000000, z: 11.000000}
     Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -8390,13 +8454,13 @@
   ScriptAsset: !<reference> 5d8c0b69-2ca5-4d6e-8181-bd1029a35908
   ScriptInputsDefault:
     reachCm: true
-    snapRadiusCm: true
     returnSec: true
     ghostLevel: true
     hoverTint: true
     flashSec: true
     cueText: true
     keyForceProps: true
+    keyAutoPlace: true
     enableDebugKeys: true
     enableLogging: true
   ScriptTypesDefault:
@@ -8407,13 +8471,14 @@
       propsContainer: !<reference.SceneObject> 8249b67e-fa42-455b-9d4d-5670ebd8873a
       cameraObject: !<reference.SceneObject> 00000000-0000-0065-0000-000000000064
       reachCm: !<float> 55.000000
-      snapRadiusCm: !<float> 35.000000
+      snapRadiusCm: !<float> 50.000000
       returnSec: 0.250000
       ghostLevel: 0.350000
       hoverTint: 0.650000
       flashSec: 0.450000
       cueText: LOOK DOWN · STACK THE LOGS
       keyForceProps: X
+      keyAutoPlace: Z
       enableDebugKeys: true
       enableLogging: true
   ScriptTypes:
@@ -8602,7 +8667,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: -55.000000, y: 0.000000, z: 30.000000}
+    Position: {x: -60.000000, y: 0.000000, z: 36.000000}
     Rotation: {x: 0.000000, y: -20.000000, z: 0.000000}
     Scale: {x: 100.000000, y: 100.000000, z: 100.000000}
     HasSegmentScaleCompensation: false
@@ -11296,6 +11361,7 @@
     - !<own> 20871687-8a40-43a2-8407-9207c1d5b1fb
     - !<own> 397a0a39-7df9-4c02-bd7a-7fc4fbea059c
     - !<own> 4b8a2a29-65a7-44c7-ae5b-37c26b9dfaba
+    - !<own> ab234630-f660-4dbd-8b8a-bc65ad50076a
   Components:
     []
 - !<SceneObject/82a4b4e8-283b-441c-8b94-9fdc50c958f2>
@@ -13075,6 +13141,24 @@
     []
   Components:
     - !<own> ddea99ce-1ff5-4cef-a835-0a19e3b54f6d
+- !<ColliderComponent/9408af90-3697-43f6-97ed-d21bd9c895d8>
+  PrefabRemaps:
+    []
+  Name: Physics Collider
+  Enabled: true
+  Shape: !<Box>
+    FitVisual: true
+    Size: {x: 0.400000, y: 0.500000, z: 0.400000}
+  Matter: !<reference> 00000000-0000-0000-0000-000000000000
+  Filter: !<reference> 00000000-0000-0000-0000-000000000000
+  OverlapFilter: !<reference> 00000000-0000-0000-0000-000000000000
+  WorldSettings: !<reference> 00000000-0000-0000-0000-000000000000
+  EnableSmoothing: false
+  PositionTension: 30.000000
+  RotationTension: 30.000000
+  ForceCompound: false
+  Intangible: false
+  ShowCollider: false
 - !<SceneObject/9468c53c-f76f-49b7-8a49-b5ec6af1c5a3>
   PrefabRemaps:
     []
@@ -13512,7 +13596,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: -22.000000, y: 0.000000, z: 42.000000}
+    Position: {x: -24.000000, y: 0.000000, z: 46.000000}
     Rotation: {x: 0.000000, y: 8.000000, z: 0.000000}
     Scale: {x: 100.000000, y: 100.000000, z: 100.000000}
     HasSegmentScaleCompensation: false
@@ -14560,6 +14644,21 @@
   ForceCompound: false
   Intangible: false
   ShowCollider: false
+- !<SceneObject/a791cd6f-0294-4ab9-8bd1-af1959586611>
+  PrefabRemaps:
+    []
+  Name: Ghost
+  Enabled: false
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 1.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 14.000000, y: 1.000000, z: 14.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 1365111d-6080-4cd4-b837-29e8446893d2
 - !<RenderMeshVisual/a7b29ac8-692c-430b-bbc8-aa1c1126c1c6>
   PrefabRemaps:
     []
@@ -14952,6 +15051,21 @@
     HasSegmentScaleCompensation: false
   Children:
     - !<own> 21cfb260-f4b0-4183-b462-9b94307d1433
+  Components:
+    []
+- !<SceneObject/ab234630-f660-4dbd-8b8a-bc65ad50076a>
+  PrefabRemaps:
+    []
+  Name: SnapSlot_Kindling
+  Enabled: false
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 48.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    - !<own> a791cd6f-0294-4ab9-8bd1-af1959586611
   Components:
     []
 - !<SceneObject/ab4f838b-cdd1-4574-853d-59b3b4a26bb8>
@@ -16515,14 +16629,16 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: -100.000000, y: 0.000000, z: -15.000000}
-    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Position: {x: 58.000000, y: 0.000000, z: 44.000000}
+    Rotation: {x: 0.000000, y: 25.000000, z: 0.000000}
     Scale: {x: 100.000000, y: 100.000000, z: 100.000000}
     HasSegmentScaleCompensation: false
   Children:
     - !<own> faa1a6b8-8a3c-46d9-99e3-3a18bd80c59d
   Components:
-    []
+    - !<own> 9408af90-3697-43f6-97ed-d21bd9c895d8
+    - !<own> e8c7440c-3880-4ab7-ade4-8a59e83fb58d
+    - !<own> 23a88812-cdfc-401e-a133-8861b965c881
 - !<ScriptComponent/c126f84b-e817-4542-b8ed-1bddba305e28>
   PrefabRemaps:
     []
@@ -16914,7 +17030,7 @@
   Enabled: false
   Layers: 1
   LocalTransform: !<TransformEntity>
-    Position: {x: -14.000000, y: 20.000000, z: 0.000000}
+    Position: {x: -12.500000, y: 19.000000, z: 0.000000}
     Rotation: {x: 0.000000, y: 90.000000, z: 0.000000}
     Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
     HasSegmentScaleCompensation: false
@@ -19628,6 +19744,44 @@
     - !<own> a3978354-569d-4fd4-a9b1-5707d0e42ff2
   Components:
     []
+- !<ScriptComponent/e8c7440c-3880-4ab7-ade4-8a59e83fb58d>
+  PrefabRemaps:
+    []
+  Name: Interactable
+  Enabled: true
+  ScriptAsset: !<reference> 652e631a-22d0-4941-9f74-2943df59f34c
+  ScriptInputsDefault:
+    targetingMode: true
+    targetingVisual: true
+    ignoreInteractionPlane: true
+    keepHoverOnTrigger: true
+    enableInstantDrag: true
+    isScrollable: true
+    allowMultipleInteractors: true
+    enablePokeDirectionality: true
+    acceptableXDirections: true
+    acceptableYDirections: true
+    acceptableZDirections: true
+    useFilteredPinch: true
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      targetingMode: !<float> 3.000000
+      targetingVisual: !<float> 1.000000
+      ignoreInteractionPlane: false
+      keepHoverOnTrigger: false
+      enableInstantDrag: false
+      isScrollable: false
+      allowMultipleInteractors: true
+      enablePokeDirectionality: false
+      acceptableXDirections: !<float> 0.000000
+      acceptableYDirections: !<float> 0.000000
+      acceptableZDirections: !<float> 1.000000
+      useFilteredPinch: false
+  ScriptTypes:
+    "":
+      {}
 - !<ColliderComponent/e922b13e-7b68-4804-8d86-b3dc5986feb4>
   PrefabRemaps:
     []
