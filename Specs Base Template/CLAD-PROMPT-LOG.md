@@ -3799,3 +3799,162 @@ timeout while the Lens-side manager logs PASSED (seen once, on the gateway
 scenario after a panel re-open); the DefaultLeafScenarioManager line in the
 Lens Studio log is authoritative. The five-phrase prompt gate remains a
 separate MANUAL run — it needs the live model and cannot live here.
+
+---
+
+## Prompt — full interaction sound coverage on a twelve-cue vocabulary
+
+> Extend SfxService to full interaction coverage. Six events are voiced today; roughly
+> twenty change state. An interface where half the actions click reads as broken more
+> than a silent one does.
+>
+> === The rule ===
+> NOTHING THE USER CAUSES IS SILENT. If the app changed state because of something the
+> person did — a selection, a step, a grab, a refusal, an arrival — it makes a sound.
+> State the app changes on its own may be silent.
+>
+> === But build a VOCABULARY, not a catalogue ===
+> Hard cap: at most twelve distinct cues total, including the six that exist. A terminal
+> has a language. Reuse by MEANING, not by widget: the same "advance" tick serves a menu
+> highlight, a checklist row and a step counter, because to the user they are the same
+> kind of event.
+>
+> The test that matters: with eyes closed, accepted / refused / advanced / arrived must
+> be distinguishable from each other. Pitch and timbre carry meaning here, not volume.
+> Say in your report how you made each pair distinguishable.
+>
+> === Do the audit first, then generate ===
+> Before writing any code, enumerate EVERY user-triggered state change on the bus and put
+> it in a table with the cue you intend for it. [...full list of required events...]
+>
+> Then generate ONLY the cues the vocabulary is missing, with /build-sfx. Short attacks,
+> same family as the existing six so nothing sounds imported from another product.
+>
+> === Rules that keep it from becoming noise ===
+> - Volume tiers: ambience quietest, ticks barely there, selections modest, alerts
+>   clearly above the rest. A tick at the same level as a warning destroys the warning.
+> - Rate-limit and coalesce: the same cue fired repeatedly within a short window plays
+>   once. Highlight ticks especially — a tick on every gaze drift is maddening. Several
+>   events can land in one frame; markers already stagger, apply the same discipline
+>   generally.
+> - NEVER over narration. Established rule: skip or duck, never talk across the voice.
+>   Speech is the most important audio in this product and it is already slow.
+> - Failure is silence plus a log line, never an exception on the bus.
+> - Cues are assets wired at design time in the Inspector, like the existing six.
+>
+> === Verify ===
+> Run a full path with the sound on — boot, menu, scan, lesson with steps and a question,
+> props, safety gate, camp and trail, SOS — and report which events fired, in order, with
+> nothing doubled and nothing silent. List anything you deliberately left silent and why.
+>
+> check-scene-roots.py before committing. Update SCENE-MAP.md with the full event-to-cue
+> table and CLAD-PROMPT-LOG.md.
+
+**Done:** ~30 user-caused bus events now map onto a twelve-cue vocabulary
+(8 existing + 4 generated). Full event→cue table lives in `Docs/SCENE-MAP.md`
+under "The sound seam"; it is the contract, not this entry.
+
+### The four new cues
+
+`tempAssetGen/gen_sfx_nav_panel.js`, same engine and family as the P12 batch.
+Both pairs are built as MIRRORS from one voice function, differing only in
+frequency arguments — the point of a vocabulary is that "back" is audibly the
+*opposite* of "next", not merely different from it.
+
+| Cue | Meaning | Build |
+|---|---|---|
+| `nav-tick` | advanced | 45 ms triangle sweep RISING 1450→1950 Hz + glassy FM attack |
+| `nav-back` | reversed | the mirror: FALLING 1250→620 Hz, same voice, lower tail |
+| `panel-open` | a surface appeared | two FM notes 700→1050 Hz, 55 ms apart, smallRoom |
+| `panel-close` | a surface went away | the SAME two notes, 1050→700 Hz |
+
+`uiToggle` was tried first for the panel pair (its docs are literally "rising =
+on, falling = off") and dropped: it draws its interval from the RNG, so open and
+close came out as two unrelated toggles rather than one gesture played both
+ways. Hand-rolled, they are the same two notes by construction.
+
+The contours were **measured, not assumed** — a first pass had `nav-back`
+reading FLAT because a fixed FM overtone sat on the end pitch and a fast decay
+buried the second half of the sweep under the noise floor. Fixed by tracking the
+overtone to the START pitch and holding the envelope across the sweep.
+
+### Two new bus events
+
+- `menuHighlightChanged {row, source}` — MainMenuPresenter, on an ACTUAL change
+  of row only, so a hover jittering inside one row cannot tick.
+- `propGrabbed {name}` — PropsController, on `onManipulationStart`. Grab ticks,
+  seating blips: "I have hold of it" and "it went in" are two sounds, not one.
+
+`journalStateChanged` gained a `refused` field (see below).
+
+### The bug that mattered
+
+The first version queued each frame's winning cue and flushed it from
+`UpdateEvent`. It logged a line for every **losing** cue — one `print()` per
+sampled survey point, several times a frame — which alone blew the runtime's
+per-frame JS budget: `TimeoutError: Javascript execution has timed out`. Once
+that fired the `UpdateEvent` binding was gone, and with the only flush path dead
+**every cue went silent for the rest of the session.** A whole interface muted
+by one noisy log line.
+
+Rewritten to play INLINE. Same-frame arbitration still works because a later,
+higher-rank cue re-points the AudioComponent before the loser has sounded a
+sample. Only the ping stagger still rides `UpdateEvent`. The rejection paths now
+log nothing at all — the rate limiter has to be cheaper than the sound.
+
+Related: the per-cue window is stamped on the **attempt**, not on the sound, or
+a ducked-away geiger calls `play()` (and logs) on every sampled point.
+
+### Three more found only by walking the path with the sound on
+
+1. **The footer chip blip flattened the journal.** Blipping `menuChipSelected`
+   *and* letting the effect speak put both in one frame; the blip won the tie by
+   arriving first, so opening the journal sounded exactly like closing it — and
+   a **refused** open sounded like an accepted one. Dropped the chip cue; each
+   chip's effect says more than the chip does. JournalPresenter now emits
+   `journalStateChanged {refused:true}` instead of swallowing the refusal.
+2. **Two debug keys bypassed the bus.** `HudRecenter` and `KeyboardInput` called
+   their own methods directly instead of emitting `recenterRequested` /
+   `keyboardRequested`, so nothing on the bus heard those keys. Both now emit,
+   matching the two-emitter pattern.
+3. **An SOS entry tone corrupted the distress signal.** It landed in the same
+   frame as the cycle's first element and won the tie, so the first `···---···`
+   went out starting on a **dash** — verified in the log, second cycle correct,
+   first not. Entering SOS is now uncued: the engine speaks the SOS line and the
+   prosign starts within a beat.
+
+Also: cues bind to `propSnapped` (the controller's fact) rather than `propPlaced`
+(the engine's echo), because the engine only re-emits during a LESSON and a prop
+seated outside one landed in silence.
+
+### Ducking, not skipping
+
+The old rule skipped every cue while narration had the air. That left half the
+interface silent during exactly the stretch where the user is pressing things —
+a lesson step is narrated for most of its life. Now: ALERT plays through at full
+level (generalising the exception the safety buzz already had), TICK/SELECTION
+duck to 0.35, AMBIENCE is skipped outright. Nothing ever interrupts speech.
+
+### Verification
+
+Walked in the Preview with keys injected and audio on, reading the `[SFX]` line
+stream against the `[ENGINE] emit` stream. Confirmed firing, in order, nothing
+doubled: boot power-on · 3× highlight tick · request-accepted blip (with the
+menu-row blip correctly coalesced into it) · lesson-loaded open · step ticks ·
+back · question-taken blip · safety warning buzz · 2× refusal buzz · safety
+confirm blip · completion sting · survey open · 26 rate-limited geiger clicks ·
+3 staggered marker pings · camp-marked blip · journal open **and** close as
+different sounds · journal-refused buzz · recenter open · trail-start open ·
+trail-mark ticks while walking · navigate open · arrival sting · props-ready
+open · 6× prop-seated blip then a pattern-complete sting on the seventh · mic
+open/close · the SOS prosign as a clean `···---···`.
+
+**Not exercised, wired only:** `requestStateChanged` BUSY/ERROR, `distanceWarning`,
+`suggestionAccepted`, `propGrabbed`. All four hang off subscriptions proven live
+by their sibling branches (COMPILING on the same handler; `propSnapped` on the
+same SIK component), but they were not reachable with debug keys in a desk
+session and are reported as unverified rather than claimed.
+
+One preview note: `useFixtureCloud` was flipped ON to get a survey that actually
+places markers (World Query finds no surfaces on a desk) and **flipped back OFF**
+before committing. `check-scene-roots.py` clean.

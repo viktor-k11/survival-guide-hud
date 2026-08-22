@@ -214,12 +214,17 @@ export class JournalPresenter extends BaseScriptComponent {
     if (this.open === open) return;
     if (open && this.mode !== "IDLE") {
       this.log("open refused — mode is " + this.mode);
+      // Say so on the bus. A refusal the user caused must not be swallowed:
+      // the LOG chip was pressed and nothing happened, and silence there is
+      // indistinguishable from the journal opening off-screen. SfxService
+      // buzzes it.
+      eventBus.emit(Events.journalStateChanged, { open: false, refused: true });
       return;
     }
     this.open = open;
     this.log((open ? "opened" : "closed") + " via " + source);
     // The menu listens and yields/reclaims the screen — boot-intro pattern.
-    eventBus.emit(Events.journalStateChanged, { open: open });
+    eventBus.emit(Events.journalStateChanged, { open: open, refused: false });
     setEnabled(this.journal, open);
     if (open) {
       enableSubtree(this.journal);

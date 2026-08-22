@@ -143,7 +143,11 @@ export class KeyboardInput extends BaseScriptComponent {
     const openKey = this.keyFromLetter(this.keyOpenKeyboard);
     const submitKey = this.keyFromLetter(this.keyDebugSubmit);
     this.createEvent("KeyPressEvent").bind((e: KeyPressEvent) => {
-      if (e.key === openKey) this.show("debugKey");
+      // Emit rather than calling show() directly, so the debug key travels the
+      // SAME seam the status-bar chip does. Calling straight through skipped
+      // the bus and anything listening to it (SfxService) never heard the key
+      // — the same bypass HudRecenter had.
+      if (e.key === openKey) eventBus.emit(Events.keyboardRequested, { source: "debugKey" });
       else if (e.key === submitKey) this.submit(this.debugSubmitText, "debugKey");
     });
   }

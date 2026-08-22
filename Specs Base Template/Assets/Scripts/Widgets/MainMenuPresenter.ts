@@ -267,7 +267,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
     // Voice selections land here too — moving the highlight to the chosen row
     // is the visible acknowledgement that the words hit a menu row.
     eventBus.subscribe(Events.menuSelected, (p: MenuSelectedPayload) => {
-      if (p && p.row >= 1 && p.row <= ROW_COUNT) this.setHighlight(p.row - 1);
+      if (p && p.row >= 1 && p.row <= ROW_COUNT) this.setHighlight(p.row - 1, "voice");
     });
 
     if (this.enableDebugKeys) this.bindDebugKeys();
@@ -311,7 +311,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
       if (interactable) {
         const index = i - 1;
         // Gaze/hover moves the highlight; pinch activates. Two different verbs.
-        interactable.onHoverEnter.add(() => this.setHighlight(index));
+        interactable.onHoverEnter.add(() => this.setHighlight(index, "hover"));
         interactable.onTriggerEnd.add(() => this.activate(index, "pinch"));
       } else {
         this.log("Row_" + i + " has no SIK Interactable — pinch will not work, debug key still will");
@@ -471,10 +471,16 @@ export class MainMenuPresenter extends BaseScriptComponent {
   }
 
   /** Move the single highlight marker to a row and repaint the description. */
-  private setHighlight(index: number): void {
+  private setHighlight(index: number, source: string = "hover"): void {
     if (index < 0 || index >= this.rows.length) return;
     // Row 6 cannot hold the highlight while it is hidden.
     if (index === NAVIGATE_ROW - 1 && this.camp === null) index = 0;
+    // Announce BEFORE the assignment and only on a real move: a hover that
+    // jitters inside one row must not tick, and re-lighting the lit row is
+    // not a state change.
+    if (index !== this.highlightIndex) {
+      eventBus.emit(Events.menuHighlightChanged, { row: index + 1, source: source });
+    }
     this.highlightIndex = index;
 
     const row = this.rows[index];
@@ -611,7 +617,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
       if (e.key === cycle) {
         let next = (this.highlightIndex + 1) % this.rows.length;
         if (next === NAVIGATE_ROW - 1 && this.camp === null) next = 0;
-        this.setHighlight(next);
+        this.setHighlight(next, "debugKey");
       } else if (e.key === activate) {
         this.activate(this.highlightIndex, "debugKey");
       }

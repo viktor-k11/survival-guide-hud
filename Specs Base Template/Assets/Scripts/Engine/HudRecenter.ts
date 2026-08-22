@@ -103,7 +103,11 @@ export class HudRecenter extends BaseScriptComponent {
     const di = digits.indexOf((this.keyRecenter || "").charAt(0));
     const key = di >= 0 ? ((Keys.Zero + di) as Keys) : Keys.Invalid;
     this.createEvent("KeyPressEvent").bind((e: KeyPressEvent) => {
-      if (e.key === key) this.recenter("debugKey");
+      // Emit rather than calling recenter() directly, so the debug key travels
+      // the SAME seam the voice does — the repo's two-emitter pattern
+      // (menuSelected, menuChipSelected). Calling straight through skipped the
+      // bus, and anything listening to it (SfxService) never heard the key.
+      if (e.key === key) eventBus.emit(Events.recenterRequested, { source: "debugKey" });
     });
   }
 }

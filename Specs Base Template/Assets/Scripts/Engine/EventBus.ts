@@ -60,6 +60,17 @@ export const Events = {
    */
   propSnapped: "propSnapped",
   /**
+   * A training prop was picked up. Payload: { name }. Emitted by
+   * PropsController on `onManipulationStart`, the same presentation-fact seam
+   * as `propSnapped` — the controller reports what happened to the props and
+   * decides nothing.
+   *
+   * The pair matters more than either half: a grab ticks and a seat blips, so
+   * "I have hold of it" and "it went in" are two different sounds rather than
+   * one sound that means both.
+   */
+  propGrabbed: "propGrabbed",
+  /**
    * The training-prop session opened or closed. Payload:
    * { active, placed, required, positionCm, cue }. Emitted by PropsController
    * when props become grabbable (zone companion active in a FIRE lesson, or
@@ -96,9 +107,14 @@ export const Events = {
    */
   suggestionAccepted: "suggestionAccepted",
   /**
-   * The session journal opened or closed. Payload: { open: boolean }.
-   * Emitted by JournalPresenter; the main menu yields the screen while open —
-   * same pattern as introStateChanged.
+   * The session journal opened, closed, or REFUSED to open. Payload:
+   * { open: boolean, refused: boolean }. Emitted by JournalPresenter; the main
+   * menu yields the screen while open — same pattern as introStateChanged.
+   *
+   * `refused` is true when the LOG chip was pressed outside IDLE and nothing
+   * happened. It exists so the refusal is audible: the user did something, and
+   * "no sound" would be indistinguishable from "it opened somewhere I am not
+   * looking".
    */
   journalStateChanged: "journalStateChanged",
   /** Terrain survey has begun. Payload: { durationSec }. */
@@ -203,6 +219,22 @@ export const Events = {
    * coordinator, exactly like a site-marker tap.
    */
   menuSelected: "menuSelected",
+  /**
+   * The main-menu highlight MOVED to a different row. Payload:
+   * { row, source } — row is 1-based, source is "hover" | "voice" | "debugKey".
+   *
+   * An announcement about a presentation event, like `hologramShown` and
+   * `sosPulse`: the presenter still owns the marker, it just says when the
+   * marker moved. Exists because moving the highlight is a user-caused state
+   * change and every user-caused state change makes a sound — SfxService
+   * renders it as the advance tick, rate-limited so gaze drift across the rows
+   * cannot machine-gun.
+   *
+   * Emitted only on an ACTUAL change of row: re-highlighting the row that is
+   * already lit is silent, which is what stops a hover that jitters inside one
+   * row from ticking.
+   */
+  menuHighlightChanged: "menuHighlightChanged",
   /**
    * A camp point was established (a site marker was chosen). Payload:
    * CampChangedPayload. The menu's row 6 exists only while this has fired.

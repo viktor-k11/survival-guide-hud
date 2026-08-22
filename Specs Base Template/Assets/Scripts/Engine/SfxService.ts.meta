@@ -28,17 +28,28 @@
   ExportUid: 00000000-0000-0000-0000-000000000000
   PackagePolicy: CanBeUnpacked
   ScriptInputsHidden:
+    alertLevel: false
+    ambienceLevel: false
+    coalesceWindowSec: false
     cueCompletion: false
     cueConfirm: false
     cueError: false
     cueGeiger: false
+    cueNavBack: false
+    cueNavTick: false
+    cuePanelClose: false
+    cuePanelOpen: false
     cuePowerOn: false
     cueSosDash: false
     cueSosDot: false
     cueSurveyPing: false
     enableLogging: false
     geigerMinIntervalSec: false
+    narrationDuck: false
     pingSpacingSec: false
+    selectionLevel: false
+    tickLevel: false
+    tickMinIntervalSec: false
     volume: false
   ScriptTypesHidden:
     {}
@@ -50,35 +61,60 @@
     []
   DefaultScriptInputs:
     - cuePowerOn: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cuePanelOpen: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cuePanelClose: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueNavTick: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueNavBack: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       cueConfirm: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       cueError: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueCompletion: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       cueSurveyPing: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       cueGeiger: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
-      cueCompletion: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       cueSosDot: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       cueSosDash: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
-      geigerMinIntervalSec: 0.120000
-      pingSpacingSec: 0.400000
       volume: 0.800000
+      ambienceLevel: 0.300000
+      tickLevel: 0.450000
+      selectionLevel: 0.750000
+      alertLevel: !<float> 1.000000
+      narrationDuck: 0.350000
+      geigerMinIntervalSec: 0.120000
+      tickMinIntervalSec: 0.250000
+      coalesceWindowSec: 0.150000
+      pingSpacingSec: 0.400000
       enableLogging: true
   ScriptTypes:
     -
       {}
   InputLines:
     - '// @ui {"widget":"separator"}'
-    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Cues — Assets/GeneratedSFX</span>"}'
-    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Unwired slot = that cue is silence plus a log line. Nothing throws.</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">The twelve cues — Assets/GeneratedSFX</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Hard cap of twelve. Reuse by MEANING, never by widget. Unwired slot = that cue is silence plus a log line. Nothing throws.</span>"}'
     - '// @input Asset.AudioTrackAsset cuePowerOn {"hint":"crt-power-on.wav — boot"}'
-    - '// @input Asset.AudioTrackAsset cueConfirm {"hint":"confirm-blip.wav — local acknowledgement"}'
-    - '// @input Asset.AudioTrackAsset cueError {"hint":"error-buzz.wav — rejection / failure"}'
-    - '// @input Asset.AudioTrackAsset cueSurveyPing {"hint":"survey-ping.wav — one per placed marker"}'
-    - '// @input Asset.AudioTrackAsset cueGeiger {"hint":"geiger-click.wav — survey ambience"}'
-    - '// @input Asset.AudioTrackAsset cueCompletion {"hint":"completion-sting.wav — lesson complete"}'
-    - '// @input Asset.AudioTrackAsset cueSosDot {"hint":"sos-dot.wav — one short SOS pulse (P14-style generated tone; error-buzz would read as a malfunction, not a signal)"}'
+    - '// @input Asset.AudioTrackAsset cuePanelOpen {"hint":"panel-open.wav — a surface appeared: menu, keyboard, mic, journal, lesson loaded, survey started, props ready, navigation, recenter"}'
+    - '// @input Asset.AudioTrackAsset cuePanelClose {"hint":"panel-close.wav — a surface went away: mic closed, journal closed, stop, trail stopped, SOS left. The same two notes as panel-open, reversed."}'
+    - '// @input Asset.AudioTrackAsset cueNavTick {"hint":"nav-tick.wav — ADVANCED: step next, checklist row, menu highlight, hologram stage, prop grabbed, trail mark"}'
+    - "// @input Asset.AudioTrackAsset cueNavBack {\"hint\":\"nav-back.wav — reversed: step back. nav-tick's mirror, falling instead of rising.\"}"
+    - '// @input Asset.AudioTrackAsset cueConfirm {"hint":"confirm-blip.wav — ACCEPTED: selection, request taken, question taken, prop seated, safety confirmed, camp marked"}'
+    - '// @input Asset.AudioTrackAsset cueError {"hint":"error-buzz.wav — REFUSED / hazard: next refused, request failed, request ignored as busy, safety warning raised, distance warning"}'
+    - '// @input Asset.AudioTrackAsset cueCompletion {"hint":"completion-sting.wav — ARRIVED: lesson complete, prop pattern complete, back at camp"}'
+    - '// @input Asset.AudioTrackAsset cueSurveyPing {"hint":"survey-ping.wav — one per placed marker, staggered"}'
+    - '// @input Asset.AudioTrackAsset cueGeiger {"hint":"geiger-click.wav — survey ambience, rate-limited"}'
+    - '// @input Asset.AudioTrackAsset cueSosDot {"hint":"sos-dot.wav — one short SOS pulse"}'
     - '// @input Asset.AudioTrackAsset cueSosDash {"hint":"sos-dash.wav — one long SOS pulse"}'
     - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Volume tiers</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">A tick at the same level as a warning destroys the warning. Alerts must sit clearly above everything else.</span>"}'
+    - '// @input float volume = 0.8 {"hint":"Master level. Every tier is a fraction of this.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input float ambienceLevel = 0.3 {"hint":"AMBIENCE — the geiger click. Quietest thing in the mix.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input float tickLevel = 0.45 {"hint":"TICK — advance / back. Barely there on purpose; these fire most often.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input float selectionLevel = 0.75 {"hint":"SELECTION — confirm, panels, marker pings, completion. Modest.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input float alertLevel = 1 {"hint":"ALERT — error buzz and SOS. Clearly above the rest, and the only tier that plays over narration.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Pacing</span>"}'
+    - '// @input float narrationDuck = 0.35 {"hint":"How far ticks and selections are ducked while narration has the air. 0 = skipped entirely (the old behaviour), which leaves half the interface silent during a narrated step. Alerts ignore this.", "widget":"slider", "min":0, "max":1, "step":0.05}'
     - '// @input float geigerMinIntervalSec = 0.12 {"hint":"Minimum seconds between geiger clicks. The click is ambience for the survey, not a counter of accepted points.", "widget":"slider", "min":0.05, "max":1, "step":0.05}'
+    - '// @input float tickMinIntervalSec = 0.25 {"hint":"Minimum seconds between two ticks of the SAME kind. Long, because a tick on every gaze drift across the menu rows is maddening.", "widget":"slider", "min":0.05, "max":1, "step":0.05}'
+    - '// @input float coalesceWindowSec = 0.15 {"hint":"Coalescing window for every other cue: the same cue inside this window plays once. Swallows chain reactions (row chosen -> request accepted) without swallowing two deliberate taps.", "widget":"slider", "min":0, "max":0.6, "step":0.05}'
     - '// @input float pingSpacingSec = 0.4 {"hint":"Stagger between the per-marker pings on surveyComplete.", "widget":"slider", "min":0.1, "max":1.5, "step":0.05}'
-    - '// @input float volume = 0.8 {"hint":"Playback volume for every cue.", "widget":"slider", "min":0, "max":1, "step":0.05}'
     - // @input bool enableLogging = true

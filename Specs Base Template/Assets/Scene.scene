@@ -4919,25 +4919,43 @@
   Enabled: true
   ScriptAsset: !<reference> 425fa836-5b46-4083-9f75-fcd3aa6c4900
   ScriptInputsDefault:
-    geigerMinIntervalSec: true
-    pingSpacingSec: true
     volume: true
+    ambienceLevel: true
+    tickLevel: true
+    selectionLevel: true
+    alertLevel: true
+    narrationDuck: true
+    geigerMinIntervalSec: true
+    tickMinIntervalSec: true
+    coalesceWindowSec: true
+    pingSpacingSec: true
     enableLogging: true
   ScriptTypesDefault:
     {}
   ScriptInputs:
     "":
       cuePowerOn: !<reference.AudioTrackAsset> 26a0135d-f3e3-48aa-8fd5-9972519c244c
+      cuePanelOpen: !<reference.AudioTrackAsset> a254edf7-886f-4b20-8287-447e29c74e50
+      cuePanelClose: !<reference.AudioTrackAsset> a786f5e7-501b-4df3-b02f-f761703eff64
+      cueNavTick: !<reference.AudioTrackAsset> 4c0637db-b5b3-4c56-855c-5a4dd884d3f1
+      cueNavBack: !<reference.AudioTrackAsset> cfa9fec6-1d8d-4dc7-8841-f5e665e88ff3
       cueConfirm: !<reference.AudioTrackAsset> a5126346-d92e-4eb4-9f0b-becec8e31132
       cueError: !<reference.AudioTrackAsset> 0718f85a-5a6c-4592-b3f3-d6f61fef1a2d
+      cueCompletion: !<reference.AudioTrackAsset> a9e77edc-c6ad-4755-b154-10cb8eb4be99
       cueSurveyPing: !<reference.AudioTrackAsset> f83dc132-dcfa-49c7-b1d3-4efdc3600e4b
       cueGeiger: !<reference.AudioTrackAsset> fe69468a-9cca-4b66-97e9-9990a027b984
-      cueCompletion: !<reference.AudioTrackAsset> a9e77edc-c6ad-4755-b154-10cb8eb4be99
       cueSosDot: !<reference.AudioTrackAsset> d8937691-ee8f-44c2-8011-99b15bdc60b4
       cueSosDash: !<reference.AudioTrackAsset> 9e65b9cb-84de-4097-8436-1e5f0348cf87
-      geigerMinIntervalSec: 0.120000
-      pingSpacingSec: 0.400000
       volume: 0.800000
+      ambienceLevel: 0.300000
+      tickLevel: 0.450000
+      selectionLevel: 0.750000
+      alertLevel: !<float> 1.000000
+      narrationDuck: 0.350000
+      geigerMinIntervalSec: 0.120000
+      tickMinIntervalSec: 0.250000
+      coalesceWindowSec: 0.150000
+      pingSpacingSec: 0.400000
       enableLogging: true
   ScriptTypes:
     "":

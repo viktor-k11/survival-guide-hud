@@ -310,6 +310,9 @@ export class PropsController extends BaseScriptComponent {
         prop.held = true;
         prop.returning = 0; // a grab cancels an in-flight return
         this.log(prop.root.name + " grabbed");
+        // A presentation fact, like propSnapped: the controller says the prop
+        // was picked up and decides nothing. Grab ticks, seating blips.
+        eventBus.emit(Events.propGrabbed, { name: prop.root.name });
       });
       prop.manipulation.onManipulationEnd.add(() => {
         if (!prop.held) return;

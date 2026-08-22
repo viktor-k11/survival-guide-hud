@@ -83,7 +83,11 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 | `GeneratedSFX/crt-power-on.wav` | Boot cue, 2.5 s stereo. Wired: SfxService — `introStateChanged {active:true}`. |
 | `GeneratedSFX/survey-ping.wav` | One per placed site marker, single sonar note, 1.15 s. Wired: SfxService — staggered on `surveyComplete`. |
 | `GeneratedSFX/completion-sting.wav` | `lessonCompleted`, ascending bell arpeggio, 1.8 s. Wired: SfxService. |
-| `GeneratedSFX/sos-dot.wav` / `sos-dash.wav` | SOS pulses, 880 Hz locator beeps, 0.2 s / 0.6 s (baked for the 0.2 s unit). Wired: SfxService — `sosPulse`; skip under narration like every cue. |
+| `GeneratedSFX/sos-dot.wav` / `sos-dash.wav` | SOS pulses, 880 Hz locator beeps, 0.2 s / 0.6 s (baked for the 0.2 s unit). Wired: SfxService — `sosPulse`, ALERT tier so they play through narration. |
+| `GeneratedSFX/nav-tick.wav` | **ADVANCED.** 45 ms triangle sweep RISING 1450→1950 Hz + a glassy FM attack. Wired: SfxService — step next, checklist row, menu highlight, hologram stage, prop grabbed, trail mark. Generator `tempAssetGen/gen_sfx_nav_panel.js`. |
+| `GeneratedSFX/nav-back.wav` | **REVERSED.** nav-tick's mirror: same voice, FALLING 1250→620 Hz, and lower in absolute pitch so back differs from next two ways at once. Wired: SfxService — step back. |
+| `GeneratedSFX/panel-open.wav` | **A SURFACE APPEARED.** Two FM notes a fifth apart, 700→1050 Hz, 55 ms between onsets, smallRoom trimmed to 0.3 s. Wired: SfxService — menu/keyboard/mic/journal/lesson/survey/props/navigate/recenter/trail-start. |
+| `GeneratedSFX/panel-close.wav` | **A SURFACE WENT AWAY.** The SAME two notes reversed, 1050→700 Hz. Hand-rolled rather than `uiToggle` — the preset draws its interval from the RNG, so open and close came out as two unrelated toggles instead of one gesture played both ways. |
 | `CRT_Phosphor.graphShader` | **The phosphor CRT shader family's single pass.** Code-node graph: screen-space scanlines, floored phosphor flicker, and a boot scanline wipe normalized against the mesh's own local AABB (`wipeProgress` 0→1, `wipeAxis` 0 = local Y for holograms, 1 = local Z for XZ-native plane meshes). Every knob is a material property. |
 | `CRT_HologramWire.mat` | CRT pass tuned for the hologram line work — cyan, glow 1.8, scanlines 0.30. Assigned to **all nine** hologram stage visuals, so `baseColor` here is the ONE field that re-tints the whole hologram. |
 | `CRT_PanelGlow.mat` | CRT pass tuned as the guide panel's translucent backing — dim green glow, stronger scanlines, `wipeAxis` 1. Assigned to `GuidePanel/BackingPlate` only. |
@@ -283,7 +287,7 @@ placed against real terrain, not the head.
 | `Systems/LessonCoordinator` | `Engine/LessonCoordinator.ts` — **the only thing that calls Gemini for a lesson.** Owns `lessonRequested`/`siteSelected` -> planner -> validator -> `engine.loadLesson()`, plus every failure path. |
 | `Systems/AssemblingLessonPresenter` | `Widgets/AssemblingLessonPresenter.ts` — enables and animates `HUDRoot/AssemblingLesson` while `requestStateChanged.state === "COMPILING"`. |
 | `Systems/SurveyController` | `Engine/SurveyController.ts` — the **on-demand** survey (menu row 1; boot auto-start removed). Casts World Query rays, accumulates a point cloud, calls the pure selector, emits `surveyStarted` / `surveyProgress` / `surveyComplete` / `distanceWarning`. Debug keys P (restart) / G (finish now). |
-| `Systems/SfxService` | `Engine/SfxService.ts` — **the ONE owner of non-speech audio cues.** One AudioComponent, subscribes to the bus, maps events to the six GeneratedSFX WAVs (power-on / confirm / error / survey-ping / geiger / completion-sting). Separate from NarrationService (speech). A cue that cannot play is silence + a log line; cues skip while narration has the air. |
+| `Systems/SfxService` | `Engine/SfxService.ts` — **the ONE owner of non-speech audio cues.** One AudioComponent, subscribes to the bus, maps ~30 user-caused events onto a **twelve-cue vocabulary** (hard cap). Separate from NarrationService (speech). Cues play INLINE (never from UpdateEvent), one per frame, highest rank wins; each cue has a coalescing window stamped on the ATTEMPT. Under narration, alerts play through, ticks/selections DUCK, ambience is skipped. A cue that cannot play is silence + a log line. **Full event→cue table below.** |
 | `Systems/NavigationController` | `Engine/NavigationController.ts` — owns the camp point, the trail recorder (explicit "LEAVING CAMP" start; marks auto-drop per spacing; decimation on pool overflow) and the navigation loop. Pure maths in `NavMath.ts`. `useFixtureTrail` + `Assets/Survey/fixtures/camp-trail-demo.json` (regenerate: `python3 Tools/make-trail-fixture.py`) is the deterministic path — SHIPS OFF. Debug keys **7** set camp / **8** start trail / **9** follow trail / **0** simulate tracking loss. |
 | `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
 | `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
@@ -750,6 +754,179 @@ A handler for this event switches among those four; it does **not** create
 anything. If a future step seems to need a fifth companion, the object for it
 must be added to this tree at design time first (hard rule 1) and documented
 here — never instantiated in response to the event.
+
+## The sound seam — a twelve-cue vocabulary (2026-08-22)
+
+**Nothing the user causes is silent.** If the app changed state because of
+something the person did — a selection, a step, a grab, a refusal, an arrival —
+it makes a sound. State the app changes on its own may be silent, and mostly is.
+
+The counterpart rule is what stops that becoming noise: **at most twelve
+distinct cues, ever.** A terminal has a language, not a catalogue. Cues are
+reused by MEANING, never by widget — the same advance tick serves a menu
+highlight, a checklist row and a step counter, because to the user those are
+the same kind of event. Roughly thirty events map onto twelve sounds.
+
+### The four that must be tellable apart with eyes closed
+
+Pitch and duration carry this, never volume:
+
+| Meaning | Cue | Length | Pitch | Shape |
+|---|---|---|---|---|
+| **advanced** | `nav-tick` | 45 ms | ~1.5–2.0 kHz | one tone, RISING |
+| **accepted** | `confirm-blip` | 90 ms | ~0.5 kHz | one FM blip |
+| **refused** | `error-buzz` | 450 ms | ~0.3 kHz | rough, descending |
+| **arrived** | `completion-sting` | 1.77 s | bell arpeggio | ascending, multi-note |
+
+Each sits in a different corner of (duration × pitch). The two that share the
+short end — advanced and accepted — are a musical eleventh apart with different
+timbres (triangle sweep vs FM blip). `nav-back` is `nav-tick`'s exact mirror:
+same voice, falling instead of rising and lower at the tail, so "went back"
+cannot be heard as "went forward". `panel-open`/`panel-close` are the same
+two notes played in opposite orders.
+
+### Volume tiers — a tick at warning level destroys the warning
+
+| Tier | Cues | Default |
+|---|---|---|
+| AMBIENCE | geiger | 0.30 |
+| TICK | nav-tick, nav-back | 0.45 |
+| SELECTION | confirm, panels, ping, sting, power-on | 0.75 |
+| ALERT | error-buzz, SOS | 1.00 |
+
+All scaled by one master `volume` (0.80). **Rank is a separate axis from tier:**
+an arrival ranks above other selections (`RANK_ARRIVAL = 2.5`) without being
+louder — reaching camp fires `campReached` in the same frame as the navigation
+surface opening and the trail recorder closing, and "arrived" must not lose
+that tie.
+
+### The full table
+
+Cue column blank = **deliberately silent**, with the reason.
+
+| Event | What the user did | Cue |
+|---|---|---|
+| `introStateChanged {active:true}` | launched the Lens | `crt-power-on` |
+| `menuHighlightChanged` | moved the highlight (gaze/voice/key) | `nav-tick` |
+| `menuSelected` | chose a menu row | `confirm-blip` |
+| `menuChipSelected` | pressed a footer chip | — *every chip's EFFECT announces itself, and more precisely* |
+| `voiceStateChanged → listening` | opened voice capture | `panel-open` |
+| `voiceStateChanged → idle` | closed voice capture | `panel-close` |
+| `voiceStateChanged → finalizing` | — | — *the app deciding the phrase ended* |
+| `keyboardRequested` | opened the AR keyboard | `panel-open` |
+| `requestStateChanged → COMPILING` | request taken | `confirm-blip` |
+| `requestStateChanged → BUSY` | second request IGNORED | `error-buzz` |
+| `requestStateChanged → ERROR` | request failed | `error-buzz` |
+| `qaRequested` | asked a question mid-lesson | `confirm-blip` |
+| `qaAnswered` | — | — *the spoken answer IS the feedback* |
+| `lessonStarted` | lesson arrived after COMPILING | `panel-open` |
+| `stepChanged {reason:"next"}` | advanced a step | `nav-tick` |
+| `stepChanged {reason:"back"}` | stepped back | `nav-back` |
+| `stepChanged {reason:"load"}` | — | — *`lessonStarted` opens in the same frame* |
+| `checklistUpdated {justChecked ≥ 0}` | ticked a checklist row | `nav-tick` |
+| `hologramStage` | blueprint advanced a stage | `nav-tick` |
+| `propsStateChanged {active:true}` | props became grabbable | `panel-open` |
+| `propGrabbed` | picked up a prop | `nav-tick` |
+| `propSnapped` (n < N) | seated a prop | `confirm-blip` |
+| `propSnapped` (n ≥ N) | completed the pattern | `completion-sting` |
+| `propPlaced` | — | — *the engine's echo of `propSnapped`, already sounded* |
+| `safetyPending {true}` | reached a gated step | `error-buzz` |
+| `safetyRejected` | next REFUSED at the gate | `error-buzz` (over narration) |
+| `safetyPending {false}` | confirmed the warning | `confirm-blip` |
+| `distanceWarning` | a distance constraint failed | `error-buzz` |
+| `lessonCompleted` | finished the lesson | `completion-sting` |
+| `suggestionAccepted` | took the next-step suggestion | `confirm-blip` |
+| `nextStepSuggested` | — | — *a background call the user did not make* |
+| `stopRequested` | said stop | `panel-close` |
+| `surveyStarted` | started a scan | `panel-open` |
+| `surveyProgress` | (scanning) | `geiger-click`, rate-limited, ambience |
+| `surveyComplete` | markers placed | `survey-ping` ×N, staggered 0.4 s |
+| `hazardsDetected` | — | — *rides with `surveyComplete`* |
+| `siteSelected` | picked a site marker | `confirm-blip` |
+| `campChanged` (not fixture) | camp marked | `confirm-blip` |
+| `trailStateChanged` recording ↑ | started recording | `panel-open` |
+| `trailStateChanged` recording ↓ | stopped recording | `panel-close` |
+| `trailStateChanged` markCount ↑ | walked far enough to drop a mark | `nav-tick` |
+| `navigateRequested` | asked for compass/trail | `panel-open` |
+| `navigateUpdated` | — | — *continuous* |
+| `campReached` | arrived back at camp | `completion-sting` (RANK_ARRIVAL) |
+| `journalStateChanged {open:true}` | opened the journal | `panel-open` |
+| `journalStateChanged {open:false}` | closed the journal | `panel-close` |
+| `journalStateChanged {refused:true}` | LOG pressed outside IDLE, refused | `error-buzz` |
+| `recenterRequested` | recentred the HUD | `panel-open` |
+| `sosStateChanged {true}` | entered SOS | — *see below* |
+| `sosStateChanged {false}` | left SOS | `panel-close` |
+| `sosPulse` | (the prosign) | `sos-dot` / `sos-dash` |
+| `modeChanged`, `companionChanged`, `timerTick`, `narration*`, `speakRequested`, `voiceInterim`, `userRequest`, `hologramShown`, `lessonKindInferred`, `lessonAnchorChanged` | — | — *app-driven, continuous, or already covered by the specific event* |
+
+### Rate-limiting and coalescing
+
+Two disciplines, because the failure modes differ:
+
+- **Per-cue window.** The same cue inside its window plays once. Ticks get
+  0.25 s — a tick on every gaze drift across the menu rows is maddening;
+  geiger gets 0.12 s; everything else 0.15 s, enough to swallow a chain
+  reaction ("menu row chosen" → "request accepted") without swallowing two
+  deliberate taps. The window is stamped on the **attempt**, not on the sound,
+  so a cue that ducks away or is unwired still waits its turn before trying
+  again.
+- **One cue per frame, highest rank wins.** Several events genuinely land
+  together. A tie goes to whoever asked first — within one rank the earliest
+  event is the cause and the later ones are its consequences.
+
+### Cues play INLINE, never from `UpdateEvent`
+
+The first version queued the frame's winner and flushed it from `UpdateEvent`.
+Two failures, found by walking the path:
+
+- It logged a line for every **losing** cue. During a survey that is one
+  `print()` per sampled point, several times a frame, which alone is enough to
+  blow the runtime's per-frame JavaScript budget. It did:
+  `TimeoutError: Javascript execution has timed out`.
+- Once that fired the `UpdateEvent` binding was gone, and with the only flush
+  path dead **every cue went silent for the rest of the session.** A whole
+  interface muted by one noisy log line.
+
+Playing inline removes both. Same-frame arbitration still works because a
+later, higher-rank cue re-points the `AudioComponent` before the loser has
+sounded a sample. Only the marker-ping stagger still rides `UpdateEvent`, so if
+that binding ever dies again it costs the stagger, not the vocabulary. **The
+rejection paths do not log at all** — the rate limiter has to be cheaper than
+the sound it is suppressing.
+
+### Narration: duck, never talk across it
+
+Speech is the most important audio in this product and it is already slow. Cues
+never interrupt it. But *skipping* every cue under narration made half the
+interface silent again during exactly the stretch where the user is pressing
+things — a lesson step is narrated for most of its life. So:
+
+- **ALERT** plays at full level over narration. A warning that gets skipped is
+  not a warning. (This generalises the exception the safety buzz already had.)
+- **TICK / SELECTION** duck to `narrationDuck` (0.35) of their tier.
+- **AMBIENCE** is skipped outright — a stream of clicks under speech is the one
+  case where quieter is not enough.
+
+### Three things found only by walking the path with the sound on
+
+1. **The footer chip blip flattened the journal.** Blipping `menuChipSelected`
+   *and* letting the effect speak put both in one frame; the blip won the tie
+   by arriving first, so opening the journal sounded exactly like closing it —
+   and a **refused** open sounded like an accepted one. The chip cue was
+   dropped; each chip's effect says more than the chip does. `JournalPresenter`
+   now emits `journalStateChanged {refused:true}` instead of swallowing the
+   refusal.
+2. **Two debug keys bypassed the bus.** `HudRecenter` and `KeyboardInput` called
+   their own methods directly instead of emitting `recenterRequested` /
+   `keyboardRequested`, so nothing listening to the bus ever heard those keys.
+   Both now emit, matching the repo's two-emitter pattern (`menuSelected`,
+   `menuChipSelected`).
+3. **An SOS entry tone corrupted the distress signal.** Cueing
+   `sosStateChanged {active:true}` landed in the same frame as the cycle's first
+   element and won the tie, so the first `···---···` went out starting on a
+   **dash**. Verified in the log: the second cycle was correct, the first was
+   not. Entering SOS is now uncued — it is not silent, the engine speaks the SOS
+   line and the prosign starts within a beat, and the rhythm is the announcement.
 
 ## The narration seam
 
