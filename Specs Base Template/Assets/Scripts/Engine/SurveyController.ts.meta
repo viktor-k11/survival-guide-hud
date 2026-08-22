@@ -64,6 +64,8 @@
     preferredMinDistanceM: false
     rayRangeCm: false
     raysPerFrame: false
+    sosLineNoData: false
+    sosLineWithBearing: false
     tentFootprintM: false
     useFixtureCloud: false
     warnOnSiteHazardOverlap: false
@@ -118,6 +120,8 @@
       enableDebugKeys: true
       keyRestartSurvey: S
       keyFinishSurvey: G
+      sosLineWithBearing: "S O S pattern. Three short, three long, three short. Follow the lights, and signal along the arrow — that way is most open."
+      sosLineNoData: "S O S pattern. Three short, three long, three short. Follow the lights. No scan data — signal toward the most open ground you can see."
       enableLogging: true
   ScriptTypes:
     -
@@ -181,4 +185,8 @@
     - '// @input bool enableDebugKeys = true {"hint":"Turn off before shipping."}'
     - "// @input string keyRestartSurvey = \"P\" {\"hint\":\"Restart the survey from scratch. P as in re-Ping — 'S' is walk-back and injected keys reach the Lens.\"}"
     - '// @input string keyFinishSurvey = "G" {"hint":"End the survey immediately with whatever has been collected."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">SOS — the one spoken line per activation</span>"}'
+    - '// @input string sosLineWithBearing = "S O S pattern. Three short, three long, three short. Follow the lights, and signal along the arrow — that way is most open." {"hint":"Spoken when SOS starts AND the cloud yields an open direction."}'
+    - '// @input string sosLineNoData = "S O S pattern. Three short, three long, three short. Follow the lights. No scan data — signal toward the most open ground you can see." {"hint":"Spoken when SOS starts with no usable survey data. It says NO direction rather than inventing one."}'
     - // @input bool enableLogging = true

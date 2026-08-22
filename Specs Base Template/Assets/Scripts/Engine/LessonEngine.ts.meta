@@ -40,6 +40,7 @@
     keyLoadWater: false
     keyNext: false
     keyRoutingSelfTest: false
+    keySos: false
     navigateLine: false
     shortUtteranceMaxWords: false
     suggestionDwellSec: false
@@ -68,6 +69,7 @@
       keyConfirm: K
       keyDone: D
       keyRoutingSelfTest: R
+      keySos: !<string> 6
       campfireFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
       waterFixture: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
       enableLogging: true
@@ -94,6 +96,7 @@
     - '// @input string keyConfirm = "K"'
     - "// @input string keyDone = \"O\" {\"hint\":\"O as in dOne — 'D' is strafe-right.\"}"
     - '// @input string keyRoutingSelfTest = "R" {"hint":"Runs a table of canned transcripts through the SAME classifier handleTranscript uses, and logs the routing decision for each. Non-destructive: classifies only, executes nothing."}'
+    - '// @input string keySos = "6" {"hint":"Enter SOS — the same sos() the voice keyword calls. A digit: the letter cluster is full, and digits are off the movement keys."}'
     - '// @input Asset.JsonAsset campfireFixture {"hint":"Assets/AI/fixtures/lesson-help-me-build-a-campfire.raw.json"}'
     - '// @input Asset.JsonAsset waterFixture {"hint":"Assets/AI/fixtures/lesson-help-me-purify-water.raw.json — no hologram, exercises companion:null"}'
     - '// @ui {"widget":"separator"}'

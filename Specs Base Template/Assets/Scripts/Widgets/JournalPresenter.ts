@@ -118,6 +118,10 @@ export class JournalPresenter extends BaseScriptComponent {
     eventBus.subscribe(Events.distanceWarning, (p: { message: string }) => {
       if (p && p.message) this.record("ADVISORY · " + p.message, true);
     });
+    // An SOS activation belongs in the record more than anything else here.
+    eventBus.subscribe(Events.sosStateChanged, (p: { active: boolean }) => {
+      if (p && p.active) this.record("SOS SIGNAL STARTED", true);
+    });
 
     // --- open/close ---------------------------------------------------------
     eventBus.subscribe(Events.menuChipSelected, (p: MenuChipPayload) => {

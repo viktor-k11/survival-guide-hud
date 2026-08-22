@@ -35,6 +35,7 @@
     enableLogging: false
     labelFormat: false
     lastKnownSuffix: false
+    sosLabel: false
     theme: false
   ScriptTypesHidden:
     {}
@@ -51,6 +52,7 @@
       aheadCm: !<float> 160.000000
       belowEyeCm: !<float> 55.000000
       labelFormat: "CAMP {D} M"
+      sosLabel: SIGNAL THIS WAY
       lastKnownSuffix: |2-
          · LAST KNOWN
       enableLogging: false
@@ -68,5 +70,6 @@
     - '// @input float aheadCm = 160 {"hint":"How far ahead of the user the rose floats, centimetres.", "widget":"slider", "min":60, "max":400, "step":10}'
     - '// @input float belowEyeCm = 55 {"hint":"How far below eye level, centimetres. Low enough to not block the view, high enough to stay in the angular frustum.", "widget":"slider", "min":40, "max":200, "step":5}'
     - '// @input string labelFormat = "CAMP {D} M" {"hint":"Label text. {D} is replaced by the distance in metres."}'
+    - '// @input string sosLabel = "SIGNAL THIS WAY" {"hint":"Label while the source is SOS — a direction, not a distance."}'
     - '// @input string lastKnownSuffix = " · LAST KNOWN" {"hint":"Suffix appended while tracking is lost."}'
     - // @input bool enableLogging

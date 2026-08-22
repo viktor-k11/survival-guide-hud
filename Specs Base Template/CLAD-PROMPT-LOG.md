@@ -3652,3 +3652,74 @@ under the HUD's KeyboardToggle fail with obstructed). A real SIK hand sends
 ordinary trigger events — the on-device path is the ordinary one. Z drives
 the identical release/snap/count code, so what it bypasses is only the grab
 gesture itself.
+
+## Prompt — SOS mode with paced signal rhythm and open-direction compass
+
+> SOS mode. It is going in the demo, so build it as a real feature, not a
+> checkbox. Product line [...]: in a real emergency the hard part of
+> signalling is keeping the rhythm right while you are cold and frightened.
+> The Lens paces it for you.
+> 1. Entry and exit: voice "sos" [...] and the SOS footer chip. It must work
+>    from ANYWHERE, including mid-lesson [...] "stop" exits, also from
+>    anywhere. Log the activation to the session journal.
+> 2. The rhythm readout [...]: nine marks that light in sequence [...] Get
+>    the timing RIGHT [...] dot = 1 unit, dash = 3 units, gap between
+>    elements = 1 unit, and SOS is sent as ONE prosign with no inter-letter
+>    gaps, then roughly a 7-unit pause [...] around 5 to 7 seconds total
+>    [...] Each pulse also flashes the screen edge [...] ±34 cm at z = -120
+>    [...] Additive glow, never a dark border.
+> 3. Audible pulses [...] error-buzz is semantically wrong [...]
+> 4. The compass: point CompassRose toward the most open sampled direction
+>    [...] PURE FUNCTION over the point cloud [...] REUSE the compass
+>    presenter — do not fork it [...] If no survey has run [...] show NO
+>    direction and say so [...]
+> 5. Spoken explanation, once [...]
+> 6. Verify: enter from IDLE and from mid-lesson, watch two full cycles,
+>    confirm the timing against the unit you set, exit with "stop" [...]
+
+**Built and verified end to end.** New: `Engine/SosRhythm.ts` (the prosign as
+pure data: 30 units/cycle; default unit 0.2 s = 6.0 s cycle — reported per
+the brief), `Engine/OpenDirection.ts` (pure azimuth-bin scorer over the
+survey cloud, deepest usable sector wins), `Widgets/SosSignalPresenter.ts` +
+design-time `HUDRoot/SosPanel` (Marks/Mark_1..9 sized as the prosign reads,
+EdgeFlash frame authored AT the ±34 budget — edges 33.6/30.6 cm included,
+additive `CRT_ChromeWarning`), warning-red `Chip_SOS`, journal row, debug
+key **6**, and `sos-dot/dash.wav` (880 Hz locator beeps via the P12
+local-synthesis route — error-buzz deliberately NOT reused: it says
+"malfunction"). The engine emits `sosStateChanged` inside setMode — the one
+owner of mode; SurveyController answers with the arrow (`navigateUpdated
+{navMode:"sos"}` — the exact seam CompassRosePresenter's header promised)
+plus the ONE spoken line, data-aware. ModeRouter shows WorldRoot in SOS.
+
+**Measured:** steady-state dot onsets 0.41 s apart, dash onsets 0.79 s apart
+(spec: 0.4/0.8 at unit 0.2) — first-cycle jitter is preview frame hitches.
+Entry verified from IDLE and from LESSON step 2; "stop" (driven through the
+REAL transcript path — debugSubmitText temporarily set to "stop", then
+restored) exits to a clean IDLE both times: props retired, companions
+hidden, menu intact. **The interrupted lesson is dropped, not resumed — and
+that is the right answer**: emergency outranks lesson, stop() resets
+everything, nothing dangles. No-data case: `openDirection` returns null, no
+rose anywhere, spoken line + `BearingNote` both say so
+(`sos-no-survey-data.jpg`). Data case: arrow at 345° over the fixture
+clearing, "SIGNAL THIS WAY" label (`sos-compass-open-direction.jpg`);
+readout mid-dash with the edge frame lit (`sos-frame-b.jpg`, plus
+`sos-frame-a.jpg` in the rest beat and `sos-journal-entry.jpg`).
+
+**Found and fixed while verifying:** subscription order on the
+`sosStateChanged` edge delivers the arrow BEFORE the presenter's begin()
+runs, so begin() must not reset the bearing flag (the note briefly claimed
+NO SCAN DATA over a live arrow). **Known preview-only limit, recorded in
+SCENE-MAP:** the pulse TONE fires on the first frame that samples an
+element, so a preview frame hitch longer than a dot can drop that dot's
+tone; the marks are state-driven and stay correct, and device frame rates
+sample a 0.2 s dot reliably. Tones skip while the spoken line has the air —
+the first cycle is lights-only under the voice, which reads as intended.
+Fixture cloud used for the data-path test and returned to OFF;
+debugSubmitText restored; guard caught Chip_SOS authored enabled (fixed —
+ships disabled like every chip) and another injected AiPreviewAgent Handler
+(deleted).
+
+NOTE: the styling pass (previous prompt) is PAUSED after surfaces 1-2
+(menu/status chrome `382b978`, gauge timer `1cb6b1b`): world markers,
+SurveyGrid and VFX remain. `CRT_ChromeCyan.mat` is authored-but-unassigned
+and `style-markers-before.jpg` captures exist for the resume.

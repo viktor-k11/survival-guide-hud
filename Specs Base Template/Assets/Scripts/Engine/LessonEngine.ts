@@ -230,6 +230,10 @@ export class LessonEngine extends BaseScriptComponent {
   private keyRoutingSelfTest: string = "R";
 
   @input
+  @hint("Enter SOS — the same sos() the voice keyword calls. A digit: the letter cluster is full, and digits are off the movement keys.")
+  private keySos: string = "6";
+
+  @input
   @allowUndefined
   @hint("Assets/AI/fixtures/lesson-help-me-build-a-campfire.raw.json")
   private campfireFixture: JsonAsset;
@@ -322,10 +326,11 @@ export class LessonEngine extends BaseScriptComponent {
       if (!p || p.row !== 6) return;
       this.navigate("bearing", p.source);
     });
-    // followTrail is the one chip the engine takes — it is a mode change.
+    // followTrail and sos are the chips the engine takes — mode changes.
     eventBus.subscribe(Events.menuChipSelected, (p: MenuChipPayload) => {
-      if (!p || p.chip !== "followTrail") return;
-      this.navigate("trail", p.source);
+      if (!p) return;
+      if (p.chip === "followTrail") this.navigate("trail", p.source);
+      else if (p.chip === "sos") this.sos();
     });
     // Arrival is a fact reported by the controller; the engine decides it
     // means IDLE — the same single-owner rule as the survey.
@@ -851,7 +856,15 @@ export class LessonEngine extends BaseScriptComponent {
     this.setMode("IDLE");
   }
 
+  /**
+   * SOS works from ANYWHERE — an emergency mode reachable only from the menu
+   * is not an emergency mode. Entering from a LESSON drops the lesson's timer
+   * but keeps nothing half-alive: the widgets hide on modeChanged, and "stop"
+   * exits SOS to a clean IDLE (the interrupted lesson does not resume — the
+   * emergency outranks it, and a stale half-lesson would be worse).
+   */
   public sos(): void {
+    if (this.mode === "SOS") return;
     this.stopTimer();
     this.setMode("SOS");
   }
@@ -1017,6 +1030,10 @@ export class LessonEngine extends BaseScriptComponent {
     // dwell timeout, stop, accept, or a new lesson landing.
     if (from === "COMPLETE") this.pendingSuggestion = "";
     this.emit(Events.modeChanged, { from: from, to: next });
+    // The SOS edge, in the ONE place mode changes: the readout, the compass
+    // source, the journal and the spoken line all key off this pair.
+    if (next === "SOS") this.emit(Events.sosStateChanged, { active: true });
+    else if (from === "SOS") this.emit(Events.sosStateChanged, { active: false });
   }
 
   // ----------------------------------------------------------------- timer
@@ -1061,9 +1078,12 @@ export class LessonEngine extends BaseScriptComponent {
   // ------------------------------------------------------------ debug keys
 
   private keyFromLetter(letter: string): Keys {
-    const idx = LETTERS.indexOf((letter || "").toUpperCase().charAt(0));
-    if (idx < 0) return Keys.Invalid;
-    return (Keys.A + idx) as Keys;
+    const ch = (letter || "").toUpperCase().charAt(0);
+    const idx = LETTERS.indexOf(ch);
+    if (idx >= 0) return (Keys.A + idx) as Keys;
+    const di = "0123456789".indexOf(ch);
+    if (di >= 0) return (Keys.Zero + di) as Keys;
+    return Keys.Invalid;
   }
 
   private bindDebugKeys(): void {
@@ -1074,6 +1094,7 @@ export class LessonEngine extends BaseScriptComponent {
     const confirmK = this.keyFromLetter(this.keyConfirm);
     const doneK = this.keyFromLetter(this.keyDone);
     const routeK = this.keyFromLetter(this.keyRoutingSelfTest);
+    const sosK = this.keyFromLetter(this.keySos);
 
     this.createEvent("KeyPressEvent").bind((e: KeyPressEvent) => {
       // Every branch calls the same public method voice does — no parallel path.
@@ -1097,6 +1118,9 @@ export class LessonEngine extends BaseScriptComponent {
         this.done();
       } else if (e.key === routeK) {
         this.runRoutingSelfTest();
+      } else if (e.key === sosK) {
+        this.log("debug key: sos");
+        this.sos();
       }
     });
   }

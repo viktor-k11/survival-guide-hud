@@ -33,6 +33,8 @@
     cueError: false
     cueGeiger: false
     cuePowerOn: false
+    cueSosDash: false
+    cueSosDot: false
     cueSurveyPing: false
     enableLogging: false
     geigerMinIntervalSec: false
@@ -53,6 +55,8 @@
       cueSurveyPing: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       cueGeiger: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       cueCompletion: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueSosDot: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
+      cueSosDash: !<reference.AudioTrackAsset> 00000000-0000-0000-0000-000000000000
       geigerMinIntervalSec: 0.120000
       pingSpacingSec: 0.400000
       volume: 0.800000
@@ -70,6 +74,8 @@
     - '// @input Asset.AudioTrackAsset cueSurveyPing {"hint":"survey-ping.wav — one per placed marker"}'
     - '// @input Asset.AudioTrackAsset cueGeiger {"hint":"geiger-click.wav — survey ambience"}'
     - '// @input Asset.AudioTrackAsset cueCompletion {"hint":"completion-sting.wav — lesson complete"}'
+    - '// @input Asset.AudioTrackAsset cueSosDot {"hint":"sos-dot.wav — one short SOS pulse (P14-style generated tone; error-buzz would read as a malfunction, not a signal)"}'
+    - '// @input Asset.AudioTrackAsset cueSosDash {"hint":"sos-dash.wav — one long SOS pulse"}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Pacing</span>"}'
     - '// @input float geigerMinIntervalSec = 0.12 {"hint":"Minimum seconds between geiger clicks. The click is ambience for the survey, not a counter of accepted points.", "widget":"slider", "min":0.05, "max":1, "step":0.05}'

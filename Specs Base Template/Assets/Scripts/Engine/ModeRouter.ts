@@ -67,7 +67,9 @@ export class ModeRouter extends BaseScriptComponent {
       world = true;
     } else if (mode === "SOS") {
       hud = true;
-      world = false;
+      // The compass rose — pointed at the most open sampled direction by the
+      // survey's SOS handler — lives under WorldRoot.
+      world = true;
     } else if (mode === "COMPLETE") {
       hud = true;
       // WorldRoot stays UP through COMPLETE (changed 2026-08-21): the last

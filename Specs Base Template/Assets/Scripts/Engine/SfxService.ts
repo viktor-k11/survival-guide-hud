@@ -40,6 +40,8 @@ export class SfxService extends BaseScriptComponent {
   @input @allowUndefined @hint("survey-ping.wav — one per placed marker") private cueSurveyPing: AudioTrackAsset;
   @input @allowUndefined @hint("geiger-click.wav — survey ambience") private cueGeiger: AudioTrackAsset;
   @input @allowUndefined @hint("completion-sting.wav — lesson complete") private cueCompletion: AudioTrackAsset;
+  @input @allowUndefined @hint("sos-dot.wav — one short SOS pulse (P14-style generated tone; error-buzz would read as a malfunction, not a signal)") private cueSosDot: AudioTrackAsset;
+  @input @allowUndefined @hint("sos-dash.wav — one long SOS pulse") private cueSosDash: AudioTrackAsset;
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Pacing</span>')
@@ -140,6 +142,13 @@ export class SfxService extends BaseScriptComponent {
     eventBus.subscribe(Events.surveyComplete, (p: SurveyCompletePayload) => {
       this.pingsPending = p && p.sites ? p.sites.length : 0;
       this.pingClock = this.pingSpacingSec; // first ping lands immediately
+    });
+
+    // --- SOS -------------------------------------------------------------
+    // The distress tone. Skips under narration like every cue — the one
+    // spoken line at activation takes the air first, then the rhythm sounds.
+    eventBus.subscribe(Events.sosPulse, (p: { kind: string }) => {
+      this.play(p && p.kind === "dash" ? this.cueSosDash : this.cueSosDot, "sos-" + (p ? p.kind : "dot"));
     });
 
     // --- completion ------------------------------------------------------

@@ -12,8 +12,12 @@ import { XYZ } from "./SurveyTypes";
 
 /** A footer chip (or its voice twin) was activated. */
 export interface MenuChipPayload {
-  /** "journal" toggles the session log — owned by JournalPresenter (a view, not engine state). */
-  chip: "setCamp" | "trailStart" | "followTrail" | "journal";
+  /**
+   * "journal" toggles the session log — owned by JournalPresenter (a view,
+   * not engine state). "sos" enters SOS — owned by the engine, like
+   * followTrail, because a mode change is the engine's job.
+   */
+  chip: "setCamp" | "trailStart" | "followTrail" | "journal" | "sos";
   /** "pinch" | "voice" | "debugKey" — diagnostics only. */
   source: string;
 }
@@ -40,8 +44,9 @@ export interface NavigateRequestPayload {
 /** Live navigation state, throttled to meaningful changes. */
 export interface NavigateUpdatePayload {
   active: boolean;
-  navMode: "bearing" | "trail";
-  /** What the compass points at RIGHT NOW: camp, or the next trail mark. */
+  /** "sos" points the SAME compass at the most open sampled direction. */
+  navMode: "bearing" | "trail" | "sos";
+  /** What the compass points at RIGHT NOW: camp, the next trail mark, or the open-direction target. */
   targetCm: XYZ;
   /** Degrees [0,360), 0 = world -Z, clockwise. */
   bearingDeg: number;

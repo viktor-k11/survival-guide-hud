@@ -39,6 +39,7 @@ export class CompassRosePresenter extends BaseScriptComponent {
   @input @widget(new SliderWidget(60, 400, 10)) @hint("How far ahead of the user the rose floats, centimetres.") private aheadCm: number = 160;
   @input @widget(new SliderWidget(40, 200, 5)) @hint("How far below eye level, centimetres. Low enough to not block the view, high enough to stay in the angular frustum.") private belowEyeCm: number = 55;
   @input @hint("Label text. {D} is replaced by the distance in metres.") private labelFormat: string = "CAMP {D} M";
+  @input @hint("Label while the source is SOS — a direction, not a distance.") private sosLabel: string = "SIGNAL THIS WAY";
   @input @hint("Suffix appended while tracking is lost.") private lastKnownSuffix: string = " · LAST KNOWN";
   @input private enableLogging: boolean = false;
 
@@ -83,9 +84,10 @@ export class CompassRosePresenter extends BaseScriptComponent {
       if (!p || !p.active) this.hide();
       else this.show();
     });
-    // Whatever mode ends navigation, the rose must not survive it.
+    // Whatever mode ends navigation, the rose must not survive it. SOS is the
+    // second legitimate host (same presenter, second source — never a fork).
     eventBus.subscribe(Events.modeChanged, (p: { to: string }) => {
-      if (!p || p.to !== "NAVIGATE") this.hide();
+      if (!p || (p.to !== "NAVIGATE" && p.to !== "SOS")) this.hide();
     });
 
     this.hide();
@@ -131,7 +133,10 @@ export class CompassRosePresenter extends BaseScriptComponent {
 
     if (this.label) {
       const d = p.distanceM >= 10 ? Math.round(p.distanceM) : p.distanceM;
-      setText(this.label, this.labelFormat.replace("{D}", "" + d) + (p.lastKnown ? this.lastKnownSuffix : ""));
+      // SOS carries a direction, not a distance — "SIGNAL THIS WAY 0 M"
+      // would be nonsense.
+      const body = p.navMode === "sos" ? this.sosLabel : this.labelFormat.replace("{D}", "" + d);
+      setText(this.label, body + (p.lastKnown ? this.lastKnownSuffix : ""));
       // The label yaws to the user, like every world label here.
       if (this.labelObj) {
         const lp = this.labelObj.getTransform().getWorldPosition();

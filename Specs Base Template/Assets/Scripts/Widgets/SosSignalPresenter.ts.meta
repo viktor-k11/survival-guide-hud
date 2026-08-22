@@ -1,0 +1,66 @@
+- !<AssetImportMetadata/7a2cba54-e3e0-40c3-9237-e2e342c8a149>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> d94a5272-bf6d-4a8f-8dcc-e8a04adfdf77
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> d94a5272-bf6d-4a8f-8dcc-e8a04adfdf77
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 2eefc436-bf2d-4feb-a78a-3b3c94179c4f
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/2eefc436-bf2d-4feb-a78a-3b3c94179c4f>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: 74c36a35-2bf4-451c-9dc6-d74607cb7241
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    edgePeak: false
+    enableLogging: false
+    sentLevel: false
+    sosPanel: false
+    theme: false
+    unitSec: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      sosPanel: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      unitSec: 0.200000
+      sentLevel: 0.300000
+      edgePeak: !<float> 1.000000
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this presenter drives</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Marks are found by name (Mark_1..9) under SosPanel/Marks; edge bars under SosPanel/EdgeFlash. All ship disabled.</span>"}'
+    - '// @input SceneObject sosPanel {"hint":"HUDRoot/SosPanel"}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Rhythm</span>"}'
+    - '// @input float unitSec = 0.2 {"hint":"The Morse unit, seconds. Dot = 1 unit, dash = 3, element gap 1, rest ~7 — 30 units per cycle, so 0.2 s = a 6.0 s cycle: inside the 5-7 s demo beat and still unmistakably S-O-S.", "widget":"slider", "min":0.08, "max":0.5, "step":0.01}'
+    - '// @input float sentLevel = 0.3 {"hint":"Brightness of marks already sent this cycle. The current element is full; history holds dim so the eye can read where in the pattern you are.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input float edgePeak = 1 {"hint":"Edge flash peak brightness, on top of the theme glow.", "widget":"slider", "min":0, "max":2, "step":0.05}'
+    - // @input bool enableLogging = true

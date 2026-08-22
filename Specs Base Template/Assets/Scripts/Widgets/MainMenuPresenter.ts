@@ -132,6 +132,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
   @input @hint("Chip_Trail label while recording.") private chipTrailRecLabel: string = "[ ● REC ]";
   @input @hint("Chip_FollowTrail label.") private chipFollowLabel: string = "[ FOLLOW TRAIL ]";
   @input @hint("Chip_Log label — opens the session journal.") private chipLogLabel: string = "[ LOG ]";
+  @input @hint("Chip_SOS label — enters SOS. Warning-coloured: it is the one chip that means an emergency.") private chipSosLabel: string = "[ SOS ]";
 
   @ui.separator
   @ui.label('<span style="color: #7CFFB2;">Ask widget</span>')
@@ -194,6 +195,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
   private chipTrail: Text | null = null;
   private chipFollow: Text | null = null;
   private chipLog: Text | null = null;
+  private chipSos: Text | null = null;
   private chipFollowRoot: SceneObject | null = null;
   /** The journal owns the screen while open — boot-intro pattern. */
   private journalOpen: boolean = false;
@@ -330,7 +332,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
 
     // Footer chips — pinch twins of the setCamp / leavingCamp / followTrail
     // voice commands. Relaying a pinch is not logic.
-    const wireChip = (name: string, chip: "setCamp" | "trailStart" | "followTrail" | "journal"): Text | null => {
+    const wireChip = (name: string, chip: "setCamp" | "trailStart" | "followTrail" | "journal" | "sos"): Text | null => {
       const obj = findChildDeep(this.mainMenu, name);
       if (!obj) {
         this.log(name + " missing from the scene");
@@ -351,6 +353,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
     this.chipTrail = wireChip("Chip_Trail", "trailStart");
     this.chipFollow = wireChip("Chip_FollowTrail", "followTrail");
     this.chipLog = wireChip("Chip_Log", "journal");
+    this.chipSos = wireChip("Chip_SOS", "sos");
 
     const ask = findChildDeep(this.mainMenu, "AskWidget");
     if (ask) {
@@ -408,6 +411,7 @@ export class MainMenuPresenter extends BaseScriptComponent {
     setText(this.chipTrail, recording ? this.chipTrailRecLabel : this.chipTrailLabel);
     setText(this.chipFollow, this.chipFollowLabel);
     setText(this.chipLog, this.chipLogLabel);
+    setText(this.chipSos, this.chipSosLabel);
     // FOLLOW TRAIL exists only when there is a trail to follow.
     setEnabled(this.chipFollowRoot, !!(this.trail && this.trail.markCount > 0));
     if (theme) {
@@ -415,6 +419,8 @@ export class MainMenuPresenter extends BaseScriptComponent {
       setTextColor(this.chipTrail, recording ? theme.accentAmber : theme.primaryPhosphor, theme.glowIntensity * (recording ? 1.0 : 0.8));
       setTextColor(this.chipFollow, theme.primaryPhosphor, theme.glowIntensity * 0.8);
       setTextColor(this.chipLog, theme.primaryPhosphor, theme.glowIntensity * 0.8);
+      // The one warning-coloured chip: it means an emergency, nothing else does.
+      setTextColor(this.chipSos, theme.warningColor, theme.glowIntensity);
     }
   }
 

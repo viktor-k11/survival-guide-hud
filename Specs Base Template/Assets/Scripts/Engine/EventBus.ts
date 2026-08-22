@@ -239,6 +239,21 @@ export const Events = {
    */
   recenterRequested: "recenterRequested",
 
+  // --- SOS (LessonEngine + SosSignalPresenter + SurveyController) ---------
+  /**
+   * The SOS mode opened or closed. Payload: { active: boolean }. Emitted by
+   * the ENGINE inside setMode — the one owner of mode — so the readout, the
+   * compass source, the journal and the spoken line all key off one edge.
+   */
+  sosStateChanged: "sosStateChanged",
+  /**
+   * One SOS element just started sounding. Payload: { kind: "dot" | "dash" }.
+   * Emitted by SosSignalPresenter at each element ONSET — an announcement
+   * about a presentation event, like hologramShown. SfxService renders it as
+   * the distress tone; the timing itself lives in the pure Engine/SosRhythm.
+   */
+  sosPulse: "sosPulse",
+
   // --- Boot intro (BootIntroPresenter.ts) ---------------------------------
   /**
    * The boot intro started or ended. Payload: { active: boolean }.

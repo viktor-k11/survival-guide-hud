@@ -36,6 +36,7 @@
     chipFollowLabel: false
     chipLogLabel: false
     chipSetCampLabel: false
+    chipSosLabel: false
     chipTrailLabel: false
     chipTrailRecLabel: false
     descriptionWrapChars: false
@@ -90,6 +91,7 @@
       chipTrailRecLabel: "[ ● REC ]"
       chipFollowLabel: "[ FOLLOW TRAIL ]"
       chipLogLabel: "[ LOG ]"
+      chipSosLabel: "[ SOS ]"
       askTitle: ASK ME ANYTHING
       askExamples: !<string[]>
         - 'try: "how do I splint a broken wrist"'
@@ -134,6 +136,7 @@
     - '// @input string chipTrailRecLabel = "[ ● REC ]" {"hint":"Chip_Trail label while recording."}'
     - '// @input string chipFollowLabel = "[ FOLLOW TRAIL ]" {"hint":"Chip_FollowTrail label."}'
     - '// @input string chipLogLabel = "[ LOG ]" {"hint":"Chip_Log label — opens the session journal."}'
+    - '// @input string chipSosLabel = "[ SOS ]" {"hint":"Chip_SOS label — enters SOS. Warning-coloured: it is the one chip that means an emergency."}'
     - '// @ui {"widget":"separator"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Ask widget</span>"}'
     - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">These examples MUST stay outside the six menu rows — they are the proof the menu is a suggestion list, not a limit.</span>"}'

@@ -83,6 +83,7 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 | `GeneratedSFX/crt-power-on.wav` | Boot cue, 2.5 s stereo. Wired: SfxService — `introStateChanged {active:true}`. |
 | `GeneratedSFX/survey-ping.wav` | One per placed site marker, single sonar note, 1.15 s. Wired: SfxService — staggered on `surveyComplete`. |
 | `GeneratedSFX/completion-sting.wav` | `lessonCompleted`, ascending bell arpeggio, 1.8 s. Wired: SfxService. |
+| `GeneratedSFX/sos-dot.wav` / `sos-dash.wav` | SOS pulses, 880 Hz locator beeps, 0.2 s / 0.6 s (baked for the 0.2 s unit). Wired: SfxService — `sosPulse`; skip under narration like every cue. |
 | `CRT_Phosphor.graphShader` | **The phosphor CRT shader family's single pass.** Code-node graph: screen-space scanlines, floored phosphor flicker, and a boot scanline wipe normalized against the mesh's own local AABB (`wipeProgress` 0→1, `wipeAxis` 0 = local Y for holograms, 1 = local Z for XZ-native plane meshes). Every knob is a material property. |
 | `CRT_HologramWire.mat` | CRT pass tuned for the hologram line work — cyan, glow 1.8, scanlines 0.30. Assigned to **all nine** hologram stage visuals, so `baseColor` here is the ONE field that re-tints the whole hologram. |
 | `CRT_PanelGlow.mat` | CRT pass tuned as the guide panel's translucent backing — dim green glow, stronger scanlines, `wipeAxis` 1. Assigned to `GuidePanel/BackingPlate` only. |
@@ -205,9 +206,11 @@ of the user.
 | `HUDRoot/BootIntro/Line2` | "VOICE INTERFACE ONLINE — PINCH AND HOLD TO ASK" (amber) — the product's thesis, in the first thing the user ever sees | — |
 | `HUDRoot/MainMenu/FooterChips/Chip_SetCamp,Chip_Trail,Chip_FollowTrail` | The camp/trail footer chips (collider + SIK Interactable each) — pinch twins of "set camp" / "leaving camp" / "follow the trail". FOLLOW TRAIL shows only once a trail exists; Chip_Trail flips to "● REC" while recording | `menuChipSelected` (emit), `trailStateChanged` |
 | `HUDRoot/MainMenu/FooterChips/Chip_Log` | "[ LOG ]" — opens the session journal. Pinch twin of "show the log" / "log" / debug key **V**; all three emit `menuChipSelected {chip:"journal"}` | `menuChipSelected` (emit) |
+| `HUDRoot/MainMenu/FooterChips/Chip_SOS` | "[ SOS ]", warning-coloured — the one chip that means an emergency. Pinch twin of voice "sos"/"emergency"/"mayday" (matched ANYWHERE, any mode) and debug key **6**; emits `menuChipSelected {chip:"sos"}`, the ENGINE enters the mode | `menuChipSelected` (emit) |
 | `HUDRoot/CompletionCard` | **The end-of-lesson card** — shown in COMPLETE, retired on ANY exit from it. `TitleLine` ("TASK COMPLETE · <TITLE>"), `NextLine` (the next-step suggestion as ONE amber chevron line, collider + SIK Interactable — pinch = accept), `HintLine` (dim). A plan without a suggestion simply has no next line and holds the shorter dwell. **Nothing auto-starts**: accept is voice ("yes"/"do it"/"next", matched locally in the engine) or pinch; declining ("no"/"not now") or the dwell ending returns to IDLE | `lessonCompleted`, `modeChanged`; emits `suggestionAccepted` |
 | `HUDRoot/Journal` | **The session log** — `Title`, `Row_1..8` (hard cap 8, same pattern as Checklist; most recent kept, newest at top), `CloseChip` (collider + Interactable). A VIEW over bus events that already exist — no new engine state. The menu yields the screen while it is open (`journalStateChanged`, boot-intro pattern); any mode change away from IDLE closes it. Timestamps are wall-clock HH:MM from the runtime `Date` when the clock claims a plausible present (year ≥ 2024 — preview and device both do), else honest session-relative `T+MM:SS`; the source in use is logged at boot | `surveyComplete`, `hazardsDetected`, `lessonCompleted`, `campChanged`, `trailStateChanged` (edges), `distanceWarning`, `menuChipSelected` |
 | `HUDRoot/GuidePanel/DegradationNote` | **Honest degradation, on screen**: "STEP N · WIDGET UNAVAILABLE", shown when the validator dropped this step's companion (carried on the step as `companionDegraded`, emitted in `stepChanged`). DIM (`dimColor`), never warning colour — the step still works; this is information, not an error | `stepChanged` |
+| `HUDRoot/SosPanel` | **The SOS rhythm readout** (2026-08-22). Children: `Marks/Mark_1..9` — nine boxes sized as the prosign reads (narrow dots, wide dashes) lighting in sequence; `EdgeFlash/Bar_T,B,S,L,R` — the screen-edge frame that flashes with each pulse, authored AT the ±34 cm budget (edges 33.6/30.6 cm included); `BearingNote` — "SIGNAL ALONG THE ARROW" or "NO SCAN DATA · PICK OPEN GROUND". All warning-coloured on `CRT_ChromeWarning` | `sosStateChanged`, emits `sosPulse` |
 | `HUDRoot/AssemblingLesson` | **Placeholder VFX** shown only while a lesson is compiling. Swap the contents, keep the path | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Ring` | Spinning amber torus | `requestStateChanged` |
 | `HUDRoot/AssemblingLesson/Core` | Counter-pulsing green disc | `requestStateChanged` |
@@ -285,6 +288,7 @@ placed against real terrain, not the head.
 | `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
 | `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
 | `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. Its 400 cm drift guard stays as the OUTER belt-and-braces; with HudFollower's stable maths it should never fire. |
+| `Systems/SosSignalPresenter` | `Widgets/SosSignalPresenter.ts` — the paced SOS readout. Renders `sosStateChanged`, samples the PURE `Engine/SosRhythm.ts` each frame (dot 1 · dash 3 · gap 1 · one prosign, no letter gaps · ~7-unit rest = 30 units/cycle; unit 0.2 s → 6.0 s cycle), lights the marks, flashes the edge frame, and announces each element onset as `sosPulse` (SfxService plays sos-dot/dash — 880 Hz, skip-under-narration like every cue). NOTE: pulses fire on the first FRAME that samples an element, so a preview frame hitch longer than a dot can drop that dot's TONE (the marks stay correct — they are state, not events); at device frame rates a 0.2 s dot always samples. |
 | `Systems/PropsController` | `Widgets/PropsController.ts` — **pinch-placed training props** (P14). Owns the grab interaction (SIK hover highlight / manipulation), the SnapSlot pattern, and the release verdict: within `snapRadiusCm` (35) of an EMPTY slot = snap + flash + `propSnapped`; anywhere else = eased return to the authored rest pose (free-fall physics CUT per the cut list — a floating or jittering log reads as a bug). Grabbable ONLY while a zone companion is active in a FIRE lesson; the family comes from `lessonKindInferred` (HologramPresenter's own verdict — never re-inferred here). Reports FACTS, never advances a step — the SurveyController seam. Slots and props are TYPED by name (log vs kindling) and a release only snaps to a matching slot. Debug key **X** forces the window open/closed; **Z** auto-places the next free prop through the SAME release path (exists because the synthetic hand cannot pinch every prop; a real hand can). |
 | `Systems/HologramPresenter` | `Widgets/HologramPresenter.ts` — **the subscriber `hologramStage` never had.** Enables exactly one stage group (whole ancestor chain), anchors it, spins it slowly, runs the stage transition, and announces the first appearance. See the hologram section below for the family rule and the measured placement. |
 | `Systems/CompletionCardPresenter` | `Widgets/CompletionCardPresenter.ts` — the completion card (see the CompletionCard row). Relays a pinch on the next line as `suggestionAccepted`; the ENGINE owns what acceptance means. |
@@ -337,7 +341,7 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `trailStateChanged` · `navigateRequested` · `navigateUpdated` · `campReached` ·
 `recenterRequested` · `hazardsDetected` · `suggestionAccepted` ·
 `journalStateChanged` · `hologramShown` · `lessonKindInferred` ·
-`propSnapped` · `propsStateChanged`
+`propSnapped` · `propsStateChanged` · `sosStateChanged` · `sosPulse`
 
 ### next_suggestion — SHIPPED as its own call (2026-08-21, second attempt)
 
@@ -585,6 +589,49 @@ hand (`props-*.jpg` in Docs/screens — see the log entry for which is which).
   drives SIK interactors only, and GestureModule does not fire in Preview).
   Existing tension — menu pinches already do this — but a multi-second drag
   holds the mic open far longer than a tap; worth a look before a device demo.
+
+### SOS — the emergency mode (2026-08-22)
+
+The product line the shot has to say: in a real emergency the hard part of
+signalling is keeping the rhythm right while you are cold and frightened —
+the Lens paces it for you.
+
+- **Entry from ANYWHERE**: voice "sos"/"emergency"/"mayday" (NAV_PHRASES,
+  matched at any length, any mode), the warning-red `Chip_SOS`, debug key
+  **6**. Verified from IDLE and from mid-LESSON. "stop" exits from anywhere.
+- **What entering from a LESSON does, deliberately**: the timer stops, the
+  widgets hide on `modeChanged`, and "stop" exits SOS to a CLEAN IDLE — the
+  interrupted lesson is dropped, not resumed. Emergency outranks lesson, and
+  a half-stale lesson coming back would be worse. Nothing dangles (verified:
+  props retired, companions hidden, menu returns intact).
+- **The rhythm is pure Engine code** (`SosRhythm.ts`): ...---... as ONE
+  prosign — dot 1 unit, dash 3, element gap 1, NO inter-letter gaps, ~7-unit
+  rest; 30 units/cycle. Default unit **0.2 s → 6.0 s cycle** (the 5-7 s demo
+  beat). Measured in Preview at steady state: dot onsets 0.41 s apart, dash
+  onsets 0.79 s apart — the spec numbers at frame quantization.
+- **The compass is the SAME rose** — `navigateUpdated` with
+  `navMode:"sos"` (the seam its header always promised). SurveyController
+  owns the cloud, so IT answers "which way is most open" via the PURE
+  `Engine/OpenDirection.ts` (azimuth bins over usable ground, deepest sector
+  wins, density breaks ties). CompassRosePresenter changes: survives SOS in
+  its mode filter, and the label says "SIGNAL THIS WAY" (a direction, not a
+  distance). **No survey = NO arrow**: `openDirection` returns null below its
+  point thresholds, the spoken line says "no scan data", and `BearingNote`
+  repeats it on screen — the last-known-bearing honesty rule, applied before
+  the fact.
+- **One spoken line per activation**, emitted by SurveyController on the
+  `sosStateChanged` edge because it is the one who knows whether there is an
+  arrow; two variants (with/without data), through `speakRequested` like
+  every other spoken line. The journal records "SOS SIGNAL STARTED".
+- **Subscription-order gotcha, cost one bug**: SurveyController sits earlier
+  than SosSignalPresenter in the `sosStateChanged` dispatch, so the arrow's
+  `navigateUpdated` lands BEFORE the presenter's own begin() runs. begin()
+  must not reset the hasBearing flag (the reset lives in end()) or the note
+  claims NO SCAN DATA over a live arrow — measured, fixed.
+- Sounds: `sos-dot.wav` / `sos-dash.wav` (880 Hz sine + a whisper of 2nd
+  harmonic, 0.2/0.6 s — baked for the default unit), generated by the same
+  local-synthesis route as the P12 batch. error-buzz was NOT reused: it means
+  "malfunction", and an SOS that sounds like a malfunction is wrong.
 
 ### NAVIGATE — a mode, not a companion
 

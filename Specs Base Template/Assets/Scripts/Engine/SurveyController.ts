@@ -29,6 +29,7 @@
  */
 import { eventBus, Events } from "./EventBus";
 import { HazardCandidate, scoreHazards } from "./HazardScoring";
+import { openDirection } from "./OpenDirection";
 import { MenuSelectedPayload } from "./RequestTypes";
 import {
   DEFAULT_SITE_OPTIONS,
@@ -194,6 +195,19 @@ export class SurveyController extends BaseScriptComponent {
   @input @hint("Turn off before shipping.") private enableDebugKeys: boolean = true;
   @input @hint("Restart the survey from scratch. P as in re-Ping — 'S' is walk-back and injected keys reach the Lens.") private keyRestartSurvey: string = "P";
   @input @hint("End the survey immediately with whatever has been collected.") private keyFinishSurvey: string = "G";
+
+  @ui.separator
+  @ui.label('<span style="color: #7CFFB2;">SOS — the one spoken line per activation</span>')
+
+  @input
+  @hint("Spoken when SOS starts AND the cloud yields an open direction.")
+  private sosLineWithBearing: string =
+    "S O S pattern. Three short, three long, three short. Follow the lights, and signal along the arrow — that way is most open.";
+
+  @input
+  @hint("Spoken when SOS starts with no usable survey data. It says NO direction rather than inventing one.")
+  private sosLineNoData: string =
+    "S O S pattern. Three short, three long, three short. Follow the lights. No scan data — signal toward the most open ground you can see.";
   @input private enableLogging: boolean = true;
 
   // ------------------------------------------------------------------ state
@@ -259,6 +273,65 @@ export class SurveyController extends BaseScriptComponent {
       if (!p || p.row !== 1) return;
       this.log("menu row 1 (" + p.source + ") — starting survey");
       this.beginSurvey();
+    });
+
+    // SOS: this controller owns the point cloud, so it is the one that can
+    // say which sampled direction is most open — you signal toward where you
+    // can be seen. It feeds the SAME compass seam NavigationController uses
+    // (navigateUpdated), and the same honesty rule as last-known bearing
+    // applies: no data means NO arrow and the spoken line says so, because a
+    // guide that invents a direction is worse than one that admits it
+    // does not know.
+    eventBus.subscribe(Events.sosStateChanged, (p: { active: boolean }) => {
+      if (p && p.active) this.beginSosGuidance();
+      else this.endSosGuidance();
+    });
+  }
+
+  /** One spoken line per activation, arrow only when the cloud can back it. */
+  private beginSosGuidance(): void {
+    const cam = this.cameraObject ? this.cameraObject.getTransform().getWorldPosition() : null;
+    const open = cam
+      ? openDirection(this.toMetres(this.cloud), { x: cam.x / 100, z: cam.z / 100 })
+      : null;
+
+    if (open && cam) {
+      const reachCm = Math.max(300, Math.min(900, open.reachM * 100));
+      const target = {
+        x: cam.x + open.dirX * reachCm,
+        y: cam.y - 120,
+        z: cam.z + open.dirZ * reachCm,
+      };
+      this.log(
+        "SOS: open direction " + open.bearingDeg.toFixed(0) + "° (reach " +
+          open.reachM.toFixed(1) + "m, " + open.binPoints + " pts) — arrow up"
+      );
+      eventBus.emit(Events.navigateUpdated, {
+        active: true,
+        navMode: "sos",
+        targetCm: target,
+        bearingDeg: open.bearingDeg,
+        distanceM: 0,
+        nextMarkIndex: -1,
+        lastKnown: false,
+      });
+      eventBus.emit(Events.speakRequested, { text: this.sosLineWithBearing, source: "sos" });
+    } else {
+      this.log("SOS: no usable survey data — no arrow, and the line says so");
+      eventBus.emit(Events.speakRequested, { text: this.sosLineNoData, source: "sos" });
+    }
+  }
+
+  private endSosGuidance(): void {
+    // The rose also hides on modeChanged; this clears the payload holders.
+    eventBus.emit(Events.navigateUpdated, {
+      active: false,
+      navMode: "sos",
+      targetCm: { x: 0, y: 0, z: 0 },
+      bearingDeg: 0,
+      distanceM: 0,
+      nextMarkIndex: -1,
+      lastKnown: false,
     });
   }
 
