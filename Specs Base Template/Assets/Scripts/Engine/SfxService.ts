@@ -10,7 +10,7 @@
  * ## The mapping
  *
  *   crt-power-on     -> introStateChanged {active:true} (boot)
- *   confirm-blip     -> menuSelected · checklist item checked · safety confirmed
+ *   confirm-blip     -> menuSelected · checklist item checked · safety confirmed · prop placed
  *   error-buzz       -> safetyRejected · request ERROR state
  *   survey-ping      -> surveyComplete, once per placed marker, staggered
  *   geiger-click     -> surveyProgress, RATE-LIMITED — ambience, not per point
@@ -109,13 +109,22 @@ export class SfxService extends BaseScriptComponent {
     eventBus.subscribe(Events.checklistUpdated, (p: { justChecked: number }) => {
       if (p && p.justChecked >= 0) this.play(this.cueConfirm, "confirm-blip");
     });
+    // A prop snapping into its slot is a local acknowledgement, same family
+    // as a checklist tick.
+    eventBus.subscribe(Events.propPlaced, () => {
+      this.play(this.cueConfirm, "confirm-blip");
+    });
     eventBus.subscribe(Events.safetyPending, (p: { pending: boolean }) => {
       if (p && p.pending === false) this.play(this.cueConfirm, "confirm-blip");
     });
 
     // --- failures --------------------------------------------------------
+    // OVER narration, deliberately: on a safety step the instruction and the
+    // warning are almost always still being spoken, so a skipped buzz means a
+    // refused "next" produces NO feedback at all — the strip was already up,
+    // nothing changes visually. Found walking the gate end to end (P14).
     eventBus.subscribe(Events.safetyRejected, () => {
-      this.play(this.cueError, "error-buzz");
+      this.play(this.cueError, "error-buzz", true);
     });
     eventBus.subscribe(Events.requestStateChanged, (p: RequestStatePayload) => {
       if (p && p.state === "ERROR") this.play(this.cueError, "error-buzz");

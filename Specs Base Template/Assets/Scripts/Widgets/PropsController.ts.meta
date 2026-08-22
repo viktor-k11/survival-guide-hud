@@ -1,0 +1,92 @@
+- !<AssetImportMetadata/28dcb500-7c3d-4033-8a02-0c6998005e40>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> 5d8c0b69-2ca5-4d6e-8181-bd1029a35908
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> 5d8c0b69-2ca5-4d6e-8181-bd1029a35908
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 5acbb77f-1305-4d0f-939f-8c1cf36031ae
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/5acbb77f-1305-4d0f-939f-8c1cf36031ae>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: f35d6d1e-7b23-4ca5-bf9f-8bab3cbcba46
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    cameraObject: false
+    cueText: false
+    enableDebugKeys: false
+    enableLogging: false
+    flashSec: false
+    ghostLevel: false
+    hoverTint: false
+    keyForceProps: false
+    propsContainer: false
+    reachCm: false
+    returnSec: false
+    snapRadiusCm: false
+    theme: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - theme: !<MappingBased.AssignableType_1> 00000000-0000-0000-0000-000000000000
+      propsContainer: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      cameraObject: !<reference.SceneObject> 00000000-0000-0000-0000-000000000000
+      reachCm: !<float> 55.000000
+      snapRadiusCm: !<float> 35.000000
+      returnSec: 0.250000
+      ghostLevel: 0.350000
+      hoverTint: 0.650000
+      flashSec: 0.450000
+      cueText: LOOK DOWN · STACK THE LOGS
+      keyForceProps: X
+      enableDebugKeys: true
+      enableLogging: true
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - // @input AssignableType_1 theme
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Objects this controller drives</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">Props (Prop_Log_*) and slots (SnapSlot_*) are found by name prefix under the container, so the contract is Docs/SCENE-MAP.md. Slot transforms ARE the pattern — edit them in the Inspector.</span>"}'
+    - '// @input SceneObject propsContainer {"hint":"WorldRoot/PropsContainer"}'
+    - '// @input SceneObject cameraObject {"hint":"Camera Object — the pattern anchors ahead of the user, within reach."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Placement — within reach, by rule</span>"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #94A3B8; font-size: 11px;\">A pinch reaches ~0.6 m. Ground content this close is outside a level gaze (~13° down before the floor enters the window), which is exactly why the cue line below exists.</span>"}'
+    - '// @input float reachCm = 55 {"hint":"How far ahead of the user the pattern stands, centimetres. Keep it a reach, not a walk.", "widget":"slider", "min":30, "max":150, "step":5}'
+    - '// @input float snapRadiusCm = 35 {"hint":"Release closer than this to an EMPTY slot snaps the prop in; anything further returns it to rest. Centimetres, world.", "widget":"slider", "min":10, "max":80, "step":1}'
+    - '// @input float returnSec = 0.25 {"hint":"Seconds for the missed-release glide back to the rest pose. 0 = instant return — the pre-agreed fallback, and nobody watching can tell.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Look</span>"}'
+    - '// @input float ghostLevel = 0.35 {"hint":"Resting brightness of the empty-slot ghosts.", "widget":"slider", "min":0.05, "max":1, "step":0.05}'
+    - '// @input float hoverTint = 0.65 {"hint":"How far a hovered log tints toward the accent colour.", "widget":"slider", "min":0, "max":1, "step":0.05}'
+    - '// @input float flashSec = 0.45 {"hint":"Seconds the snap confirmation flash takes to decay.", "widget":"slider", "min":0.1, "max":1.5, "step":0.05}'
+    - '// @input string cueText = "LOOK DOWN · STACK THE LOGS" {"hint":"StatusBar cue when the props appear. The frustum rule: near ground content is allowed ONLY when the HUD says to look down. Keep it under ~34 characters."}'
+    - '// @ui {"widget":"separator"}'
+    - '// @ui {"widget":"label", "label":"<span style=\"color: #7CFFB2;\">Debug</span>"}'
+    - '// @input string keyForceProps = "X" {"hint":"Force the prop step open/closed without a lesson — the interaction is testable on a desk. Same right-hand-cluster rule as every debug key: never W/A/S/D, Q/E or the arrows."}'
+    - // @input bool enableDebugKeys = true
+    - // @input bool enableLogging = true

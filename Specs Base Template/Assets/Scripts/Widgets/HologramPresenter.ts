@@ -188,7 +188,8 @@ export class HologramPresenter extends BaseScriptComponent {
     // looks up a stage inside the family already chosen.
     eventBus.subscribe(Events.lessonStarted, (p: { title: string }) => {
       const title = p ? p.title : "";
-      this.family = inferLessonKind(this.lastRequestText, title);
+      const request = this.lastRequestText;
+      this.family = inferLessonKind(request, title);
       // CONSUMED, not remembered. The request text is evidence about THIS
       // lesson; leaving it set let the next lesson inherit it, and a lesson
       // with no request of its own (a fixture, a debug key) then inferred the
@@ -201,9 +202,13 @@ export class HologramPresenter extends BaseScriptComponent {
       this.currentStage = 0;
       this.hideAll();
       this.log(
-        'lesson "' + title + '" (request "' + this.lastRequestText + '") -> family=' +
+        'lesson "' + title + '" (request "' + request + '") -> family=' +
           (this.family ? this.family : "NONE — no hologram for this lesson")
       );
+      // Published so nothing else re-infers the family. PropsController keys
+      // its grabbable window off this instead of calling inferLessonKind a
+      // second time — one call site, one answer, no drift.
+      eventBus.emit(Events.lessonKindInferred, { kind: this.family, title: title });
     });
 
     eventBus.subscribe(Events.hologramStage, (p: { stage: number }) => {

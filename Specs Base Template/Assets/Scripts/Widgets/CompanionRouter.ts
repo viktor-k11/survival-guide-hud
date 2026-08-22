@@ -39,8 +39,19 @@ export class CompanionRouter extends BaseScriptComponent {
    * only ever says WHICH companion; the anchor says WHERE.
    */
   private anchor: { x: number; y: number; z: number } | null = null;
+  /**
+   * Where the props pattern stands while a prop session is active. It BEATS
+   * the lesson anchor: the props are deliberately within reach of the user
+   * (a pinch is ~0.6 m), so a zone anchored at a distant surveyed site would
+   * outline ground the user cannot work. PropsController reports the
+   * position as a fact; placing the zone on it is this router's decision.
+   */
+  private propsAnchor: { x: number; y: number; z: number } | null = null;
   /** The authored position, restored whenever a lesson arrives with no anchor. */
   private zoneHomePosition: vec3 | null = null;
+
+  /** ZoneCircle's authored Y scale — the tube height the ring was tuned at. */
+  private zoneCircleAuthoredY: number = 1;
 
   onAwake(): void {
     this.createEvent("OnStartEvent").bind(() => this.onStart());
@@ -48,6 +59,7 @@ export class CompanionRouter extends BaseScriptComponent {
 
   private onStart(): void {
     if (this.zoneWidget) this.zoneHomePosition = this.zoneWidget.getTransform().getLocalPosition();
+    if (this.zoneCircle) this.zoneCircleAuthoredY = this.zoneCircle.getTransform().getLocalScale().y;
 
     eventBus.subscribe(Events.lessonAnchorChanged, (p: LessonAnchorPayload) => {
       this.anchor = p && p.position ? p.position : null;
@@ -61,6 +73,14 @@ export class CompanionRouter extends BaseScriptComponent {
       }
       this.placeZone();
     });
+
+    eventBus.subscribe(
+      Events.propsStateChanged,
+      (p: { active: boolean; positionCm: { x: number; y: number; z: number } | null }) => {
+        this.propsAnchor = p && p.active && p.positionCm ? p.positionCm : null;
+        this.placeZone();
+      }
+    );
 
     eventBus.subscribe(
       Events.companionChanged,
@@ -120,7 +140,9 @@ export class CompanionRouter extends BaseScriptComponent {
   private placeZone(): void {
     if (!this.zoneWidget) return;
     const t = this.zoneWidget.getTransform();
-    if (this.anchor) {
+    if (this.propsAnchor) {
+      t.setWorldPosition(new vec3(this.propsAnchor.x, this.propsAnchor.y, this.propsAnchor.z));
+    } else if (this.anchor) {
       t.setWorldPosition(new vec3(this.anchor.x, this.anchor.y, this.anchor.z));
     } else if (this.zoneHomePosition) {
       t.setLocalPosition(this.zoneHomePosition);
@@ -136,7 +158,11 @@ export class CompanionRouter extends BaseScriptComponent {
       // The rect form is a group of four edges; scaling the group scales the outline.
       t.setLocalScale(new vec3(cm / 90, 1, cm / 90));
     } else {
-      t.setLocalScale(new vec3(cm, cm, cm));
+      // XZ only — the Y stays at the authored tube height. Scaling the torus
+      // uniformly inflated a 1.2 m zone into a ball that BURIED the ground it
+      // was outlining (found when the props pattern moved the zone within
+      // reach); the rect branch above always kept Y flat for the same reason.
+      t.setLocalScale(new vec3(cm, this.zoneCircleAuthoredY, cm));
     }
   }
 }

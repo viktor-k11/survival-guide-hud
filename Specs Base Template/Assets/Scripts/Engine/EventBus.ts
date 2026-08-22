@@ -29,14 +29,47 @@ export const Events = {
    * placement.
    */
   hologramShown: "hologramShown",
+  /**
+   * HologramPresenter's per-lesson family verdict, published so nothing else
+   * re-infers it. Payload: { kind: "tent" | "fire" | null, title }. Emitted
+   * once per lessonStarted, after inferLessonKind() — the VALIDATOR'S own
+   * function — has run on the originating request text plus the title.
+   * PropsController consumes this instead of duplicating the inference: one
+   * function, one call site, one answer, no drift.
+   */
+  lessonKindInferred: "lessonKindInferred",
   /** Countdown / duration tick for GaugeTimer. */
   timerTick: "timerTick",
   /** A checklist item was ticked or cleared. */
   checklistUpdated: "checklistUpdated",
   /** A step needs explicit user confirmation before continuing. */
   safetyPending: "safetyPending",
-  /** A training prop was placed in the world. */
+  /**
+   * A training prop was placed in the world. Payload:
+   * { stepIndex, placed, required }. Emitted by the ENGINE (its record of the
+   * fact below); `required` comes from the LIVE SnapSlot count the controller
+   * reported — the plan's props_required is never produced and stays inert.
+   */
   propPlaced: "propPlaced",
+  /**
+   * A prop snapped into a SnapSlot. Payload: { slotIndex, placed, required }.
+   * Emitted by PropsController — a FACT about the scene ("n of N placed"),
+   * exactly the SurveyController seam: the controller never advances a step
+   * and never sets the mode; the engine decides that a complete pattern means
+   * the step is done. `required` is the live slot count.
+   */
+  propSnapped: "propSnapped",
+  /**
+   * The training-prop session opened or closed. Payload:
+   * { active, placed, required, positionCm, cue }. Emitted by PropsController
+   * when props become grabbable (zone companion active in a FIRE lesson, or
+   * the debug force key) and when they retire. `positionCm` is where the
+   * pattern stands (within reach, by design — see the frustum rule);
+   * CompanionRouter pulls the zone onto it, and the StatusBar shows `cue`
+   * ("look down") because near ground content is invisible at level gaze and
+   * silence is the failure mode.
+   */
+  propsStateChanged: "propsStateChanged",
   /**
    * Final step done. Payload: { title, steps, nextSuggestion }.
    * `nextSuggestion` is the OPTIONAL next-task phrase from the plan ("" when

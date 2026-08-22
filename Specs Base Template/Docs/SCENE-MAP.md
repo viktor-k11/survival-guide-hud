@@ -111,8 +111,19 @@ Bright, saturated, additive. Real visuals replace these later; the names are
 > `Prop_Log_1..6`, `Prop_Kindling`, `Prop_Stake` — instantiated from the GLB
 > prefabs at DESIGN time. Every level of each prop's chain ships disabled
 > (including the GLB-import inner `Scenes/Scene/geometry_0` nodes), so an
-> enabler must walk the chain. P14 only enables, positions and snaps these.
-> The log-cabin budget is exactly six logs.
+> enabler must walk the chain (`PropsController.enableTree`). The log-cabin
+> budget is exactly six logs.
+>
+> **P14 SHIPPED (2026-08-22):** each `Prop_Log_N` now carries a design-time
+> box `ColliderComponent` (0.45 × 0.5 × 0.28 local — ×100 root scale = cm,
+> `fitVisual` off, deliberately taller than the log so a grab from above
+> connects) plus SIK `Interactable` (targeting Direct/Indirect) and
+> `InteractableManipulation` (rotation/scale disabled — a held log stays
+> axis-aligned; the snap sets the slot's rotation anyway). Each log's AUTHORED
+> local transform is its REST POSE — the horseshoe arc the controller returns
+> missed releases to — so the arc is Inspector-editable. `Prop_Kindling` /
+> `Prop_Stake` remain inert props with no interaction components.
+> `SnapSlot_1..6` are the pattern (see the table row above).
 
 > **GLB-reimport gotcha, cost a debugging loop:** replacing a GLB's content on
 > disk keeps the prefab id (instances survive) but the OLD subresource ids
@@ -235,7 +246,9 @@ placed against real terrain, not the head.
 | `…/HologramFire/S2_Tinder` | Stage 2 — tinder bundle | `hologramStage` |
 | `…/HologramFire/S3_LogCabin` | Stage 3 — log-cabin stack | `hologramStage` |
 | `…/HologramFire/S4_Flame` | Stage 4 — lit flame | `hologramStage`, `lessonCompleted` |
-| `WorldRoot/PropsContainer` | Empty container for training props. **The only object here with no visual** — props get parented under it, but they must be pre-made children, never runtime-instantiated | `propPlaced` |
+| `WorldRoot/PropsContainer` | Container for training props AND the snap pattern. `Systems/PropsController` positions it WITHIN REACH of the user (default 55 cm, `reachCm`) when a prop step opens, yawed so local +Z faces the user — never at a distant surveyed site: a pinch reaches ~0.6 m | `propsStateChanged` (emitter), `propSnapped` (emitter) |
+| `WorldRoot/PropsContainer/SnapSlot_1..6` | **The log-cabin pattern, as design-time transforms** — two logs along X at y 0, two along Z at y 20, two along X at y 40, ±14 cm off centre. The pattern IS the required count: `propPlaced.required` = live slot tally, because the plan's `props_required` is never produced (and must stay un-produced — the last prompt extension failed its gate). Edit the pattern in the Inspector; the code counts and snaps, nothing more | `PropsController` |
+| `WorldRoot/PropsContainer/SnapSlot_N/Ghost` | Empty-slot target marker: `PH_Plane` quad (46 × 26 cm, log footprint) with a shared dim-cyan `PH_Cyan` clone, breathing at the theme pulse. Hidden the moment its slot fills | `PropsController` |
 | `WorldRoot/HazardMarker_1..3` | **The "do NOT camp here" pool, hard cap 3** — warning-coloured X of two crossed stakes (`Cross_A`/`Cross_B`) + a `Label` carrying the REASON with its number ("STEEP 31°", "COLLECTS WATER", "BROKEN GROUND"), deliberately not the site-marker language so the two verdicts separate at a glance. A hazard the user cannot interpret is decoration | `hazardsDetected`, `surveyStarted` (clear) |
 | `WorldRoot/TrailContainer/Crumb_01..24` | **The trail stake pool, hard cap 24** — vertical ~1.5 m stakes, not ground discs (the frustum limit is ANGULAR: floor content is invisible to a wearer facing the horizon, and a walker looks ahead, not down). When the pool fills, the controller DECIMATES (every second mark, spacing doubled) — coverage stays complete on a finite pool; measured live: 25th mark → 13 marks @ 300 cm | `trailStateChanged`, `navigateUpdated` (passed marks dim) |
 | `WorldRoot/CampStake` | The camp point marker: `Pole` (2 m, amber — same visual language as the crumbs, larger and distinct) + yaw-billboarded `Label` ("CAMP") | `campChanged` |
@@ -267,6 +280,7 @@ placed against real terrain, not the head.
 | `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
 | `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
 | `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. Its 400 cm drift guard stays as the OUTER belt-and-braces; with HudFollower's stable maths it should never fire. |
+| `Systems/PropsController` | `Widgets/PropsController.ts` — **pinch-placed training props** (P14). Owns the grab interaction (SIK hover highlight / manipulation), the SnapSlot pattern, and the release verdict: within `snapRadiusCm` (35) of an EMPTY slot = snap + flash + `propSnapped`; anywhere else = eased return to the authored rest pose (free-fall physics CUT per the cut list — a floating or jittering log reads as a bug). Grabbable ONLY while a zone companion is active in a FIRE lesson; the family comes from `lessonKindInferred` (HologramPresenter's own verdict — never re-inferred here). Reports FACTS, never advances a step — the SurveyController seam. Debug key **X** forces the window open/closed. |
 | `Systems/HologramPresenter` | `Widgets/HologramPresenter.ts` — **the subscriber `hologramStage` never had.** Enables exactly one stage group (whole ancestor chain), anchors it, spins it slowly, runs the stage transition, and announces the first appearance. See the hologram section below for the family rule and the measured placement. |
 | `Systems/CompletionCardPresenter` | `Widgets/CompletionCardPresenter.ts` — the completion card (see the CompletionCard row). Relays a pinch on the next line as `suggestionAccepted`; the ENGINE owns what acceptance means. |
 | `Systems/JournalPresenter` | `Widgets/JournalPresenter.ts` — the session log (see the Journal row). Debug key **V** toggles via the same `menuChipSelected` the chip and voice use. |
@@ -317,7 +331,8 @@ Declared in `Assets/Scripts/Engine/EventBus.ts` as `Events`:
 `menuSelected` · `campChanged` · `introStateChanged` · `menuChipSelected` ·
 `trailStateChanged` · `navigateRequested` · `navigateUpdated` · `campReached` ·
 `recenterRequested` · `hazardsDetected` · `suggestionAccepted` ·
-`journalStateChanged` · `hologramShown`
+`journalStateChanged` · `hologramShown` · `lessonKindInferred` ·
+`propSnapped` · `propsStateChanged`
 
 ### next_suggestion — SHIPPED as its own call (2026-08-21, second attempt)
 
@@ -488,6 +503,61 @@ moment the lesson succeeds (`hologram-complete-standing.jpg`).
 > hand-built STAGING TEST INPUT, not demo content, and not wired to a debug key
 > by default. Campfire plans use three (stages 2, 3, 4), so a live fire lesson
 > does reach the flame on its own.
+
+### Training props — the snap pattern (P14, 2026-08-22)
+
+Grab a log with a pinch, drop it near a SnapSlot, the pattern fills in; fill
+all six and the step advances itself. Verified end-to-end with the synthetic
+hand (`props-*.jpg` in Docs/screens — see the log entry for which is which).
+
+- **`required` comes from the SCENE, not the plan.** `step.props_required` is
+  read by the validator but never produced (adding it to the prompt failed its
+  regression gate) — so the SnapSlot count is the one honest source.
+  `PropsController` reports `propSnapped {slotIndex, placed, required}`; the
+  ENGINE re-emits `propPlaced` and decides that `placed >= required` means
+  `next()` — the controller never advances a step (SurveyController seam).
+- **The window:** grabbable while a zone companion is active in a FIRE lesson.
+  Family comes from `lessonKindInferred` — emitted by HologramPresenter after
+  its single per-lesson `inferLessonKind()` call — so props and hologram can
+  never disagree about what lesson this is. `companionChanged` fires on every
+  step entry (even `type:null`), which is what closes the window on a step
+  change with no extra event. Debug key **X** forces it open on a desk.
+- **Reach beats anchor.** The pattern anchors `reachCm` (55) ahead of the
+  user on the WorldRoot floor — a pinch reaches ~0.6 m, so a distant surveyed
+  site is out. `propsStateChanged {positionCm}` lets CompanionRouter pull the
+  ZONE onto the pattern (props anchor BEATS lesson anchor while active), and
+  its `cue` ("LOOK DOWN · STACK THE LOGS") rides the StatusBar's hologram-cue
+  line — ground content at your feet enters the display only past ~13° of
+  downward pitch, and silence is the failure mode (`props-cue-look-down.jpg`).
+- **Missed release = eased return to the authored rest pose** (`returnSec`
+  0.25, 0 = instant). Free-fall physics is CUT, per the project's own cut
+  list: nobody watching a demo can tell, and a log that jitters or tunnels is
+  worse than no physics. A placed log stops being grabbable — re-grabbing a
+  seated log would make the count lie to the engine.
+- **glTF props tint via `baseColorFactor`**, not `baseColor` — writing the
+  wrong one silently does nothing (same trap shape as ENABLE_BASE_TEX). Each
+  log gets its OWN material clone (all six share `FirewoodLog_Flat`; without
+  clones, hovering one would highlight all six).
+- **Safety gate — walked end to end on the campfire fixture, two of four
+  surfaces needed fixes:** the strip appeared (worked) and confirm released
+  the gate (worked), but the warning was never SPOKEN (the engine now emits
+  `speakRequested {source:"safety"}` on safety-step entry — queues behind the
+  step narration, never blocks), and the refusal buzz was SKIPPED whenever
+  narration had the air — which on a safety step is nearly always, so a
+  refused "next" produced no feedback at all. `safetyRejected`'s error-buzz
+  now plays OVER narration, like the boot cue.
+- **ZoneCircle scales XZ-only now.** `CompanionRouter.sizeZone` scaled the
+  torus uniformly, so a 1.2 m zone inflated the tube into a ball that buried
+  the ground it was outlining (found when the props pulled the zone within
+  reach). Y stays at the authored tube height — the rect branch always did
+  the equivalent. The torus mesh's tube still thickens with XZ radius; a
+  properly thin large ring would need its own mesh, noted and not built.
+- **On-device open question, noted in passing:** `VoiceInput` binds raw
+  GestureModule pinch events on both hands, so on device a grab-pinch will
+  ALSO begin a voice capture. Preview is unaffected (the synthetic hand
+  drives SIK interactors only, and GestureModule does not fire in Preview).
+  Existing tension — menu pinches already do this — but a multi-second drag
+  holds the mic open far longer than a tap; worth a look before a device demo.
 
 ### NAVIGATE — a mode, not a companion
 

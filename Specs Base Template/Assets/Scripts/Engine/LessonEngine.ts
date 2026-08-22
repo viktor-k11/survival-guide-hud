@@ -339,6 +339,12 @@ export class LessonEngine extends BaseScriptComponent {
       this.acceptSuggestion(p ? p.source : "pinch");
     });
 
+    // Prop placements are scene facts from PropsController; completion
+    // meaning "advance" is decided here, nowhere else.
+    eventBus.subscribe(Events.propSnapped, (p: { slotIndex: number; placed: number; required: number }) => {
+      this.onPropSnapped(p);
+    });
+
     // A late suggestion from the coordinator's background call. It only ever
     // ARMS the card — accepting is still the user's act.
     eventBus.subscribe(Events.nextStepSuggested, (p: { text: string }) => {
@@ -855,20 +861,27 @@ export class LessonEngine extends BaseScriptComponent {
     return this.mode;
   }
 
-  /** Called by the (future) prop system when a training prop is placed. */
-  public notifyPropPlaced(): void {
+  /**
+   * A prop snapped into a slot — reported by PropsController over the bus.
+   * The controller reports facts ("n of N placed"); THIS is where "the
+   * pattern is complete" becomes "the step advances" — same single-owner
+   * seam as the survey. `required` is the live SnapSlot count from the
+   * scene: the plan's props_required is never produced, so the pattern is
+   * the only honest source of the target number.
+   */
+  private onPropSnapped(p: { slotIndex: number; placed: number; required: number }): void {
     if (this.mode !== "LESSON" || !this.plan) return;
     const step = this.currentStep();
     if (!step) return;
 
-    const current = (this.propCounts[this.stepIndex] || 0) + 1;
-    this.propCounts[this.stepIndex] = current;
+    const placed = p && typeof p.placed === "number" ? p.placed : 0;
+    const required = p && typeof p.required === "number" ? p.required : 0;
+    this.propCounts[this.stepIndex] = placed;
 
-    const required = step.props_required ? step.props_required : 0;
-    this.emit(Events.propPlaced, { stepIndex: this.stepIndex, placed: current, required: required });
+    this.emit(Events.propPlaced, { stepIndex: this.stepIndex, placed: placed, required: required });
 
-    if (required > 0 && current >= required) {
-      this.log("prop requirement met — auto-advancing");
+    if (required > 0 && placed >= required) {
+      this.log("prop pattern complete (" + placed + "/" + required + ") — auto-advancing");
       this.next();
     }
   }
@@ -928,6 +941,14 @@ export class LessonEngine extends BaseScriptComponent {
         pending: true,
         warning: step.warning,
       });
+      // The warning is SPOKEN, not just shown — found missing when the gate
+      // was walked end to end (P14): the strip appeared, the buzz worked, and
+      // nothing ever said the warning aloud. speakRequested queues behind the
+      // step narration instead of interrupting it (the same channel Q&A
+      // answers use), and the engine still waits for nothing.
+      if (step.warning) {
+        this.emit(Events.speakRequested, { text: step.warning, source: "safety" });
+      }
     }
   }
 

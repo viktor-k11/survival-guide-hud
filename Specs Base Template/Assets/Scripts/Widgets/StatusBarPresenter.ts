@@ -272,6 +272,14 @@ export class StatusBarPresenter extends BaseScriptComponent {
       this.holoRemaining = this.holoCue.length > 0 ? this.holoCueHoldSec : 0;
       this.applyWarning();
     });
+    // The props pattern is near ground content — same rule, same line: the
+    // cue rides the hologram-cue machinery because both say "look down".
+    eventBus.subscribe(Events.propsStateChanged, (p: { active: boolean; cue: string }) => {
+      if (!p || !p.active || !p.cue) return;
+      this.holoCue = p.cue;
+      this.holoRemaining = this.holoCueHoldSec;
+      this.applyWarning();
+    });
     eventBus.subscribe(Events.narrationStateChanged, (p: { speaking: boolean; pending: boolean }) => {
       this.speaking = !!(p && p.speaking);
       const pending = !!(p && p.pending);

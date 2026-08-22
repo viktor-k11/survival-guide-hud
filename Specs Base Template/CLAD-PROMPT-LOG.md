@@ -3499,3 +3499,109 @@ the vestibule, which is the stage the reference makes the most of.
 Also updated the staging fixture's step TEXT to match the new order (it still
 said "drive the stakes" on the stage that now drapes the fly) — test input
 only, no product copy touched. Fire stages untouched.
+
+## Prompt — pinch-placed training props with pattern snap, verified safety gate
+
+> Training props: grab a log with a pinch, drop it into the pattern, the step
+> completes itself. Plus verify the safety gate end to end.
+>
+> === 1. What already exists — verify, do not rebuild ===
+> - The safety gate is fully implemented in LessonEngine: safetyPending,
+>   safetyRejected, confirm(). Do not reimplement it.
+> - propPlaced already fires with {stepIndex, placed, required}.
+> - PropsContainer already holds pre-made disabled props from P12:
+>   Prop_Log_1..6, Prop_Kindling, Prop_Stake — flat-shaded, one material slot
+>   each.
+> Your job is the interaction and the wiring, not the state machine.
+>
+> === 2. props_required is inert and MUST STAY inert ===
+> step.props_required is read by the validator but never produced [...] Do NOT
+> add it. [...] The required count is a property of the SCENE, not of the
+> plan. The pattern knows how many pieces it takes. So: author the target
+> positions as design-time objects, PropsContainer/SnapSlot_1..N [...]; a
+> props controller owns the pattern, counts placements, and reports FACTS —
+> "n of N placed", "pattern complete". LessonEngine decides that completion
+> means the step advances. Same seam as SurveyController [...]; fill
+> propPlaced's `required` from the live slot count so the event stops lying.
+>
+> === 3. Snap placement — this is the part that must ship ===
+> Pinch-grab with a hover highlight; kinematic while held; release near a slot
+> inside the active zone snaps the prop into place with a ZoneConfirm flash
+> and emits propPlaced. Release anywhere else returns the prop to its rest
+> position [...] Trigger: props become grabbable when a zone companion is
+> active in a FIRE lesson [...] Infer the lesson family from the title and
+> originating request, the same way a hologram presenter would; if a
+> HologramPresenter already exists, share that inference rather than
+> duplicating it. Add a debug key that force-enables the prop step [...]
+>
+> === 4. Physics — optional, and the cut is pre-agreed === [...]
+> === 5. Reach and the frustum — the rule applies directly here ===
+> A pinch reaches about 0.6 m [...] anchor the zone and the slots WITHIN
+> REACH of the user, not at a distant site; the HUD MUST say to look down
+> when the step begins. [...] Silence is the failure mode.
+>
+> === 6. Safety gate — verify the whole chain, fix only what is broken ===
+> Walk it end to end on a safety step: warning strip appears, the warning is
+> spoken, next is refused with the error buzz, and "confirm" releases it.
+> [...] Report which of the four surfaces worked untouched and what you had
+> to fix.
+>
+> === 7. Verify with the synthetic hand === [...] Capture: a prop highlighted
+> on hover, a prop mid-drag, the pattern part-built, and the completed
+> pattern with the step advancing on its own. Plus one frame of the safety
+> warning strip with next refused.
+>
+> check-scene-roots.py before committing. Update SCENE-MAP.md [...] and
+> CLAD-PROMPT-LOG.md. Commit: "feat: pinch-placed training props with
+> pattern snap, verified safety gate"
+
+**Shipped the interaction end to end and verified it with the synthetic
+hand.** New `Widgets/PropsController.ts` on `Systems/PropsController`; scene
+gains `SnapSlot_1..6` (each with a dim-cyan `Ghost` quad) under
+PropsContainer, and each `Prop_Log_N` gains a design-time box collider + SIK
+`Interactable` + `InteractableManipulation` plus an authored rest pose in a
+horseshoe arc. `required` now comes from the live slot count: the controller
+emits `propSnapped {slotIndex, placed, required}`, the ENGINE re-emits
+`propPlaced` and advances when the pattern completes —
+`LessonSchema.ts`/`lesson-system-prompt.txt` byte-identical to HEAD, as
+ordered. Family sharing: HologramPresenter now publishes its per-lesson
+verdict as `lessonKindInferred`; the props key their window off that event
+instead of a second `inferLessonKind()` call. The pattern anchors 55 cm ahead
+on the floor, `propsStateChanged` pulls the ZONE onto it (CompanionRouter) and
+puts "LOOK DOWN · STACK THE LOGS" on the StatusBar (rides the hologram-cue
+machinery). Physics on a miss: CUT per the pre-agreed cut list — eased
+return to rest instead, and it reads fine.
+
+**Verified live on the campfire fixture (debug key C, step 0 = zone step):**
+hover highlight (`props-hover-highlight.jpg`), kinematic mid-drag
+(`props-mid-drag.jpg`), miss-return ("released clear of the pattern —
+returning to rest", prop measured back at its exact rest pose), six snaps
+(4-13 cm capture radius each), `propPlaced {placed:6, required:6}` → "prop
+pattern complete (6/6) — auto-advancing" → step 2's checklist up and "PROPS
+retired" (`props-pattern-part-built.jpg`,
+`props-pattern-complete-step-advanced.jpg`, `props-step-begin.jpg`,
+`props-cue-look-down.jpg`). Debug key X toggles ACTIVE (FORCED)/retired.
+
+**Safety gate — two of four surfaces worked untouched, two were broken:**
+
+| surface | verdict |
+|---|---|
+| warning strip appears | worked untouched (`props-safety-strip-next-refused.jpg`) |
+| warning is SPOKEN | **was broken — nothing ever emitted speech for it.** Engine now emits `speakRequested {source:"safety"}` on safety-step entry; queues behind step narration, never blocks. Measured: `[TTS] speaking (safety) "Never light a fire in strong wind…"` |
+| next refused with error buzz | **half-broken — the buzz was SKIPPED whenever narration had the air**, which on a safety step is nearly always, so a refused next gave no feedback (the strip was already up). `safetyRejected`'s buzz now plays OVER narration, like the boot cue. Re-verified: no skip line. |
+| "confirm" releases it | worked untouched (`safetyPending pending:false`, next then advanced to step 5) |
+
+**Decisions / discovered issues:** (1) `CompanionRouter.sizeZone` scaled
+ZoneCircle's torus uniformly — a 1.2 m zone became a ball that buried the
+pattern; now XZ-only with authored Y. The torus tube still thickens with
+radius; a thin large ring needs its own mesh someday. (2) glTF props tint via
+`baseColorFactor` (not `baseColor`) — silent no-op otherwise; per-log material
+clones because all six share `FirewoodLog_Flat`. (3) On device, a grab-pinch
+will also open VoiceInput's mic (raw GestureModule pinch on both hands) —
+pre-existing tension, harmless in Preview, flagged in SCENE-MAP for the
+device demo. (4) The synthetic-hand tools inject `AiPreviewAgent Handler` and
+the AiPreviewAgentInteract package; handler deleted before commit (guard
+clean), package left untracked like its Inspect sibling. (5) One SIK quirk:
+`Prop_Log_6` twice timed out on `onTriggerStart` via uniqueId-targeting; a
+Hover first, then Pinch-hold, worked — matches the known SIK
+timing issue in the preview-interaction notes, not a Lens bug.
