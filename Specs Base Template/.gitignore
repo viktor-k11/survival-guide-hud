@@ -44,3 +44,6 @@ __pycache__/
 .font_tmp/
 # Same, from the IconSelector MCP tool.
 .icon_tmp/
+
+# Added by Lens Studio (LEAF plugin)
+leaf_plugin_settings.json
