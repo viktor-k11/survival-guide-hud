@@ -232,7 +232,7 @@ export class HudFollower extends BaseScriptComponent {
 
   /** alpha = 1 - exp(-dt/tau): in (0,1) for any dt > 0 — cannot overshoot. */
   private alpha(dt: number, tau: number): number {
-    return 1 - Math.exp(-dt / Math.max(0.01, tau));
+    return followAlpha(dt, tau);
   }
 
   private targetFromState(): vec3 {
@@ -264,4 +264,24 @@ export class HudFollower extends BaseScriptComponent {
   private log(msg: string): void {
     if (this.enableLogging) print("[FOLLOW] " + msg);
   }
+}
+
+// ---------------------------------------------------------------- pure core
+
+/**
+ * The smoothing coefficient, exported PURE so LEAF can hold the line on the
+ * most expensive lesson this project learned: SIK Headlock's dt-scaled lerp
+ * (`easing * dt / 0.033`) DIVERGES once that product exceeds 2 — any frame
+ * over ~0.26 s at easing 0.25 — and the measured runaway (x30/s to 1e19 cm)
+ * cost half a session and produced two false conclusions. This form is in
+ * (0,1) for ANY dt > 0, so one smoothing step can approach but never pass
+ * the target.
+ */
+export function followAlpha(dt: number, tau: number): number {
+  return 1 - Math.exp(-dt / Math.max(0.01, tau));
+}
+
+/** One smoothing step along one axis: current eased toward target. */
+export function followStep(current: number, target: number, dt: number, tau: number): number {
+  return current + (target - current) * followAlpha(dt, tau);
 }

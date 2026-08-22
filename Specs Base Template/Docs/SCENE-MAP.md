@@ -288,6 +288,7 @@ placed against real terrain, not the head.
 | `Systems/TrailPresenter` | `Widgets/TrailPresenter.ts` — maps `trailStateChanged.marksCm` onto the Crumb pool, dims passed marks while following, places the camp stake. |
 | `Systems/CompassRosePresenter` | `Widgets/CompassRosePresenter.ts` — the one bearing display (see the CompassRose row above). |
 | `Systems/HudRecenter` | `Engine/HudRecenter.ts` — `recenterRequested` (voice "recenter", debug key **5**) force-places HUDRoot in front of the user; the escape hatch for a tracking hiccup. Root placement = engine-side, like ModeRouter. Its 400 cm drift guard stays as the OUTER belt-and-braces; with HudFollower's stable maths it should never fire. |
+| `Systems/LeafIndex` | The LEAF suite registry (`Scripts/Leaf/LeafIndex.ts`) — 18 scenarios: 7 pure-function tests (Tier 2), 7 demo invariants (Tier 1), 4 flow extras (Tier 3). Under Systems, NOT a scene root, so the roots guard stays quiet. Carries two fixture @inputs the engine does not (`crampedCloud`, `brokenLesson`). **ZERO Gemini in the suite**: fixtures + pure functions only; the AI boundary is asserted with the engine's own `classify()` (observed, never crossed), and lesson completion uses the DOCTORED campfire fixture whose in-plan suggestion makes the coordinator SKIP its background call. Run via the LeafPlugin panel; scenario runs reset the scene, so never run against a demo in progress. |
 | `Systems/SosSignalPresenter` | `Widgets/SosSignalPresenter.ts` — the paced SOS readout. Renders `sosStateChanged`, samples the PURE `Engine/SosRhythm.ts` each frame (dot 1 · dash 3 · gap 1 · one prosign, no letter gaps · ~7-unit rest = 30 units/cycle; unit 0.2 s → 6.0 s cycle), lights the marks, flashes the edge frame, and announces each element onset as `sosPulse` (SfxService plays sos-dot/dash — 880 Hz, skip-under-narration like every cue). NOTE: pulses fire on the first FRAME that samples an element, so a preview frame hitch longer than a dot can drop that dot's TONE (the marks stay correct — they are state, not events); at device frame rates a 0.2 s dot always samples. |
 | `Systems/PropsController` | `Widgets/PropsController.ts` — **pinch-placed training props** (P14). Owns the grab interaction (SIK hover highlight / manipulation), the SnapSlot pattern, and the release verdict: within `snapRadiusCm` (35) of an EMPTY slot = snap + flash + `propSnapped`; anywhere else = eased return to the authored rest pose (free-fall physics CUT per the cut list — a floating or jittering log reads as a bug). Grabbable ONLY while a zone companion is active in a FIRE lesson; the family comes from `lessonKindInferred` (HologramPresenter's own verdict — never re-inferred here). Reports FACTS, never advances a step — the SurveyController seam. Slots and props are TYPED by name (log vs kindling) and a release only snaps to a matching slot. Debug key **X** forces the window open/closed; **Z** auto-places the next free prop through the SAME release path (exists because the synthetic hand cannot pinch every prop; a real hand can). |
 | `Systems/HologramPresenter` | `Widgets/HologramPresenter.ts` — **the subscriber `hologramStage` never had.** Enables exactly one stage group (whole ancestor chain), anchors it, spins it slowly, runs the stage transition, and announces the first appearance. See the hologram section below for the family rule and the measured placement. |
@@ -589,6 +590,38 @@ hand (`props-*.jpg` in Docs/screens — see the log entry for which is which).
   drives SIK interactors only, and GestureModule does not fire in Preview).
   Existing tension — menu pinches already do this — but a multi-second drag
   holds the mic open far longer than a tap; worth a look before a device demo.
+
+### The LEAF suite — the regression net (2026-08-22)
+
+18 scenarios, all green, in `Assets/Scripts/Leaf/` (one @component per file —
+a Lens Studio rule). In-lens run time 66 s total; with per-scenario scene
+resets a full pass is ~4 minutes — fast enough to run before every commit.
+Names say what broke; the table lives in CLAD-PROMPT-LOG.md.
+
+- **Tier 1 invariants** are the SCENE-MAP contracts verbatim: open-clearing
+  → 2 tents + fire clear ≥ 3 m + 0 hazards + no warning; cramped-camp →
+  warning + fire under 3 m + exactly 3 steep hazards; both asserted with the
+  hazard penalty ON (0.25) — the machine now owns the regression that was
+  once checked by hand. Point counts are NOT asserted (measured 344-387,
+  unstable by design of the fixture reveal).
+- **The follower test encodes the expensive lesson**: `followAlpha`/
+  `followStep` are now exported PURE from HudFollower (the component
+  delegates, behaviour identical) and the test drives dt = 0.016 → 30.4 s.
+  Boundary worth remembering: at dt 30.4 s the true alpha rounds to exactly
+  1.0 in doubles — a step ONTO the target, stable; the Headlock failure
+  shape is alpha ABOVE 1. The invariant is (0, 1].
+- **Test-vs-code verdicts from the first red run** (assertions were fixed,
+  never weakened): hazard synthetic clouds had to match the documented
+  metrics (hollow = below the NEIGHBOURHOOD mean, so a wide dish is not a
+  hollow; broken = NORMAL spread, not height jitter); validator test plans
+  must be MIN_STEPS-shaped or they are structurally rejected before the
+  companion is even examined; the gateway test cannot HOLD a job open —
+  the queue's stall guard (correctly) kills held jobs, so the batch is
+  submitted synchronously in one tick and only relative order is asserted.
+  No product code needed changing — every red was the test's fault.
+- The suite runs from the LeafPlugin panel / MCP; a scenario run RESETS the
+  Lens. One MCP quirk seen: a run can report a transport timeout while the
+  Lens-side manager logs PASSED — the manager's line is the truth.
 
 ### SOS — the emergency mode (2026-08-22)
 

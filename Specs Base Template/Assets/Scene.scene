@@ -4793,6 +4793,21 @@
     - !<own> f7c5af32-6e4c-4828-b284-4896a53317b5
   Components:
     []
+- !<SceneObject/31d54c27-41a9-4ccb-b7dd-d03664dfaaa7>
+  PrefabRemaps:
+    []
+  Name: LeafIndex
+  Enabled: true
+  Layers: 1
+  LocalTransform: !<TransformEntity>
+    Position: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Rotation: {x: 0.000000, y: 0.000000, z: 0.000000}
+    Scale: {x: 1.000000, y: 1.000000, z: 1.000000}
+    HasSegmentScaleCompensation: false
+  Children:
+    []
+  Components:
+    - !<own> 72bd3e54-8fb3-4d81-ad92-73a12326d483
 - !<Text/31e193fa-8928-40a6-b66a-57d2921232ad>
   PrefabRemaps:
     []
@@ -7691,6 +7706,7 @@
     - !<own> 9cdd8fc8-8cb5-42a9-9b76-6ffbfa0f7a43
     - !<own> 6017fece-0a9a-4d53-8e0b-0587380650c1
     - !<own> a4a37250-f6b6-4bcb-b4d3-9dc9e51126f2
+    - !<own> 31d54c27-41a9-4ccb-b7dd-d03664dfaaa7
   Components:
     []
 - !<SceneObject/55e380f3-d46b-4965-8c0e-b01788ebb0a9>
@@ -10110,6 +10126,23 @@
   Components:
     - !<own> 6cec881d-67f7-431d-9fd3-130e7539eb12
     - !<own> a5e3ba93-c326-47e5-a430-0032177ffefa
+- !<ScriptComponent/72bd3e54-8fb3-4d81-ad92-73a12326d483>
+  PrefabRemaps:
+    []
+  Name: LeafIndex
+  Enabled: true
+  ScriptAsset: !<reference> adc0dba5-65f3-4023-b01d-ae8653030072
+  ScriptInputsDefault:
+    {}
+  ScriptTypesDefault:
+    {}
+  ScriptInputs:
+    "":
+      crampedCloud: !<reference.JsonAsset> e2539cbc-4301-4287-8329-9cb6cf3f5f97
+      brokenLesson: !<reference.JsonAsset> 404fc54d-e175-4494-9b18-27cd8b0ec81d
+  ScriptTypes:
+    "":
+      {}
 - !<RenderMeshVisual/72ddb545-8392-4ee4-968e-426a9c8d049b>
   PrefabRemaps:
     []

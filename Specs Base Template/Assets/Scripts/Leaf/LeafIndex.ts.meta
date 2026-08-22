@@ -1,0 +1,49 @@
+- !<AssetImportMetadata/507a07b4-60f9-4877-b98f-97a00e8f56cf>
+  ImportedAssetIds:
+    TypeScriptAsset: !<reference> adc0dba5-65f3-4023-b01d-ae8653030072
+  ImporterName: TypeScriptAssetImporter
+  PrimaryAsset: !<reference> adc0dba5-65f3-4023-b01d-ae8653030072
+  PackageType: NotAPackage
+  LegacyPackagePolicy: ~
+  ExtraData:
+    {}
+  AssetDataMap:
+    TypeScriptAsset: !<own> 3bef46dc-3ae6-40e6-aa8b-8a54e9809615
+  DependentFiles:
+    []
+  ImporterSettings: !<AssetImporterSettings>
+    {}
+  CompressionSettings: !<own> 00000000-0000-0000-0000-000000000000
+- !<TypeScriptAssetData/3bef46dc-3ae6-40e6-aa8b-8a54e9809615>
+  SvgIcon: ""
+  SetupScript:
+    code: ""
+  Description: ""
+  VersionMajor: 0
+  VersionMinor: 0
+  VersionPatch: 0
+  VersionPrerelease: ""
+  UpdateOrder: 0
+  ComponentUid: b71b0668-a5f2-4dc4-9f80-2590336823a0
+  ExportUid: 00000000-0000-0000-0000-000000000000
+  PackagePolicy: CanBeUnpacked
+  ScriptInputsHidden:
+    brokenLesson: false
+    crampedCloud: false
+  ScriptTypesHidden:
+    {}
+  ReadMe: !<reference> 00000000-0000-0000-0000-000000000000
+  DeclarationFile: !<reference> 00000000-0000-0000-0000-000000000000
+  Tags:
+    []
+  Attachments:
+    []
+  DefaultScriptInputs:
+    - crampedCloud: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+      brokenLesson: !<reference.JsonAsset> 00000000-0000-0000-0000-000000000000
+  ScriptTypes:
+    -
+      {}
+  InputLines:
+    - '// @input Asset.JsonAsset crampedCloud {"hint":"Assets/Survey/fixtures/survey-cramped-camp.json — the constraint-case cloud."}'
+    - '// @input Asset.JsonAsset brokenLesson {"hint":"Assets/AI/fixtures/broken-lesson-9-steps-7-item-checklist.json — a structurally broken plan the validator must REJECT."}'
