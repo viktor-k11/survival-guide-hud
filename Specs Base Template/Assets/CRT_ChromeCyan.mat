@@ -1,0 +1,55 @@
+- !<Material/b9f20351-a002-4269-914c-a78b86070cb8>
+  PackagePath: ""
+  PassesInfo:
+    - !<own> 2120b964-0293-43c6-b8ca-714208d32de6
+- !<PassInfo/2120b964-0293-43c6-b8ca-714208d32de6>
+  CachedProperties:
+    []
+  DepthWrite: true
+  DepthTest: true
+  DepthFunction: LessEqual
+  TwoSided: true
+  ColorMask: {x: true, y: true, z: true, w: true}
+  CullMode: Back
+  PolygonOffset: {x: 0.000000, y: 0.000000}
+  FrustumCulling: Auto
+  FrustumCullPad: 0.000000
+  InstanceCount: 1
+  Defines:
+    []
+  BlendMode: Add
+  Properties:
+    PreviewEnabled:
+      typeIdx: 0
+      value: 0
+    baseColor:
+      typeIdx: 5
+      value: {x: 0.300000, y: 0.920000, z: 1.000000, w: 1.000000}
+    glowIntensity:
+      typeIdx: 1
+      value: 1.200000
+    scanlineCount:
+      typeIdx: 1
+      value: 220.000000
+    scanlineStrength:
+      typeIdx: 1
+      value: 0.250000
+    scanlineScroll:
+      typeIdx: 1
+      value: 0.050000
+    flickerAmount:
+      typeIdx: 1
+      value: 0.080000
+    flickerRate:
+      typeIdx: 1
+      value: 10.000000
+    wipeProgress:
+      typeIdx: 1
+      value: 1.000000
+    wipeSoftness:
+      typeIdx: 1
+      value: 0.100000
+    wipeAxis:
+      typeIdx: 1
+      value: 0.000000
+  Pass: !<reference> b5a9a820-e67b-4b3a-9519-f21bca977144
