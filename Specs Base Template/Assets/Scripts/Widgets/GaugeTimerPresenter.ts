@@ -33,6 +33,14 @@ export class GaugeTimerPresenter extends BaseScriptComponent {
   private urgentBelow: number = 0.2;
 
   private trackScale: number = 16;
+  /**
+   * The fill's authored Y/X scale ratio. The tori are FLATTENED on their
+   * local Y (the depth axis once rotated to face the user) so the gauge reads
+   * as a ring, not a ball — the same uniform-torus-scale trap the zone circle
+   * fell into. The per-tick sweep must preserve that ratio, or the first tick
+   * would puff the ring back up.
+   */
+  private fillYRatio: number = 1;
   private trackMat: Material;
   private fillMat: Material;
 
@@ -47,6 +55,8 @@ export class GaugeTimerPresenter extends BaseScriptComponent {
     }
     if (this.fill) {
       this.fillMat = isolateMaterial(this.fill.getComponent("Component.RenderMeshVisual"));
+      const s = this.fill.getTransform().getLocalScale();
+      this.fillYRatio = s.x > 0.001 ? s.y / s.x : 1;
     }
     setFont(this.label, this.theme ? this.theme.font : null);
 
@@ -78,7 +88,7 @@ export class GaugeTimerPresenter extends BaseScriptComponent {
 
     if (this.fill) {
       const s = this.trackScale * this.fillFullScale * frac;
-      this.fill.getTransform().setLocalScale(new vec3(s, s, s));
+      this.fill.getTransform().setLocalScale(new vec3(s, s * this.fillYRatio, s));
     }
 
     if (!theme) return;
